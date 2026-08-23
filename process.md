@@ -52,4 +52,4 @@ Attempting to document the entire system design on paper before writing any code
 1. Every source code change must reach the `main` branch through a Pull Request (PR), and it requires at least one other team member to review, leave a substantive review comment, and approve before merging.
 2. Sprint length is two weeks; the backlog is evaluated and re-prioritized at the start of each sprint.
 3. Mock datasets containing sensitive or simulated financial information must never be committed to the repository; the `.gitignore` file must strictly block all local test data files (`.csv`, `.json`).
-4. Any changes to the API and AI input/output structures after a Sprint starts must be immediately recorded in `docs/changelog.md` to ensure synchronization among all team members.
+4. Any changes to the API and AI input/output structures after a Sprint starts must be immediately recorded in the project changelog (e.g., `docs/changelog.md`) to ensure synchronization among all team members.
