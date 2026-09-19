@@ -39,5 +39,3 @@ cd <repo-name>
   traceability.md
   images/
 ```
-
-> Note: `docs/retro.md` is no longer used as a separate file — the new `sprint-log.md` template already includes the Retrospective and Attendance sections for each sprint.
