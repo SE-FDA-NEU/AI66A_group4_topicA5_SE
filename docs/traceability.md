@@ -5,14 +5,13 @@ This table is the single source of truth for Milestone 1 Section 6 and for the M
 
 | Route | Purpose | Access | Priority | Feature | Story issue | PR | Status |
 |-------|---------|--------|----------|---------|-------------|-----|--------|
-| `/` | Landing page | G | P0 | F1 - Login/Logout | US01 (#?), US02 (#?) | | Not started |
-| `/dashboard` | Overview of the number of applications and the average score for the day | U | P0 | F2 - Overview Dashboard | US08 (#?) | | Not started |
-| `/loan-applications/new` | Create a new loan application | U | P0 | F3 - Loan Application Entry & Validation | US03 (#?), US09 (#?) | | Not started |
-| `/loan-applications/:id` | View application details: information, score, explanation, and history | U | P0 | F4 - Scoring & Result Explanation | US04 (#?), US05 (#?) | | Not started |
-| `/loan-applications` | List of all processed loan applications | U | P1 | F5 - Application History & Management | US06 (#?), US10 (#?) | | Not started |
+| `/` | Landing page | G | P0 | F1 - Login/Logout | US01 (#9), US02 (#19) | | Not started |
+| `/dashboard` | Overview of the number of applications and the average score for the day | U | P0 | F2 - Overview Dashboard | US08 (#13) | | Not started |
+| `/loan-applications/new` | Create a new loan application | U | P0 | F3 - Loan Application Entry & Validation | US03 (#10), US09 (#14) | | Not started |
+| `/loan-applications/:id` | View application details: information, score, explanation, and history | U | P0 | F4 - Scoring & Result Explanation | US04 (#11), US05 (#20) | | Not started |
+| `/loan-applications` | List of all processed loan applications | U | P1 | F5 - Application History & Management | US06 (#12), US10 (#22) | | Not started |
 | `/admin/users` | Manage employee accounts | A | P2 | F6 - User Administration | **(no issue yet — an additional P2 story needs to be created)** | | Not started |
 
-> `#?` = replace with the actual GitHub issue number as soon as the corresponding issue is created on the board. Fill in the `PR` column with the PR number when development of that screen begins (from Sprint 2 onward). Update the `Status` column to `In progress`/`Done` according to the actual progress; do not wait until the end of the project to update everything at once.
 
 **Access codes:** G = guest (not logged in) · U = authenticated user · A = admin
 
