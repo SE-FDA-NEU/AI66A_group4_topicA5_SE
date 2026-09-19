@@ -1,15 +1,22 @@
-# Team Project
-
-One-paragraph description of what your team is building goes here.
+# Credit Scoring Demo
 
 ## Team
 
-| Name | GitHub username | Role |
-| --- | --- | --- |
-| Do Quang Trung | macaronzz | Leader |
-| Nguyen Quang Huy | criticalmatt-dot | Member |
-| Vu Ngoc Hai | HaiMeoden | Member |
-| Trinh Duc Thanh | Thanh-dev-192006 | Member |
+* **Product Owner (PO):** Đỗ Quang Trung
+* **Scrum Master (Sprint 1):** Trịnh Đức Thành
+* Members: Đỗ Quang Trung, Trịnh Đức Thành, Vũ Ngọc Hải, Nguyễn Quang Huy
+
+## Project Board
+
+🔗 [GitHub Project Board](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE.git)
+
+## Definition of Done
+
+🔗 See the full details at [`docs/definition-of-done.md`](docs/definition-of-done.md) — all 8 required criteria must be satisfied; none may be skipped.
+
+## Traceability
+
+🔗 Screen → feature → issue → PR: see [`docs/traceability.md`](docs/traceability.md)
 
 ## Setup
 
@@ -17,3 +24,20 @@ One-paragraph description of what your team is building goes here.
 git clone <this-repo-url>
 cd <repo-name>
 ```
+
+## Folder Structure
+
+```text
+/backend
+
+/frontend
+
+/docs
+  requirements.md
+  sprint-log.md          (includes retrospective + attendance for each sprint)
+  definition-of-done.md
+  traceability.md
+  images/
+```
+
+> Note: `docs/retro.md` is no longer used as a separate file — the new `sprint-log.md` template already includes the Retrospective and Attendance sections for each sprint.
