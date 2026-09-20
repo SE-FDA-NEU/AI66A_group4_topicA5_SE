@@ -13,12 +13,13 @@ Finalize user stories (including Acceptance Criteria and points) and complete th
 
 | Issue | Story | Points | Owner |
 |-------|-------|--------|-------|
+| # 23     | Conduct real-world interviews with target users | --- | Hải & Trung |
 | # 26     |  Design the Flow diagram     |    ---    | Hải     |
-| # 25      | Update sprint log for M1    |    ---    | Thành   |
 | # 24     | Draft and finalize the docs/requirements.md file|  --- | Trung |
 | # 27     | Update the docs/traceability.md | --- | Huy |
 | # 28     | Update README.md                | --- | Huy |
-| # 23     | Conduct real-world interviews with target users | --- | Hải & Trung |
+| # 25      | Update sprint log for M1    |    ---    | Thành   |
+
 
 
 **Total committed: __ points**
@@ -27,12 +28,13 @@ Finalize user stories (including Acceptance Criteria and points) and complete th
 
 | Issue | Points | Status | If not done, why |
 |-------|--------|--------|------------------|
-| # 28    |   ---     | Done  | |
-| # 27    |   ---     | Done  | 
-| # 26    |   ---     | Done |
-| # 25    |   ---     | Done |
-| # 24    |   ---     | Done  |
 | # 23    |   ---     | Done | 
+| # 26    |   ---     | Done |
+| # 24    |   ---     | Done  |
+| # 27    |   ---     | Done  | 
+| # 28    |   ---     | Done  | |
+| # 25    |   ---     | Done |
+
 
 
 **Completed: __ points. Velocity this sprint: Fast**
