@@ -87,12 +87,13 @@ With 2 years of experience in the profession, Hoang processes an average of 1 to
 - Given an active session, when selecting logout, then the session terminates and the user is redirected to `/`.
 - Given a logged-out state, when clicking the browser's Back button, then the system must not display cached Dashboard data.
 
-**US03 — Submit loan application**
-- Given an empty application form, when valid income, credit history, and loan purpose are filled and Submit is clicked, then the application is saved with status "Scoring" in under **3 seconds**.
-- Given an income entered as **0 VND**, when clicking Submit, then the system rejects the application immediately without invoking the scoring model (BR2).
+**US03 - Input loan application**
+- Given an empty application input form, when fully filling in income, **loan amount, loan term**, credit history, loan purpose and clicking Submit, then the application is saved with the status "Scoring in progress" in under **3 seconds**.
+- Given the entered income is **0 VND**, when clicking Submit, then the system immediately rejects the application and does not call the scoring model (BR2).
+- Given the loan amount and term cause **DSR to exceed 50%** (BR3), when clicking Submit, then the application is still saved but is flagged as "High risk" right upon creation, even before having a model score.
 
 **US04 — View credit score with explanation**
-- Given a scored application, when opening application details, then the score is displayed as an integer between **0–100**.
+- Given a scored application, when opening application details, then the score is displayed as an integer between **0–100**, include the **CIC debt classification** (if applicable) in the explanation.
 - Given a score below **40**, when viewing results, then the system displays a "Recommendation Rejected" label along with at least **2 primary reasons**.
 
 **US05 — View scored application details**
@@ -123,12 +124,14 @@ With 2 years of experience in the profession, Hoang processes an average of 1 to
 
 | ID | Rule | Worked example |
 | --- | --- | --- |
-| BR1 | Returned credit scores must fall within the range **[0, 100]** | Model calculates 132 → system intercepts, logs an error, and does not display the score to users |
-| BR2 | Declared income must be **greater than 0 VND**; otherwise, the application is rejected prior to scoring | Application states 0 VND income → system returns "Invalid application", avoiding scoring API calls |
-| BR3 | An application can be rescored at most **3 times within 24 hours** from its first scoring run | Application #120 scored at 9:00, 9:15, 9:20 → 4th scoring request at 9:25 is rejected, must wait until 9:00 next day |
-| BR4 | Score **< 40** → label "Recommendation Rejected"; **40–69** → "Needs Further Review"; **≥ 70** → "Eligible for Recommendation" | Application scores 35 → automatically labeled "Recommendation Rejected", requiring no additional manager approval |
-| BR5 | Do not store full Citizen ID (CCCD/CMND) or bank account numbers in logs — store only the **last 4 digits** | Citizen ID `001234567890` submitted in form → system log records `*********890` |
-| BR6 | Employees (User role) can only view applications created by themselves; Managers (Admin role) can view all branch applications | Employee Hoang creates #45 → other employees (User role) cannot view #45; manager Thanh can view it |
+| BR1 | The returned credit score must be in the range **[0, 100]**. If out of range, the application status changes to **"Requires manual review"**, and the score must not be displayed to the user | Model calculates 132 -> system blocks, logs error, changes application #88 to "Requires manual review" instead of displaying incorrect score |
+| BR2 | Declared income must be **> 0 VND** | Application declares 0 VND income -> system returns "Invalid application", does not call scoring API |
+| BR3 | **Debt/Income Ratio (DSR)** = (estimated installment / monthly income) must not exceed **50%**; if exceeded, the application is automatically flagged as "High risk" regardless of the model score | Income 20 million/month, loan 500 million, estimated installment 15 million/month -> DSR = 75% -> flagged as "High risk", requires Manager review even if model score is 80 |
+| BR4 | The scoring result must cross-reference the customer's **CIC debt group** if available; applications in **debt groups 3-5** (bad debt) are **automatically rejected**, regardless of the model score | Customer in CIC debt group 4, model scores 82 points -> application is still rejected because debt groups 3-5 are always rejected |
+| BR5 | An application can only be re-scored a maximum of **3 times in 1 hour** (anti-probing/gaming the model). Hitting the threshold -> application is automatically flagged **"Requires Manager review"**, not just silently blocked | Application #120 calls scoring at 9:00, 9:15, 9:20 -> the 4th call at 9:25 is blocked and flagged "Requires Manager review" |
+| BR6 | Score **< 40** -> receives "Proposal rejected"; **40-69** -> "Requires further review"; **>= 70** -> "Eligible for proposal" | Application gets 35 points -> automatically labeled "Proposal rejected", no further Manager approval needed |
+| BR7 | Do not store full ID card (CMND/CCCD) numbers or bank account numbers in **system logs** - only store the last 4 digits. In the **main database**, these fields must be **encrypted at rest**, and only decrypted upon valid lookup requests with access logged | CCCD 001234567890 entered into form -> log only records *******7890; stored in DB in encrypted format, anyone viewing plain text is logged "user X viewed CCCD of application #45 at 10:03" |
+| BR8 | Employees (role **User**) can only view applications created by themselves; Managers (role **Admin**) can view all branch applications, including employee account management | Employee Hoang (User) creates application #45 -> other employees (role User) cannot see application #45; Manager Thanh (Admin) can see all |
 
 ## 6. Screens and flow
 
@@ -137,7 +140,7 @@ With 2 years of experience in the profession, Hoang processes an average of 1 to
 | `/` | Login page | G | P0 |
 | `/dashboard` | Daily application count and average score overview | U | P0 |
 | `/loan-applications/new` | New loan application entry | U | P0 |
-| `/loan-applications/:id` | View 1 application details: data, score, explanation, history | U | P0 |
+| `/loan-applications/:id` | View 1 application details: data, score, explanation, CIC debt classification group history | U | P0 |
 | `/loan-applications` | List of all processed applications | U | P1 |
 | `/admin/users` | Employee account management | A | P2 |
 
