@@ -29,9 +29,9 @@ Finalize user stories (including Acceptance Criteria and points) and complete th
 |-------|--------|--------|------------------|
 | # 28    |   ---     | Done  | |
 | # 27    |   ---     | Done  | 
-| # 26    |   ---     | In review |
-| # 25    |   ---     | In Progress |
-| # 24    |   ---     | In review  |
+| # 26    |   ---     | Done |
+| # 25    |   ---     | Done |
+| # 24    |   ---     | Done  |
 | # 23    |   ---     | Done | 
 
 
@@ -40,8 +40,16 @@ Finalize user stories (including Acceptance Criteria and points) and complete th
 ### Sprint Review
 
 - What we demonstrated:
+    - The screen flow of the application, covering login, dashboard, loan application creation and scoring result, application history, and admin user management.
+  - Three sequence diagrams for the main flows: submitting an application and scoring it, viewing the score result with its explanation, and approving or rejecting an application.
+  - The `docs/requirements.md` document is finished with the feedback of Scrum Master
+
 - Feedback received:
-- Backlog changes as a result:
+
+  - The PO agreed to revise `docs/requirements.md` according to the SM's review comments, except for sections 3 and 4, which stay unchanged.
+  - Member @HaiMeoden has fixed the screen flow due to SM review 
+  - Member @macaronzz has fixed and added 2 more sequence diagram for two additional usecase due to SM recommendation
+
 
 ### Retrospective
 
@@ -54,11 +62,11 @@ Finalize user stories (including Acceptance Criteria and points) and complete th
 
 ### Attendance
 
-| Member | Planning | Review | Retro |
-|--------|----------|--------|-------|
-| Trung      |    ✓      |        |       |
-| Thành      |    ✓      |        |
-| Hải        |    ✓      |        |
-| Huy        |    ✓      |        |
+| Member | Planning | Review |
+|--------|----------|--------|
+| Trung      |    ✓      |    ✓     |       |
+| Thành      |    ✓      |    ✓     |
+| Hải        |    ✓      |    ✓    |
+| Huy        |    ✓      |    ✓    |
 
 
