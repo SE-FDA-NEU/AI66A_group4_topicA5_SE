@@ -55,18 +55,21 @@ Finalize user stories (including Acceptance Criteria and points) and complete th
 
 | Keep doing | Stop doing | Start doing |
 |------------|------------|-------------|
-|            |            |             |
+| Substantive PR reviews that catch real business logic gaps. | Leaving business logic issues to surface only at the final PR review. | Checking requirements against a business checklist before opening the PR. |
+| Iterating on the screen flow and sequence diagrams based on feedback. | Creating issues without story points or with broken parent links. | Reviewing issues for points, parent links and sprint right after Planning. |
+| | | Cross-checking requirements, screen flow and sequence diagrams before closing a milestone. |
+
 
 
 
 
 ### Attendance
 
-| Member | Planning | Review |
-|--------|----------|--------|
-| Trung      |    ✓      |    ✓     |       |
-| Thành      |    ✓      |    ✓     |
-| Hải        |    ✓      |    ✓    |
-| Huy        |    ✓      |    ✓    |
+| Member | Planning | Review | Retro |
+|--------|----------|--------| ------- |
+| Trung      |    ✓      |    ✓     |   ✓    |
+| Thành      |    ✓      |    ✓     |   ✓    |
+| Hải        |    ✓      |    ✓    |    ✓    |
+| Huy        |    ✓      |    ✓    |    ✓    |
 
 
