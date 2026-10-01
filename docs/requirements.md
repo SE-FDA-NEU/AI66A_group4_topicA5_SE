@@ -144,6 +144,6 @@ With 2 years of experience in the profession, Hoang processes an average of 1 to
 | `/loan-applications` | List of all processed applications | U | P1 |
 | `/admin/users` | Employee account management | A | P2 |
 
-**Flow diagram:** see `docs/images/screen-flow.png`
+**Flow diagram:** see `docs/images/screen-flow.jpg`
 
-![Screen flow](images/screen-flow.png)
+![Screen flow](images/screen-flow.jpg)
