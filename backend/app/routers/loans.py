@@ -9,7 +9,6 @@ from app.models import LoanApplication
 
 router = APIRouter(tags=["walking-skeleton"])
 
-
 def _row_html(r: LoanApplication) -> str:
     esc = html.escape
     owner = esc(r.created_by_user.full_name) if r.created_by_user else "-"
@@ -28,7 +27,6 @@ def _row_html(r: LoanApplication) -> str:
         "</tr>"
     )
 
-
 @router.get("/loan-applications", response_class=HTMLResponse)
 def list_loan_applications(db: Session = Depends(get_db)):
     rows = (
@@ -37,7 +35,6 @@ def list_loan_applications(db: Session = Depends(get_db)):
         .order_by(LoanApplication.created_at.desc(), LoanApplication.id)
         .all()
     )
-
     if rows:
         table = (
             '<table border="1" cellpadding="6" style="border-collapse: collapse;">'
