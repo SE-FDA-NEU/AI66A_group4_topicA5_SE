@@ -3,10 +3,10 @@
 ### (a) The model
 The team follows a **Hybrid Agile** model (Scrum with Plan-driven milestone gates). A single cycle (Sprint) lasts two weeks. At the start of the cycle, the team clearly divides the backlog based on specialized roles:
 
-* **Nguyen Quang Huy:** Database Foundation, API Architecture, and Authentication.
+* **Do Quang Trung:** Database Foundation, API Architecture, and Authentication.
 * **Trinh Duc Thanh:** Business Logic, AI model building, and tuning (including SHAP explanations).
 * **Vu Ngoc Hai:** UI Core and state management.
-* **Do Quang Trung:** Ancillary UI and API Integration (connecting Frontend with Backend).
+* **Nguyen Quang Huy:** Ancillary UI and API Integration (connecting Frontend with Backend).
 
 During the cycle, members develop, write tests for their respective modules, and integrate via local Pull Requests. At the end of a cycle, the team delivers a working API connected to a functional interface to conduct end-to-end testing.
 
