@@ -4,15 +4,16 @@
 
 ![Architecture](images/architecture.png)
 
-5 components:
+| Component | What it is | Status |
+| --- | --- | --- |
+| **Browser** | Used by employees and managers (phone or computer). | in use |
+| **Frontend web app** | React + Vite single-page app for the screens in M1 section 6. | planned (Sprint 3) |
+| **Backend API** | FastAPI service. Owns all business logic and enforces BR1-BR8. | built (skeleton) |
+| **Database** | SQLite file `credit_scoring.db` in development, PostgreSQL for a real deployment (switched by `DATABASE_URL`). | built |
+| **Scoring module** | Runs **inside the API process**, not as a separate service. Loads `model.joblib` once at startup. In: feature vector. Out: integer score 0-100 and a list of explanation strings. | planned (Sprint 4) |
+| **Offline training pipeline** | Trains on the German Credit Dataset and writes `model.joblib`. The dataset is never loaded into the database; only runtime data is stored. | planned (Sprint 4) |
 
-- **Browser** — Used by loan officers / managers (mobile or desktop).
-- **Frontend web app** — Not yet implemented in M2; scheduled for Sprint 3 (M3). Currently, the walking skeleton pathway is tested directly via API / Swagger UI (`/docs`).
-- **Backend API** — FastAPI, handling all domain logic and business rules.
-- **Database** — SQLite during development (single file `credit_scoring.db`), can be switched to PostgreSQL via the `DATABASE_URL` environment variable for production deployment.
-- **ML Model service** — Runs in the same process as the API (not an isolated service), loading the model once upon startup.
-
-Each arrow in the diagram explicitly indicates the transmitted data (HTTP/HTTPS JSON, SQL, feature vector, JWT in header).
+Every arrow is labelled with what travels along it. The API reaches the database through a library (SQLAlchemy), not through another API.
 
 ## 2. Data model
 
