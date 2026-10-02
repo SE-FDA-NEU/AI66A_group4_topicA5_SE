@@ -26,3 +26,20 @@ Each arrow in the diagram explicitly indicates the transmitted data (HTTP/HTTPS 
 | `event_logs` | Logs all important actions for auditing purposes | PK `id`, FK `actor_id`→users.id NULL, FK `loan_application_id` NULL, `action`, `detail` text (masked), `created_at` | BR7 — `detail` must never contain the full Citizen ID number, only the last 4 digits |
 
 The ERD and the table are consistent — 4 tables, sufficient for the minimum required data model.
+
+## 3. API Design
+
+> The table below represents the **complete API design for the entire product**. In M2, only the `GET /loan-applications` endpoint (the walking skeleton route, see Section 4) has been implemented. The remaining endpoints will be implemented in Sprint 3 (authentication) and Sprint 4 (scoring and business rules).
+
+| Method | Path | Input | Success | Error codes |
+| --- | --- | --- | --- | --- |
+| POST | `/auth/register` | email, password, full_name, role | 201 + user | 400 (email already exists), 422 (validation error) |
+| POST | `/auth/login` | email, password | 200 + JWT | 401 (incorrect email/password), 423 (account locked — BR/US01 AC2) |
+| POST | `/loan-applications` | monthly_income, loan_amount, loan_term_months, estimated_monthly_payment, cic_debt_group?, citizen_id? | 201 + application | 401 (not authenticated), 422 (income ≤ 0 — BR2) |
+| GET | `/loan-applications` | (JWT) | 200 + application list (filtered according to BR8) | 401 |
+| GET | `/loan-applications/{id}` | (JWT) | 200 + application details | 403 (unauthorized access — BR8), 404 (not found) |
+| PATCH | `/loan-applications/{id}/cancel` | (JWT) | 200 + cancelled application | 400 (application already processed and cannot be cancelled), 403, 404 |
+| POST | `/loan-applications/{id}/score` | (JWT) | 201 + scoring result or blocking reason | 400 (application already cancelled), 403, 404 |
+| GET | `/loan-applications/{id}/scores` | (JWT) | 200 + scoring history | 403, 404 |
+
+8 endpoints (≥6 as required), with at least 2 different error codes used in the design (400/401/403/404/422/423).
