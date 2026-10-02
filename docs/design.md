@@ -28,22 +28,26 @@ Every arrow is labelled with what travels along it. The API reaches the database
 
 The ERD and the table are consistent — 4 tables, sufficient for the minimum required data model.
 
-## 3. API Design
+## 3. API design
 
-> The table below represents the **complete API design for the entire product**. In M2, only the `GET /loan-applications` endpoint (the walking skeleton route, see Section 4) has been implemented. The remaining endpoints will be implemented in Sprint 3 (authentication) and Sprint 4 (scoring and business rules).
+Conventions: JSON under the `/api` prefix, `Authorization: Bearer <JWT>` on everything except login, money in whole VND,
+errors as `{"detail": "<message>"}`. This is the design for the whole product; in M2 only the page in section 4 is built.
+The order of checks when an application is submitted and scored is: BR2 (income > 0) -> save -> BR3 (set the high-risk flag) -> BR4 (bad-debt
+group: reject, model not called) -> BR5 (3 scorings per hour) -> model -> BR1 (score range) -> BR6 (label).
 
-| Method | Path | Input | Success | Error codes |
-| --- | --- | --- | --- | --- |
-| POST | `/auth/register` | email, password, full_name, role | 201 + user | 400 (email already exists), 422 (validation error) |
-| POST | `/auth/login` | email, password | 200 + JWT | 401 (incorrect email/password), 423 (account locked — BR/US01 AC2) |
-| POST | `/loan-applications` | monthly_income, loan_amount, loan_term_months, estimated_monthly_payment, cic_debt_group?, citizen_id? | 201 + application | 401 (not authenticated), 422 (income ≤ 0 — BR2) |
-| GET | `/loan-applications` | (JWT) | 200 + application list (filtered according to BR8) | 401 |
-| GET | `/loan-applications/{id}` | (JWT) | 200 + application details | 403 (unauthorized access — BR8), 404 (not found) |
-| PATCH | `/loan-applications/{id}/cancel` | (JWT) | 200 + cancelled application | 400 (application already processed and cannot be cancelled), 403, 404 |
-| POST | `/loan-applications/{id}/score` | (JWT) | 201 + scoring result or blocking reason | 400 (application already cancelled), 403, 404 |
-| GET | `/loan-applications/{id}/scores` | (JWT) | 200 + scoring history | 403, 404 |
+| Method | Path | Input | Success | Error codes | Covers |
+| --- | --- | --- | --- | --- | --- |
+| POST | `/api/auth/login` | email, password | 200 + JWT | 401 wrong credentials; 422 invalid body; **423** account locked (US01, 15 min) | US01 (P0) |
+| POST | `/api/loan-applications` | monthly_income, loan_amount, loan_term_months, estimated_monthly_payment, credit_history_note, purpose, cic_debt_group?, citizen_id? | 201 + application (`pending`, high-risk flag set if DSR > 50%) | 401; **422** missing or malformed field ("Income is required") or income <= 0 | US03, US09 (P0); BR2, BR3 |
+| GET | `/api/loan-applications` | - | 200 + list (User: own only; Admin: all) | 401 | US05 list (P1); BR8 |
+| GET | `/api/loan-applications/{id}` | - | 200 + data, score, explanation | 401; **403** not the owner; **404** "Application not found" | US05; BR8 |
+| PATCH | `/api/loan-applications/{id}` | fields to change | 200 + application | 401; 403; 404; **409** "Application already processed, cannot be edited"; 422 | US10 (P1) |
+| PATCH | `/api/loan-applications/{id}/cancel` | - | 200 + cancelled application | 401; 403; 404; 409 already processed | US10 (P1) |
+| POST | `/api/loan-applications/{id}/score` | - | 201 + score, label, explanation | 401; 403; 404; 409 cancelled or approved; **429** BR5 limit reached (application becomes `manual_review`) | US04 (P0); BR1, BR3-BR6 |
+| GET | `/api/loan-applications/{id}/scores` | - | 200 + history (empty list shown as "No history available") | 401; 403; 404 | US06 (P1) |
+| GET | `/api/dashboard/summary` | - | 200 + today's `total_applications` and `average_score` (null when none) | 401 | US08 (P0) |
 
-8 endpoints (≥6 as required), with at least 2 different error codes used in the design (400/401/403/404/422/423).
+Not designed yet (P2, or tied to Sprint 4 encryption): logout (US02), notifications (US07), account management (`/admin/users`), the citizen-ID lookup (BR7).
 
 ## 4. Walking skeleton
 
