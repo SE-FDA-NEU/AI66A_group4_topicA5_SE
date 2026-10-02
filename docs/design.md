@@ -19,14 +19,66 @@ Every arrow is labelled with what travels along it. The API reaches the database
 
 ![ERD](images/erd.png)
 
-| Table | Purpose | Columns (PK/FK, type) | Corresponding business rule (from M1) |
-| --- | --- | --- | --- |
-| `users` | Stores login accounts with 2 roles: User/Admin | PK `id`, `email` UNIQUE, `hashed_password`, `full_name`, `role` enum, `failed_login_count`, `locked_until` | BR8 (authorization); US01 AC2 (account lockout) through `failed_login_count`/`locked_until` |
-| `loan_applications` | Stores a loan application and its processing status | PK `id`, FK `created_by`→users.id, `monthly_income`, `loan_amount`, `loan_term_months`, `estimated_monthly_payment`, `cic_debt_group` NULL, `citizen_id_encrypted` NULL, `status` enum, `dsr_flag_high_risk` bool | BR2 (income > 0, enforced at the API layer), BR3 (DSR → `dsr_flag_high_risk`), BR4 (`cic_debt_group`), BR7 (`citizen_id_encrypted` must not store plaintext data) |
-| `scoring_results` | Stores each scoring attempt — one application can have multiple rows for scoring history (US06) | PK `id`, FK `loan_application_id`, `score` int NULL, `label` string NULL, `explanation` text, `rejected_reason` string NULL, `created_at` | BR1 (`score` is NULL when outside [0,100]), BR4 (`rejected_reason`=`cic_bad_debt_group`), BR5 (`rejected_reason`=`rate_limited...`), BR6 (`label`) |
-| `event_logs` | Logs all important actions for auditing purposes | PK `id`, FK `actor_id`→users.id NULL, FK `loan_application_id` NULL, `action`, `detail` text (masked), `created_at` | BR7 — `detail` must never contain the full Citizen ID number, only the last 4 digits |
+Diagram source: `images/erd.dot`. Money columns are whole VND (`BIGINT`), see Decision 3. Enums are stored by value in `VARCHAR`.
+Multiplicity: `1 : 0..*` for a required foreign key, `0..1 : 0..*` for a nullable one.
 
-The ERD and the table are consistent — 4 tables, sufficient for the minimum required data model.
+**`users`** - login accounts with two roles.
+
+| Column | Type | Key | Constraint / which rule |
+| --- | --- | --- | --- |
+| `id` | VARCHAR (UUID) | PK | |
+| `email` | VARCHAR NOT NULL | | UNIQUE |
+| `hashed_password` | VARCHAR NOT NULL | | |
+| `full_name` | VARCHAR NOT NULL | | |
+| `role` | VARCHAR(20) NOT NULL | | `user` or `admin` only - **BR8** |
+| `failed_login_count` | INTEGER NOT NULL | | default 0 - **US01** (lock after 3 failures) |
+| `locked_until` | TIMESTAMPTZ NULL | | **US01** (locked for 15 minutes) |
+| `created_at` | TIMESTAMPTZ NOT NULL | | |
+
+**`loan_applications`** - one loan application and its processing state.
+
+| Column | Type | Key | Constraint / which rule |
+| --- | --- | --- | --- |
+| `id` | VARCHAR (UUID) | PK | |
+| `created_by` | VARCHAR NOT NULL | FK -> `users.id` | ON DELETE RESTRICT - **BR8** (every application has an owner) |
+| `monthly_income` | BIGINT NOT NULL | | CHECK `> 0` - **BR2** |
+| `loan_amount` | BIGINT NOT NULL | | CHECK `> 0` - **BR3** input |
+| `loan_term_months` | INTEGER NOT NULL | | CHECK `> 0` - **BR3** input |
+| `estimated_monthly_payment` | BIGINT NOT NULL | | CHECK `>= 0` - **BR3** input |
+| `credit_history_note` | TEXT NULL | | **US03** |
+| `purpose` | VARCHAR NULL | | **US03** |
+| `cic_debt_group` | INTEGER NULL | | CHECK 1 to 5 - **BR4** |
+| `citizen_id_encrypted` | VARCHAR NULL | | ciphertext only - **BR7** |
+| `citizen_id_last4` | VARCHAR(4) NULL | | last 4 digits only - **BR7** |
+| `status` | VARCHAR(20) NOT NULL | | `pending`, `scored`, `manual_review`, `rejected`, `cancelled`, `approved` (US03, US10, BR1, BR3, BR4, BR5) |
+| `dsr_flag_high_risk` | BOOLEAN NOT NULL | | true when DSR > 50% - **BR3** |
+| `created_at` | TIMESTAMPTZ NOT NULL | | indexed - **US08** (daily dashboard) |
+| `updated_at` | TIMESTAMPTZ NOT NULL | | |
+
+**`scoring_results`** - one row per scoring attempt, so an application keeps a history (**US06**).
+
+| Column | Type | Key | Constraint / which rule |
+| --- | --- | --- | --- |
+| `id` | VARCHAR (UUID) | PK | |
+| `loan_application_id` | VARCHAR NOT NULL | FK -> `loan_applications.id` | ON DELETE RESTRICT; index with `created_at` to count scorings per hour - **BR5** |
+| `score` | INTEGER NULL | | CHECK 0 to 100; NULL when the result was blocked - **BR1**, **BR4** |
+| `label` | VARCHAR(20) NULL | | `rejected` (< 40), `review` (40-69), `eligible` (>= 70) - **BR6** |
+| `explanation` | JSON NULL | | list of key factors - **US04** |
+| `rejected_reason` | VARCHAR NULL | | why it was blocked or rejected - **BR1**, **BR4**, **BR5** |
+| `model_version` | VARCHAR NULL | | traceability of the model that produced the score |
+| `input_snapshot` | JSON NULL | | the inputs used, so a score can be reproduced |
+| `created_at` | TIMESTAMPTZ NOT NULL | | |
+
+**`event_logs`** - audit trail of important actions ("who changed what, and when").
+
+| Column | Type | Key | Constraint / which rule |
+| --- | --- | --- | --- |
+| `id` | VARCHAR (UUID) | PK | |
+| `actor_id` | VARCHAR NULL | FK -> `users.id` | ON DELETE SET NULL (the log outlives the user) |
+| `loan_application_id` | VARCHAR NULL | FK -> `loan_applications.id` | ON DELETE SET NULL |
+| `action` | VARCHAR NOT NULL | | e.g. `loan.created`, `citizen_id.viewed` - **BR7** (every ID view is logged) |
+| `detail` | TEXT NULL | | masked text, never a full citizen ID - **BR7** |
+| `created_at` | TIMESTAMPTZ NOT NULL | | |
 
 ## 3. API Design
 
