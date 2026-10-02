@@ -43,3 +43,26 @@ The ERD and the table are consistent — 4 tables, sufficient for the minimum re
 | GET | `/loan-applications/{id}/scores` | (JWT) | 200 + scoring history | 403, 404 |
 
 8 endpoints (≥6 as required), with at least 2 different error codes used in the design (400/401/403/404/422/423).
+
+## 4. Walking skeleton
+
+**Route:** `GET /loan-applications` - returns an HTML page, opened directly in the browser, no login yet.
+**Table it reads:** `loan_applications`, created and seeded with **12 rows** by `python -m app.seed` (M2 asks for at least 10).
+Settings live in `backend/.env.example` (only `DATABASE_URL`); the real `.env` is never committed. Install steps: `SETUP.md`.
+
+![Running page](images/walking-skeleton.png)
+
+The query behind the page (SQLAlchemy, and the SQL it runs):
+
+```python
+rows = db.query(LoanApplication).order_by(LoanApplication.created_at.desc()).all()
+```
+
+```sql
+SELECT * FROM loan_applications ORDER BY created_at DESC;
+```
+
+The data comes from the database, not from an array in the code. The test `test_route_reads_the_database_not_a_hardcoded_list`
+proves it: it inserts one row, calls the page again, and exactly one more row appears.
+Known limits: no authentication yet, so BR8 filtering is not applied; the page escapes all text it reads from the database.
+The JSON API lives under `/api`, so the final React page can use the M1 screen route `/loan-applications` without a clash.
