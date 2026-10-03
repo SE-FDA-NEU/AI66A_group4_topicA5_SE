@@ -1,6 +1,7 @@
 # Python
 __pycache__/
 *.pyc
+.venv/
 venv/
 .env
 # Data & models (too large for Git)
@@ -10,3 +11,8 @@ checkpoints/
 # Editor / OS junk
 .vscode/
 .DS_Store
+*.db
+.pytest_cache/
+.coverage
+htmlcov/
+junit.xml
