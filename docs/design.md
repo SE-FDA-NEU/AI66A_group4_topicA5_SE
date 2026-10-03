@@ -153,3 +153,13 @@ The JSON API lives under `/api`, so the final React page can use the M1 screen r
 - We need two model versions running side by side, 
 - The model's libraries conflict with the API's libraries
 - Loading the model makes startup too slow to be practical. Then we move it behind a separate service, keeping the same function interface so the API code does not change.
+
+### Decision 3 - Money stored as whole VND in BIGINT
+
+**Options:** BIGINT (whole VND) - NUMERIC(15,2) - FLOAT.
+
+**Chose:** BIGINT.
+
+**Why:** VND has no minor unit in practice, so whole numbers lose nothing. Integers are exact, and BR3 is compared in integer arithmetic (`payment * 100 > 50 * income`), so a DSR of exactly 50% is correctly not flagged, which a float could get wrong. 
+
+**What would change our mind:** if the product must support a currency with decimals, or interest calculations that produce fractions of a dong, we switch to NUMERIC with a fixed scale.
