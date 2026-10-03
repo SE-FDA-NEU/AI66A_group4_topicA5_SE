@@ -138,3 +138,18 @@ The JSON API lives under `/api`, so the final React page can use the M1 screen r
 **What would change our mind:** the BR5 limit (3 scorings per hour) needs a count-then-insert that stays correct under concurrent requests. If two simultaneous `POST /score` calls for the same application can both pass the check in testing, SQLite's file-level write lock is not enough and we move to PostgreSQL in Sprint 4. We would also move for a real deployment with several users writing at once.
 
 
+### Decision 2 - Scoring model inside the API process, not a separate service
+
+**Options:** 
+-  The API loads a saved model file once at startup and calls it as a function 
+-  A separate scoring service that the API calls over HTTP 
+-  A managed cloud prediction endpoint.
+
+**Chose:**  The model runs inside the API process
+
+**Why:** this is a demo with one deployable and low traffic. A separate service adds a network call, a second thing to start and a new way to fail, and none of that helps M2 or the first scoring sprint. Loading the model once at startup, and never retraining per request, keeps the output consistent for the same input
+
+**What would change our mind:** 
+- We need two model versions running side by side, 
+- The model's libraries conflict with the API's libraries
+- Loading the model makes startup too slow to be practical. Then we move it behind a separate service, keeping the same function interface so the API code does not change.
