@@ -163,3 +163,16 @@ The JSON API lives under `/api`, so the final React page can use the M1 screen r
 **Why:** VND has no minor unit in practice, so whole numbers lose nothing. Integers are exact, and BR3 is compared in integer arithmetic (`payment * 100 > 50 * income`), so a DSR of exactly 50% is correctly not flagged, which a float could get wrong. 
 
 **What would change our mind:** if the product must support a currency with decimals, or interest calculations that produce fractions of a dong, we switch to NUMERIC with a fixed scale.
+
+
+## 6. What changed since M1
+
+Writing the design exposed two places where M1 was unclear. Both are resolved in this design.
+
+1. **US03 gains an input: the estimated monthly payment.** BR3 defines DSR as estimated installment divided by monthly income, but US03 lists only
+   income, loan amount, loan term, credit history and purpose, so it does not say where the installment comes from. The form and
+   `POST /api/loan-applications` now take `estimated_monthly_payment`, and the high-risk flag is set when the application is created. Whether the
+   officer types it or it is computed from an interest rate is still to be decided with the Product Owner.
+2. **BR1 and BR5 now end in one status.** M1 words them two ways ("Requires manual review" for BR1, "Requires Manager review" for BR5). In the design
+   they are one status, `manual_review`, and the cause is kept in `scoring_results.rejected_reason`. The high-risk result of BR3 is separate: it
+   sets the `dsr_flag_high_risk` flag and leaves the status as `pending`.
