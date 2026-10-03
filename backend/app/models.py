@@ -75,7 +75,7 @@ class User(Base):
         server_default=UserRole.USER.value,
     )
     failed_login_count = Column(Integer, nullable=False, default=0, server_default="0")
-    locked_until = tz_datetime(DateTime, nullable=True)
+    locked_until = tz_datetime(nullable=True)
 
     created_at = tz_datetime(nullable=False, default=now_utc)
 
