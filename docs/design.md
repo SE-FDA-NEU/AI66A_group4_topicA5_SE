@@ -123,3 +123,18 @@ The data comes from the database, not from an array in the code. The test `test_
 proves it: it inserts one row, calls the page again, and exactly one more row appears.
 Known limits: no authentication yet, so BR8 filtering is not applied; the page escapes all text it reads from the database.
 The JSON API lives under `/api`, so the final React page can use the M1 screen route `/loan-applications` without a clash.
+
+
+## 5. Design decisions (ADR)
+
+### Decision 1 - SQLite instead of PostgreSQL for the walking skeleton
+
+**Options:** SQLite file - PostgreSQL in Docker - MySQL.
+
+**Chose:** SQLite.
+
+**Why:** the instructor must run the project in minutes on a machine that has never seen it. PostgreSQL adds Docker or a database service to SETUP.md, and every extra step is a chance to fail for reasons unrelated to our code. SQLite is one file created by `python -m app.seed`, and the tests run on an in-memory SQLite database. All access goes through SQLAlchemy, with only generic column types, so switching is a change of `DATABASE_URL` in `.env`.
+
+**What would change our mind:** the BR5 limit (3 scorings per hour) needs a count-then-insert that stays correct under concurrent requests. If two simultaneous `POST /score` calls for the same application can both pass the check in testing, SQLite's file-level write lock is not enough and we move to PostgreSQL in Sprint 4. We would also move for a real deployment with several users writing at once.
+
+
