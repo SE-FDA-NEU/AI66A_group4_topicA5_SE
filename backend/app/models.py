@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 
 from sqlalchemy import (
     JSON,
-    Numeric,
+    BigInteger,
     CheckConstraint,
     Index,
     Boolean,
@@ -108,10 +108,10 @@ class LoanApplication(Base):
     )
 
     # US03 - money is exact numbers.
-    monthly_income = Column(Numeric(15, 2), nullable=False)               # BR2
-    loan_amount = Column(Numeric(15, 2), nullable=False)                  # BR3
+    monthly_income = Column(BigInteger, nullable=False)               # BR2
+    loan_amount = Column(BigInteger, nullable=False)                  # BR3
     loan_term_months = Column(Integer, nullable=False)                    # BR3
-    estimated_monthly_payment = Column(Numeric(15, 2), nullable=False)    # BR3 (DSR input)
+    estimated_monthly_payment = Column(BigInteger, nullable=False)    # BR3 (DSR input)
     credit_history_note = Column(Text, nullable=True)
     purpose = Column(String, nullable=True)
 
