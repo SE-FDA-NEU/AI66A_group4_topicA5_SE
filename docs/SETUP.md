@@ -93,3 +93,7 @@ Expected: `21 passed`. The tests use an in-memory database, so they never touch 
 | PowerShell: "running scripts is disabled on this system" | Execution policy blocks the activate script | Run `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`, or use `cmd` and `.venv\Scripts\activate.bat` |
 | `Address already in use` when starting `uvicorn` | Port 8000 is taken by another process | Run `uvicorn app.main:app --reload --port 8001` and open `http://localhost:8001/loan-applications` |
 | You want a clean database | The seed only runs on an empty database | Stop the server, delete `credit_scoring.db`, run `python -m app.seed` again |
+
+## 10. Tested by
+
+> Tested by: **@NguyenHoangTuan**, on a Windows machine, on 4/10/2026, took about 10 minutes.
