@@ -65,7 +65,7 @@ Running it again prints `Data already present, skipping seed.` and changes nothi
 uvicorn app.main:app --reload
 ```
 
-## 7. How to tell it works (walking skeleton)
+## 7. How to know it works (walking skeleton)
 
 Open **http://localhost:8000/loan-applications** in a browser.
 
@@ -96,4 +96,4 @@ Expected: `21 passed`. The tests use an in-memory database, so they never touch 
 
 ## 10. Tested by
 
-> Tested by: **@NguyenHoangTuan**, on a Windows machine, on 4/10/2026, took about 10 minutes.
+> Tested by: **Nguyễn Hoàng Tuấn**, on a Windows machine, on 4/10/2026, took about 5 minutes.
