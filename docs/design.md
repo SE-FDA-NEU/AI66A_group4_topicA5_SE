@@ -103,13 +103,34 @@ Not designed yet (P2, or tied to Sprint 4 encryption): logout (US02), notificati
 
 ## 4. Walking skeleton
 
-**Route:** `GET /loan-applications` - returns an HTML page, opened directly in the browser, no login yet.
+**4.1. Route:** `GET /loan-applications` - returns an HTML page, opened directly in the browser, no login yet.
 **Table it reads:** `loan_applications`, created and seeded with **12 rows** by `python -m app.seed` (M2 asks for at least 10).
 Settings live in `backend/.env.example` (only `DATABASE_URL`); the real `.env` is never committed. Install steps: `SETUP.md`.
 
-![Running page](images/walking-skeleton.png)
 
-The query behind the page (SQLAlchemy, and the SQL it runs):
+**4.2. How to know it worked:**
+
+Open **http://localhost:8000/loan-applications** in a browser.
+
+Expected: a page titled **"Loan applications (12)"** with a table of exactly 12 rows (owner, income, loan amount, term,
+estimated payment, purpose, status, high-risk flag). Three rows show **Yes** in the last column (DSR above 50%, rule BR3).
+
+The data is read from the `loan_applications` table in `credit_scoring.db`, not from a list in the code.
+Also available: http://localhost:8000/health returns `{"status":"ok"}`, and http://localhost:8000/docs shows the Swagger UI.
+
+**4.3. Troubleshooting:** 
+| Problem | Cause | Fix |
+| --- | --- | --- |
+| `ModuleNotFoundError: No module named 'fastapi'` (or `pytest` / `dotenv`) | The virtual environment is not active, or step 3 was skipped | Activate it again (`source .venv/bin/activate` or `.venv\Scripts\Activate.ps1`), then run `pip install -r requirements.txt` |
+| `ModuleNotFoundError: No module named 'app'` | The command was run outside the `backend/` folder | `cd` into `backend/` and run it again |
+| The page says "Loan applications (0)" / "No loan applications yet." | Step 5 (seeding) was skipped, or it ran in another folder so another `credit_scoring.db` was created | Run `python -m app.seed` from `backend/`, then reload the page |
+| PowerShell: "running scripts is disabled on this system" | Execution policy blocks the activate script | Run `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`, or use `cmd` and `.venv\Scripts\activate.bat` |
+| `Address already in use` when starting `uvicorn` | Port 8000 is taken by another process | Run `uvicorn app.main:app --reload --port 8001` and open `http://localhost:8001/loan-applications` |
+| You want a clean database | The seed only runs on an empty database | Stop the server, delete `credit_scoring.db`, run `python -m app.seed` again |
+
+**4.4. Tested by:** Nguyễn Hoàng Tuấn @Chidokato5376 (Team 05) on a fresh Windows laptop, 4 Oct — 5 minutes.
+
+**4.5. The query behind the page (SQLAlchemy, and the SQL it runs):**
 
 ```python
 rows = db.query(LoanApplication).order_by(LoanApplication.created_at.desc()).all()
