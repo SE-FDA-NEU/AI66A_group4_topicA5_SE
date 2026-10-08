@@ -40,17 +40,17 @@ Multiplicity: `1 : 0..*` for a required foreign key, `0..1 : 0..*` for a nullabl
 | Column | Type | Key | Constraint / which rule |
 | --- | --- | --- | --- |
 | `id` | VARCHAR (UUID) | PK | |
-| `created_by` | VARCHAR NOT NULL | FK -> `users.id` | ON DELETE RESTRICT - **BR8** (every application has an owner) |
+| `created_by` | VARCHAR NOT NULL | FK -> `users.id` | ON DELETE RESTRICT; required owner (data integrity). **BR8** ownership access is enforced by the API. |
 | `monthly_income` | BIGINT NOT NULL | | CHECK `> 0` - **BR2** |
-| `loan_amount` | BIGINT NOT NULL | | CHECK `> 0` - **BR3** input |
-| `loan_term_months` | INTEGER NOT NULL | | CHECK `> 0` - **BR3** input |
-| `estimated_monthly_payment` | BIGINT NOT NULL | | CHECK `>= 0` - **BR3** input |
+| `loan_amount` | BIGINT NOT NULL | | CHECK `> 0`; required input for **BR3** |
+| `loan_term_months` | INTEGER NOT NULL | | CHECK `> 0`; required input for **BR3** |
+| `estimated_monthly_payment` | BIGINT NOT NULL | | CHECK `> 0`; required input for **BR3** |
 | `credit_history_note` | TEXT NULL | | **US03** |
 | `purpose` | VARCHAR NULL | | **US03** |
 | `cic_debt_group` | INTEGER NULL | | CHECK 1 to 5 - **BR4** |
 | `citizen_id_encrypted` | VARCHAR NULL | | ciphertext only - **BR7** |
 | `citizen_id_last4` | VARCHAR(4) NULL | | last 4 digits only - **BR7** |
-| `status` | VARCHAR(20) NOT NULL | | `pending`, `scored`, `manual_review`, `rejected`, `cancelled`, `approved` (US03, US10, BR1, BR3, BR4, BR5) |
+| `status` | VARCHAR(20) NOT NULL | | `pending`, `scored`, `manual_review`, `rejected`, `cancelled`, `approved`; service transitions: **BR1/BR5** -> `manual_review`, **BR4** -> `rejected`, Admin approval under **BR8** -> `approved` (US03, US10) |
 | `dsr_flag_high_risk` | BOOLEAN NOT NULL | | true when DSR > 50% - **BR3** |
 | `created_at` | TIMESTAMPTZ NOT NULL | | indexed - **US08** (daily dashboard) |
 | `updated_at` | TIMESTAMPTZ NOT NULL | | |
@@ -76,7 +76,7 @@ Multiplicity: `1 : 0..*` for a required foreign key, `0..1 : 0..*` for a nullabl
 | `id` | VARCHAR (UUID) | PK | |
 | `actor_id` | VARCHAR NULL | FK -> `users.id` | ON DELETE SET NULL (the log outlives the user) |
 | `loan_application_id` | VARCHAR NULL | FK -> `loan_applications.id` | ON DELETE SET NULL |
-| `action` | VARCHAR NOT NULL | | e.g. `loan.created`, `citizen_id.viewed` - **BR7** (every ID view is logged) |
+| `action` | VARCHAR NOT NULL | | e.g. `loan.created`, `loan.approved`, `citizen_id.viewed`; **BR7** requires every ID view to be logged |
 | `detail` | TEXT NULL | | masked text, never a full citizen ID - **BR7** |
 | `created_at` | TIMESTAMPTZ NOT NULL | | |
 
@@ -97,6 +97,7 @@ group: reject, model not called) -> BR5 (3 scorings per hour) -> model -> BR1 (s
 | PATCH | `/api/loan-applications/{id}/cancel` | - | 200 + cancelled application | 401; 403; 404; 409 already processed | US10 (P1) |
 | POST | `/api/loan-applications/{id}/score` | - | 201 + score, label, explanation | 401; 403; 404; 409 cancelled or approved; **429** BR5 limit reached (application becomes `manual_review`) | US04 (P0); BR1, BR3-BR6 |
 | GET | `/api/loan-applications/{id}/scores` | - | 200 + history (empty list shown as "No history available") | 401; 403; 404 | US06 (P1) |
+| PATCH | `/api/loan-applications/{id}/approve` | - | 200 + application with `status: approved`; writes `loan.approved` audit event | 401; **403** not Admin; 404; **409** cancelled, rejected, already approved, or no latest `eligible` score | Manager approval; US10, BR6, BR8 |
 | GET | `/api/dashboard/summary` | - | 200 + today's `total_applications` and `average_score` (null when none) | 401 | US08 (P0) |
 
 Not designed yet (P2, or tied to Sprint 4 encryption): logout (US02), notifications (US07), account management (`/admin/users`), the citizen-ID lookup (BR7).
@@ -197,3 +198,5 @@ Writing the design exposed two places where M1 was unclear. Both are resolved in
 2. **BR1 and BR5 now end in one status.** M1 words them two ways ("Requires manual review" for BR1, "Requires Manager review" for BR5). In the design
    they are one status, `manual_review`, and the cause is kept in `scoring_results.rejected_reason`. The high-risk result of BR3 is separate: it
    sets the `dsr_flag_high_risk` flag and leaves the status as `pending`.
+3. **Approval is now an explicit Manager action.** `approved` was already a valid status in US10, but there was no API to reach it. An Admin can now
+   call `PATCH /api/loan-applications/{id}/approve` only after the latest score is `eligible`; the transition is recorded as `loan.approved` in the audit log.
