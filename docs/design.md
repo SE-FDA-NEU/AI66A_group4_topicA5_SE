@@ -2,7 +2,7 @@
 
 ## 1. Architecture
 
-![Architecture](images/architecture.png)
+![Architecture](images/architecture.jpg)
 
 | Component | What it is | Status |
 | --- | --- | --- |
@@ -30,7 +30,7 @@ Multiplicity: `1 : 0..*` for a required foreign key, `0..1 : 0..*` for a nullabl
 | `email` | VARCHAR NOT NULL | | UNIQUE |
 | `hashed_password` | VARCHAR NOT NULL | | |
 | `full_name` | VARCHAR NOT NULL | | |
-| `role` | VARCHAR(20) NOT NULL | | `user` or `admin` only - **BR8** |
+| `role` | VARCHAR(20) NOT NULL | | enum: `user` or `admin` (supports **BR8**) |
 | `failed_login_count` | INTEGER NOT NULL | | default 0 - **US01** (lock after 3 failures) |
 | `locked_until` | TIMESTAMPTZ NULL | | **US01** (locked for 15 minutes) |
 | `created_at` | TIMESTAMPTZ NOT NULL | | |
@@ -40,19 +40,19 @@ Multiplicity: `1 : 0..*` for a required foreign key, `0..1 : 0..*` for a nullabl
 | Column | Type | Key | Constraint / which rule |
 | --- | --- | --- | --- |
 | `id` | VARCHAR (UUID) | PK | |
-| `created_by` | VARCHAR NOT NULL | FK -> `users.id` | ON DELETE RESTRICT; required owner (data integrity). **BR8** ownership access is enforced by the API. |
+| `created_by` | VARCHAR NOT NULL | FK -> `users.id` | ON DELETE RESTRICT; required owner |
 | `monthly_income` | BIGINT NOT NULL | | CHECK `> 0` - **BR2** |
-| `loan_amount` | BIGINT NOT NULL | | CHECK `> 0`; required input for **BR3** |
-| `loan_term_months` | INTEGER NOT NULL | | CHECK `> 0`; required input for **BR3** |
-| `estimated_monthly_payment` | BIGINT NOT NULL | | CHECK `> 0`; required input for **BR3** |
-| `credit_history_note` | TEXT NULL | | **US03** |
-| `purpose` | VARCHAR NULL | | **US03** |
-| `cic_debt_group` | INTEGER NULL | | CHECK 1 to 5 - **BR4** |
+| `loan_amount` | BIGINT NOT NULL | | CHECK `> 0` |
+| `loan_term_months` | INTEGER NOT NULL | | CHECK `> 0` |
+| `estimated_monthly_payment` | BIGINT NOT NULL | | required DSR input |
+| `credit_history_note` | TEXT NULL | | |
+| `purpose` | VARCHAR NULL | | |
+| `cic_debt_group` | INTEGER NULL | | CHECK 1 to 5 |
 | `citizen_id_encrypted` | VARCHAR NULL | | ciphertext only - **BR7** |
 | `citizen_id_last4` | VARCHAR(4) NULL | | last 4 digits only - **BR7** |
-| `status` | VARCHAR(20) NOT NULL | | `pending`, `scored`, `manual_review`, `rejected`, `cancelled`, `approved`; service transitions: **BR1/BR5** -> `manual_review`, **BR4** -> `rejected`, Admin approval under **BR8** -> `approved` (US03, US10) |
+| `status` | VARCHAR(20) NOT NULL | | enum: `pending`, `scored`, `manual_review`, `rejected`, `cancelled`, `approved` |
 | `dsr_flag_high_risk` | BOOLEAN NOT NULL | | true when DSR > 50% - **BR3** |
-| `created_at` | TIMESTAMPTZ NOT NULL | | indexed - **US08** (daily dashboard) |
+| `created_at` | TIMESTAMPTZ NOT NULL | | indexed |
 | `updated_at` | TIMESTAMPTZ NOT NULL | | |
 
 **`scoring_results`** - one row per scoring attempt, so an application keeps a history (**US06**).
@@ -60,14 +60,16 @@ Multiplicity: `1 : 0..*` for a required foreign key, `0..1 : 0..*` for a nullabl
 | Column | Type | Key | Constraint / which rule |
 | --- | --- | --- | --- |
 | `id` | VARCHAR (UUID) | PK | |
-| `loan_application_id` | VARCHAR NOT NULL | FK -> `loan_applications.id` | ON DELETE RESTRICT; index with `created_at` to count scorings per hour - **BR5** |
-| `score` | INTEGER NULL | | CHECK 0 to 100; NULL when the result was blocked - **BR1**, **BR4** |
-| `label` | VARCHAR(20) NULL | | `rejected` (< 40), `review` (40-69), `eligible` (>= 70) - **BR6** |
-| `explanation` | JSON NULL | | list of key factors - **US04** |
-| `rejected_reason` | VARCHAR NULL | | why it was blocked or rejected - **BR1**, **BR4**, **BR5** |
+| `loan_application_id` | VARCHAR NOT NULL | FK -> `loan_applications.id` | ON DELETE RESTRICT; indexed with `created_at` |
+| `score` | INTEGER NULL | | CHECK 0 to 100 - **BR1**; NULL allowed for a blocked result |
+| `label` | VARCHAR(20) NULL | | enum: `rejected` (< 40), `review` (40-69), `eligible` (>= 70) - **BR6** |
+| `explanation` | JSON NULL | | list of key factors |
+| `rejected_reason` | VARCHAR NULL | | reason code for a blocked or rejected result |
 | `model_version` | VARCHAR NULL | | traceability of the model that produced the score |
 | `input_snapshot` | JSON NULL | | the inputs used, so a score can be reproduced |
 | `created_at` | TIMESTAMPTZ NOT NULL | | |
+
+Business rules enforced by the service/API, rather than by a single column constraint: **BR1** changes an out-of-range model result to `manual_review`; **BR4** rejects CIC groups 3-5; **BR5** limits an application to three scorings per hour and then sets `manual_review`; **BR8** restricts User access to self-created applications while Admin can view all applications. An Admin approval is a separate API authorization decision, not an additional BR8 database constraint.
 
 **`event_logs`** - audit trail of important actions ("who changed what, and when").
 
@@ -97,7 +99,7 @@ group: reject, model not called) -> BR5 (3 scorings per hour) -> model -> BR1 (s
 | PATCH | `/api/loan-applications/{id}/cancel` | - | 200 + cancelled application | 401; 403; 404; 409 already processed | US10 (P1) |
 | POST | `/api/loan-applications/{id}/score` | - | 201 + score, label, explanation | 401; 403; 404; 409 cancelled or approved; **429** BR5 limit reached (application becomes `manual_review`) | US04 (P0); BR1, BR3-BR6 |
 | GET | `/api/loan-applications/{id}/scores` | - | 200 + history (empty list shown as "No history available") | 401; 403; 404 | US06 (P1) |
-| PATCH | `/api/loan-applications/{id}/approve` | - | 200 + application with `status: approved`; writes `loan.approved` audit event | 401; **403** not Admin; 404; **409** cancelled, rejected, already approved, or no latest `eligible` score | Manager approval; US10, BR6, BR8 |
+| PATCH | `/api/loan-applications/{id}/approve` | - | 200 + application with `status: approved`; writes `loan.approved` audit event | 401; **403** not Admin; 404; **409** cancelled, rejected, already approved, or no latest `eligible` score | Manager approval; US10, BR6 |
 | GET | `/api/dashboard/summary` | - | 200 + today's `total_applications` and `average_score` (null when none) | 401 | US08 (P0) |
 
 Not designed yet (P2, or tied to Sprint 4 encryption): logout (US02), notifications (US07), account management (`/admin/users`), the citizen-ID lookup (BR7).
