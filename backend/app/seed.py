@@ -2,10 +2,10 @@ from datetime import datetime, timedelta, timezone
 
 from app.database import Base, SessionLocal, engine
 from app.models import LoanApplication, LoanStatus, User, UserRole
+from app.security import hash_password
 
-# Placeholder only. Real password hashing arrives with authentication.
-# "!" is not a valid hash, so nobody can log in with these seed accounts yet.
-UNUSABLE_PASSWORD = "!"
+# Demo password
+TEST_PASSWORD = "Demo@2026"
 
 USERS = [
     dict(email="hoang@branch.vn", full_name="Do Viet Hoang", role=UserRole.USER),
@@ -41,7 +41,7 @@ def seed_database(db) -> dict:
     for data in USERS:
         user = db.query(User).filter_by(email=data["email"]).one_or_none()
         if user is None:
-            user = User(hashed_password=UNUSABLE_PASSWORD, **data)
+            user = User(hashed_password=hash_password(TEST_PASSWORD),**data,)
             db.add(user)
         users[data["email"]] = user
     db.flush()
