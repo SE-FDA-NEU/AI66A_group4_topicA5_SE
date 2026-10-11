@@ -4,7 +4,7 @@ from fastapi import FastAPI
 
 from app import models  # noqa: F401  (registers every table on Base.metadata)
 from app.database import Base, engine
-from app.routers import loans
+from app.routers import auth, loans
 from fastapi.responses import RedirectResponse, Response
 
 
@@ -27,6 +27,7 @@ app = FastAPI(
 )
 
 app.include_router(loans.router)
+app.include_router(auth.router)
 
 @app.get("/", include_in_schema=False)
 
