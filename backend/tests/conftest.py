@@ -37,3 +37,25 @@ def client(db_session):
     app.dependency_overrides[get_db] = override_get_db
     yield TestClient(app)
     app.dependency_overrides.clear()
+
+
+@pytest.fixture
+def seeded(db_session):
+    from app.seed import seed_database
+
+    seed_database(db_session)
+    return db_session
+
+
+@pytest.fixture
+def login(client):
+    from app.seed import TEST_PASSWORD
+
+    def _login(email):
+        resp = client.post(
+            "/api/auth/login", json={"email": email, "password": TEST_PASSWORD}
+        )
+        assert resp.status_code == 200, resp.text
+        return {"Authorization": f"Bearer {resp.json()['access_token']}"}
+
+    return _login
