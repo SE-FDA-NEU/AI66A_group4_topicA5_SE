@@ -5,7 +5,8 @@ from fastapi import FastAPI
 from app import models  # noqa: F401  (registers every table on Base.metadata)
 from app.database import Base, engine
 from app.routers import applications, auth, loans
-from fastapi.responses import RedirectResponse, Response
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse, RedirectResponse, Response
 
 
 @asynccontextmanager
@@ -29,6 +30,61 @@ app = FastAPI(
 app.include_router(loans.router)
 app.include_router(auth.router)
 app.include_router(applications.router)
+
+
+FIELD_LABELS = {
+    "monthly_income": "Monthly income",
+    "loan_amount": "Loan amount",
+    "loan_term_months": "Loan term",
+    "estimated_monthly_payment": "Estimated monthly payment",
+    "purpose": "Loan purpose",
+    "credit_history_note": "Credit history",
+    "cic_debt_group": "CIC debt group",
+    "email": "Email",
+    "password": "Password",
+}
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_error_handler(request, exc):
+    errors = {}
+    for error in exc.errors():
+        location = error["loc"]
+        field = str(location[-1]) if len(location) > 1 else "form"
+        label = FIELD_LABELS.get(field, "Input")
+        kind = error["type"]
+        context = error.get("ctx", {})
+
+        if kind == "missing":
+            message = f"{label} is required."
+        elif kind in ("int_parsing", "int_type", "int_from_float"):
+            message = f"{label} must be a whole number."
+        elif kind == "greater_than":
+            unit = " VND" if field == "monthly_income" else ""
+            message = f"{label} must be greater than {context['gt']}{unit}."
+        elif kind == "greater_than_equal":
+            message = f"{label} must be at least {context['ge']}."
+        elif kind == "less_than_equal":
+            message = f"{label} must not exceed {context['le']}."
+        elif kind == "string_too_long":
+            message = f"{label} must not exceed {context['max_length']} characters."
+        elif kind == "string_type":
+            message = f"{label} must be text."
+        elif kind == "json_invalid":
+            field = "form"
+            message = "The request contains invalid JSON. Check it and try again."
+        else:
+            message = f"{label} is invalid. Check its format and try again."
+        errors.setdefault(field, message)
+
+    return JSONResponse(
+        status_code=422,
+        content={
+            "detail": "Please correct the highlighted fields and submit again.",
+            "errors": errors,
+        },
+    )
+
 
 @app.get("/", include_in_schema=False)
 
