@@ -5,7 +5,8 @@ from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session, joinedload
 
 from app.database import get_db
-from app.models import LoanApplication
+from app.deps import get_current_user
+from app.models import LoanApplication, User, UserRole
 
 router = APIRouter(tags=["walking-skeleton"])
 
@@ -28,13 +29,18 @@ def _row_html(r: LoanApplication) -> str:
     )
 
 @router.get("/loan-applications", response_class=HTMLResponse)
-def list_loan_applications(db: Session = Depends(get_db)):
-    rows = (
-        db.query(LoanApplication)
-        .options(joinedload(LoanApplication.created_by_user))
-        .order_by(LoanApplication.created_at.desc(), LoanApplication.id)
-        .all()
+def list_loan_applications(
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    query = db.query(LoanApplication).options(
+        joinedload(LoanApplication.created_by_user)
     )
+    if user.role != UserRole.ADMIN:
+        query = query.filter(LoanApplication.created_by == user.id)
+    rows = query.order_by(
+        LoanApplication.created_at.desc(), LoanApplication.id
+    ).all()
     if rows:
         table = (
             '<table border="1" cellpadding="6" style="border-collapse: collapse;">'
