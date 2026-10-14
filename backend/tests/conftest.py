@@ -2,7 +2,7 @@ import os
 
 os.environ["DATABASE_URL"] = "sqlite://"
 from cryptography.fernet import Fernet  # noqa: E402
-os.environ['DATABASE_ENCRYPTION_KEY'] = Fernet.generate_key().decode(ascii)  # noqa: E402
+os.environ['DATA_ENCRYPTION_KEY'] = Fernet.generate_key().decode("ascii")  # noqa: E402
 
 
 import pytest  # noqa: E402
