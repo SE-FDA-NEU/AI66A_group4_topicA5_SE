@@ -1,10 +1,13 @@
+from datetime import datetime, timezone
+
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.deps import get_current_user
-from app.models import EventLog, LoanApplication, LoanStatus, User, UserRole
+from app.models import EventLog, LoanApplication, LoanStatus, ScoringResult, User, UserRole
+from app.scoring_service import LABEL_TEXT, score_application
 
 router = APIRouter(prefix="/api", tags=["loan-applications"])
 
@@ -19,7 +22,33 @@ class ApplicationIn(BaseModel):
     cic_debt_group: int | None = Field(default=None, ge=1, le=5)
 
 
+def _aware(value: datetime) -> datetime:
+    return value if value.tzinfo else value.replace(tzinfo=timezone.utc)
+
+
+def _latest(loan: LoanApplication):
+    return max(
+        loan.scoring_results,
+        key=lambda result: (_aware(result.created_at), result.id),
+        default=None,
+    )
+
+
+def result_dict(result: ScoringResult) -> dict:
+    return {
+        "id": result.id,
+        "score": result.score,
+        "label": result.label.value if result.label else None,
+        "label_text": LABEL_TEXT.get(result.label),
+        "explanation": result.explanation or [],
+        "rejected_reason": result.rejected_reason,
+        "model_version": result.model_version,
+        "created_at": _aware(result.created_at).isoformat(),
+    }
+
+
 def loan_dict(loan: LoanApplication) -> dict:
+    latest = _latest(loan)
     return {
         "id": loan.id,
         "owner_id": loan.created_by,
@@ -34,6 +63,7 @@ def loan_dict(loan: LoanApplication) -> dict:
         "dsr_flag_high_risk": loan.dsr_flag_high_risk,
         "created_at": loan.created_at.isoformat(),
         "updated_at": loan.updated_at.isoformat(),
+        "latest_score": result_dict(latest) if latest else None,
     }
 
 
@@ -85,16 +115,14 @@ def list_applications(
     return [loan_dict(loan) for loan in loans]
 
 
-@router.get("/loan-applications/{loan_id}")
-def get_application(
-    loan_id: str,
-    db: Session = Depends(get_db),
-    user: User = Depends(get_current_user),
-):
+def _get_allowed(
+    db: Session, user: User, loan_id: str
+) -> LoanApplication:
     loan = db.get(LoanApplication, loan_id)
     if loan is None:
         raise HTTPException(
-            404, "Application not found. Check the link or return to the list."
+            404,
+            "Application not found. Check the link or return to the list.",
         )
     if user.role != UserRole.ADMIN and loan.created_by != user.id:
         raise HTTPException(
@@ -102,4 +130,44 @@ def get_application(
             "You can only open applications you created. "
             "Ask your manager if you need access to this one.",
         )
-    return loan_dict(loan)
+    return loan
+
+
+@router.get("/loan-applications/{loan_id}")
+def get_application(
+    loan_id: str,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    return loan_dict(_get_allowed(db, user, loan_id))
+
+
+@router.post("/loan-applications/{loan_id}/score", status_code=201)
+def score(
+    loan_id: str,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    loan = _get_allowed(db, user, loan_id)
+    result = score_application(db, loan, user)
+    db.refresh(loan)
+    return {
+        "result": result_dict(result),
+        "application": loan_dict(loan),
+    }
+
+
+@router.get("/loan-applications/{loan_id}/scores")
+def score_history(
+    loan_id: str,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    loan = _get_allowed(db, user, loan_id)
+    results = (
+        db.query(ScoringResult)
+        .filter(ScoringResult.loan_application_id == loan.id)
+        .order_by(ScoringResult.created_at, ScoringResult.id)
+        .all()
+    )
+    return [result_dict(result) for result in results]
