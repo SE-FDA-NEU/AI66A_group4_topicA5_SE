@@ -1,6 +1,9 @@
 import os
 
 os.environ["DATABASE_URL"] = "sqlite://"
+from cryptography.fernet import Fernet  # noqa: E402
+os.environ['DATA_ENCRYPTION_KEY'] = Fernet.generate_key().decode("ascii")  # noqa: E402
+
 
 import pytest  # noqa: E402
 from fastapi.testclient import TestClient  
@@ -59,3 +62,13 @@ def login(client):
         return {"Authorization": f"Bearer {resp.json()['access_token']}"}
 
     return _login
+
+VALID_APPLICATION = {
+    "monthly_income": 20_000_000,
+    "loan_amount": 100_000_000,
+    "loan_term_months": 24,
+    "estimated_monthly_payment": 5_000_000,
+    "credit_history_note": "3 years, on time",
+    "purpose": "Buy a motorbike",
+    "cic_debt_group": 1,
+}
