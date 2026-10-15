@@ -1,8 +1,8 @@
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app.database import get_db
 from app.deps import get_current_user
@@ -10,6 +10,8 @@ from app.models import EventLog, LoanApplication, LoanStatus, ScoringResult, Use
 from app.scoring_service import LABEL_TEXT, score_application
 
 router = APIRouter(prefix="/api", tags=["loan-applications"])
+
+LOCAL_TZ = timezone(timedelta(hours=7))
 
 
 class ApplicationIn(BaseModel):
@@ -171,3 +173,38 @@ def score_history(
         .all()
     )
     return [result_dict(result) for result in results]
+
+
+@router.get("/dashboard/summary")
+def dashboard_summary(
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    today = datetime.now(LOCAL_TZ).date()
+    start_local = datetime.combine(
+        today, datetime.min.time(), tzinfo=LOCAL_TZ
+    )
+    start_utc = start_local.astimezone(timezone.utc)
+    end_utc = (start_local + timedelta(days=1)).astimezone(timezone.utc)
+    query = (
+        db.query(LoanApplication)
+        .options(joinedload(LoanApplication.scoring_results))
+        .filter(
+            LoanApplication.created_at >= start_utc,
+            LoanApplication.created_at < end_utc,
+        )
+    )
+    if user.role != UserRole.ADMIN:
+        query = query.filter(LoanApplication.created_by == user.id)
+    loans = query.all()
+    scores = []
+    for loan in loans:
+        latest = _latest(loan)
+        if latest is not None and latest.score is not None:
+            scores.append(latest.score)
+    return {
+        "date": today.isoformat(),
+        "total_applications": len(loans),
+        "average_score": round(sum(scores) / len(scores), 1) if scores else None,
+        "high_risk_count": sum(1 for loan in loans if loan.dsr_flag_high_risk),
+    }
