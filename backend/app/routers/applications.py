@@ -54,10 +54,12 @@ def loan_dict(loan: LoanApplication) -> dict:
     return {
         "id": loan.id,
         "owner_id": loan.created_by,
+        "owner_name": loan.created_by_user.full_name if loan.created_by_user else None,
         "monthly_income": loan.monthly_income,
         "loan_amount": loan.loan_amount,
         "loan_term_months": loan.loan_term_months,
         "estimated_monthly_payment": loan.estimated_monthly_payment,
+        "dsr_percent": round(loan.estimated_monthly_payment * 100 / loan.monthly_income, 1),
         "purpose": loan.purpose,
         "credit_history_note": loan.credit_history_note,
         "cic_debt_group": loan.cic_debt_group,
