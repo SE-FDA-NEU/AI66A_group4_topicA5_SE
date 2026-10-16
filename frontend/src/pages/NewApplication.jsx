@@ -34,7 +34,16 @@ export default function NewApplication() {
     setBusy("Saving the application...");
     let created;
     try {
-      created = await api.createApplication(form);
+      const payload = {
+        monthly_income: form.monthly_income,
+        loan_amount: form.loan_amount,
+        loan_term_months: form.loan_term_months,
+        estimated_monthly_payment: form.estimated_monthly_payment,
+        purpose: form.purpose,
+        credit_history_note: form.credit_history_note,
+        cic_debt_group: form.cic_debt_group.trim() === "" ? null : form.cic_debt_group,
+      };
+      created = await api.createApplication(payload);
     } catch (err) {
       setErrors(err.fields || {});
       setMessage(err.message);
