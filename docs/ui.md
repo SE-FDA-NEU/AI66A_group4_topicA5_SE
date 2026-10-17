@@ -65,3 +65,55 @@ Remaining browser checklist (navigate through controls, without typing screen UR
 6. Submit a high-risk case with payment `15000000`. Log out and compare Linh's own list with Thanh's branch list. Confirm details retry/error states and that cancelled/approved records have no rescore action.
 
 Record the actual browser, tested commit, account, results and screenshot links here when browser access is available. Independent clean-machine `Tested by` remains S3-17 (#154).
+
+## 2. Wireframes
+
+Each wireframe says why the person comes here and which API endpoints the screen calls.
+
+### 2.1 Login `/`
+
+"The user comes here to sign in with their branch account."
+Calls: `POST /api/auth/login`
+
+```
++------------------------------------+
+|          Credit Scoring            |
+|   Sign in with your branch account |
+|  [! Email or password is incorrect.|
+|      Check your details ...      ] |   <- shown only after an error
+|  Email    [______________________] |
+|  Password [______________________] |
+|  [          Sign in             ]  |   <- "Signing in..." and disabled while waiting
++------------------------------------+
+```
+
+![Wireframe 1](images/ui/wireframe-1.svg)
+
+### 2.2 New application `/loan-applications/new`
+
+"The user comes here to enter a customer's loan application and get a credit score."
+Calls: `POST /api/loan-applications`, then `POST /api/loan-applications/{id}/score`
+
+```
++-----------------------------------------------+
+| New loan application                          |
+| [! Please fix these fields:                   |
+|    - Income is required                       |
+|    - Loan term is required ]                  |   <- US09 summary, nothing saved
+| Monthly income (VND)        [______________]  |
+|   Income is required                          |   <- red text under the wrong field
+| Loan amount (VND)           [______________]  |
+| Loan term (months)          [______________]  |
+| Estimated monthly payment   [______________]  |
+|   (over half of income = High risk)           |
+| Loan purpose                [______________]  |
+| Credit history              [______________]  |
+| CIC debt group (1-5)        [______________]  |
+| Citizen ID (optional)       [______________]  |
+| Bank account (optional)     [______________]  |
+| Numbers encrypted before storage             |
+| [ Submit and score ]   <- "Saving the application..." / "Scoring the application..." |
++-----------------------------------------------+
+```
+
+![Wireframe 2](images/ui/wireframe-2.svg)
