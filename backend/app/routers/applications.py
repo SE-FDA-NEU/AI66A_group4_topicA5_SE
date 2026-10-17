@@ -1,4 +1,5 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta, timezone
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
@@ -6,7 +7,14 @@ from sqlalchemy.orm import Session, joinedload
 
 from app.database import get_db
 from app.deps import get_current_user
-from app.models import EventLog, LoanApplication, LoanStatus, ScoringResult, User, UserRole
+from app.models import (
+    EventLog,
+    LoanApplication,
+    LoanStatus,
+    ScoringResult,
+    User,
+    UserRole,
+)
 from app.scoring_service import LABEL_TEXT, score_application
 
 router = APIRouter(prefix="/api", tags=["loan-applications"])
@@ -25,7 +33,7 @@ class ApplicationIn(BaseModel):
 
 
 def _aware(value: datetime) -> datetime:
-    return value if value.tzinfo else value.replace(tzinfo=timezone.utc)
+    return value if value.tzinfo else value.replace(tzinfo=UTC)
 
 
 def _latest(loan: LoanApplication):
@@ -54,10 +62,12 @@ def loan_dict(loan: LoanApplication) -> dict:
     return {
         "id": loan.id,
         "owner_id": loan.created_by,
+        "owner_name": loan.created_by_user.full_name if loan.created_by_user else None,
         "monthly_income": loan.monthly_income,
         "loan_amount": loan.loan_amount,
         "loan_term_months": loan.loan_term_months,
         "estimated_monthly_payment": loan.estimated_monthly_payment,
+        "dsr_percent": round(loan.estimated_monthly_payment * 100 / loan.monthly_income, 1),
         "purpose": loan.purpose,
         "credit_history_note": loan.credit_history_note,
         "cic_debt_group": loan.cic_debt_group,
@@ -72,8 +82,8 @@ def loan_dict(loan: LoanApplication) -> dict:
 @router.post("/loan-applications", status_code=201)
 def create_application(
     body: ApplicationIn,
-    db: Session = Depends(get_db),
-    user: User = Depends(get_current_user),
+    db: Annotated[Session, Depends(get_db)],
+    user: Annotated[User, Depends(get_current_user)],
 ):
     high_risk = (
         body.estimated_monthly_payment * 100 > 50 * body.monthly_income
@@ -105,8 +115,8 @@ def create_application(
 
 @router.get("/loan-applications")
 def list_applications(
-    db: Session = Depends(get_db),
-    user: User = Depends(get_current_user),
+    db: Annotated[Session, Depends(get_db)],
+    user: Annotated[User, Depends(get_current_user)],
 ):
     query = db.query(LoanApplication)
     if user.role != UserRole.ADMIN:
@@ -138,8 +148,8 @@ def _get_allowed(
 @router.get("/loan-applications/{loan_id}")
 def get_application(
     loan_id: str,
-    db: Session = Depends(get_db),
-    user: User = Depends(get_current_user),
+    db: Annotated[Session, Depends(get_db)],
+    user: Annotated[User, Depends(get_current_user)],
 ):
     return loan_dict(_get_allowed(db, user, loan_id))
 
@@ -147,8 +157,8 @@ def get_application(
 @router.post("/loan-applications/{loan_id}/score", status_code=201)
 def score(
     loan_id: str,
-    db: Session = Depends(get_db),
-    user: User = Depends(get_current_user),
+    db: Annotated[Session, Depends(get_db)],
+    user: Annotated[User, Depends(get_current_user)],
 ):
     loan = _get_allowed(db, user, loan_id)
     result = score_application(db, loan, user)
@@ -162,8 +172,8 @@ def score(
 @router.get("/loan-applications/{loan_id}/scores")
 def score_history(
     loan_id: str,
-    db: Session = Depends(get_db),
-    user: User = Depends(get_current_user),
+    db: Annotated[Session, Depends(get_db)],
+    user: Annotated[User, Depends(get_current_user)],
 ):
     loan = _get_allowed(db, user, loan_id)
     results = (
@@ -177,15 +187,15 @@ def score_history(
 
 @router.get("/dashboard/summary")
 def dashboard_summary(
-    db: Session = Depends(get_db),
-    user: User = Depends(get_current_user),
+    db: Annotated[Session, Depends(get_db)],
+    user: Annotated[User, Depends(get_current_user)],
 ):
     today = datetime.now(LOCAL_TZ).date()
     start_local = datetime.combine(
         today, datetime.min.time(), tzinfo=LOCAL_TZ
     )
-    start_utc = start_local.astimezone(timezone.utc)
-    end_utc = (start_local + timedelta(days=1)).astimezone(timezone.utc)
+    start_utc = start_local.astimezone(UTC)
+    end_utc = (start_local + timedelta(days=1)).astimezone(UTC)
     query = (
         db.query(LoanApplication)
         .options(joinedload(LoanApplication.scoring_results))
