@@ -117,11 +117,15 @@ jobs:
           cp .env.example .env
           python -m app.seed
 
-  node:
-    name: Node build and tests
-    needs: detect
-    if: needs.detect.outputs.node == 'true'
+  # The `detect` job only looks for package.json at the repository root, where
+  # this project has none, so the generic Node job never ran. Same fix as
+  # `backend-tests` above: name the folder explicitly and drop the gate.
+  frontend-tests:
+    name: Frontend build and tests (frontend/)
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
     steps:
       - uses: actions/checkout@v4
 
@@ -129,18 +133,22 @@ jobs:
         with:
           node-version: "20"
           cache: npm
+          # Without this, setup-node looks for a lockfile at the root and fails.
+          cache-dependency-path: frontend/package-lock.json
 
-      - run: npm ci || npm install
+      # `npm ci`, not `npm install`: it fails loudly when package-lock.json and
+      # package.json have drifted apart, which is what we want CI to catch.
+      - run: npm ci
 
       - name: Lint
         run: npm run lint --if-present
-        continue-on-error: true   
+        continue-on-error: true
 
       - name: Test
         run: npm test --if-present
 
       - name: Build
-        run: npm run build --if-present
+        run: npm run build
 
   secrets:
     name: No secrets committed
