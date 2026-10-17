@@ -6,6 +6,7 @@ import ApplicationList from "./pages/ApplicationList";
 import Dashboard from "./pages/Dashboard";
 import NewApplication from "./pages/NewApplication";
 import Login from "./pages/Login";
+import Users from "./pages/Users";
 
 function Protected({ children }) {
   const { user } = useAuth();
@@ -21,6 +22,7 @@ export default function App() {
       <Route path="/loan-applications" element={<Protected><ApplicationList /></Protected>} />
       <Route path="/loan-applications/new" element={<Protected><NewApplication /></Protected>} />
       <Route path="/loan-applications/:id" element={<Protected><ApplicationDetail /></Protected>} />
+      <Route path="/admin/users" element={<Protected>{user?.role === "admin" ? <Users /> : <p>You need Manager access to manage employees. Ask your branch manager for help.</p>}</Protected>} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
