@@ -21,3 +21,13 @@ export function reviewQueue(applications) {
   return applications.filter(needsReview).sort((a, b) =>
     priority(a) - priority(b) || Date.parse(a.created_at) - Date.parse(b.created_at) || a.id.localeCompare(b.id));
 }
+
+// Filters for the application list. `view` comes from `?view=` on the list page.
+// `ownerId` (optional) keeps only that officer's records.
+export function filterApplications(applications, view = "all", ownerId = null) {
+  const owned = ownerId == null ? applications : applications.filter((a) => a.owner_id === ownerId);
+  if (view === "review") return reviewQueue(owned);
+  if (view === "high-risk") return reviewQueue(owned).filter((a) => a.dsr_flag_high_risk);
+  if (view === "eligible") return reviewQueue(owned).filter(canApprove);
+  return owned;
+}
