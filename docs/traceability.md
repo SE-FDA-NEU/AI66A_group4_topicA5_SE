@@ -23,14 +23,18 @@ Numbered so that issues and tests can reference them.
 
 | # | Rule | Enforced where | Tested by |
 |---|------|----------------|-----------|
-| BR1 | Returned credit score must be in [0, 100]; out of range -> change to "Requires manual review" | API `/score`, validate before returning response | Model unit test |
-| BR2 | Declared income must be > 0 VND | Loan application receiving API, validate before saving to DB | API unit test |
-| BR3 | DSR (installment/income) <= 50%, exceeded -> flag as "High risk" | `create_application` sets persistent High risk; `approve_application` / details UI require explicit Manager review | `test_applications.py`, `test_scoring.py`, `test_approval.py::test_manager_can_review_high_risk_eligible_result` |
-| BR4 | CIC debt group 3-5 -> automatically rejected regardless of model score | `scoring_service.py` rejects; `approve_application` also blocks CIC groups 3-5 | `test_scoring.py` (groups 3/4/5), `test_approval.py::test_cic_bad_debt_cannot_be_approved` |
-| BR5 | Maximum 3 scorings/application per hour, hitting threshold -> flag as "Requires Manager review" | API `/score`, check call count per application | Scoring flow integration test |
-| BR6 | Score <40 -> "Proposal rejected"; 40-69 -> "Requires further review"; >=70 -> "Eligible for proposal" | `scoring_service.py:label_for`; approval requires a valid latest eligible result | `test_scoring.py`, `test_scoring_unit.py`, `test_approval.py` |
-| BR7 | Logs only store last 4 digits of CCCD/account; main DB encrypted at rest, log access when decrypted | Logging middleware + DB encryption layer (backend) | Sensitive data processing test |
-| BR8 | Authorization for 2 roles: User (only view self-created applications) / Admin (view all branch applications + account management) | Current-user dependency and owner filtering; approval additionally requires Admin | `test_auth.py`, `test_applications.py`, `test_walking_skeleton.py`, `test_approval.py` (Officer/anonymous denial) |
+| BR1 | Integer 0–100 only; invalid score hidden, manual_review | `scoring_service.py:score_application` | `test_scoring.py` invalid values and 0/100; `test_scoring_unit.py` |
+| BR2 | Income > 0; invalid input not saved/scored | `routers/applications.py:validate_application`; DB CHECK | `test_applications.py`, `test_models.py` |
+| BR3 | DSR >50% -> persistent High risk; Manager explicitly reviews | create API, approval API/UI | `test_applications.py` exactly/above 50%; `test_scoring.py`, `test_approval.py` |
+| BR4 | CIC 3/4/5 reject without model call, cannot approve | `scoring_service.py`, approve API | `test_scoring.py` all bad-debt groups; `test_approval.py` |
+| BR5 | Three results per rolling hour, fourth blocked + manual_review | lock before count/insert in `transactions.py`/scoring service | `test_scoring.py` limit/old/CIC; `test_br_integrity.py` independent simultaneous sessions |
+| BR6 | <40 rejected; 40–69 review; >=70 eligible | `scoring_service.py:label_for`; approval API | `test_scoring.py` persisted 0/39/40/69/70/100; `test_scoring_unit.py`, `test_approval.py` |
+| BR7 | Encrypt Citizen ID/account fields; masked normal responses; authorized decrypt + access audit | `privacy.py`, create/reveal API, `SensitiveData.jsx`; local key initialization | `test_privacy.py`: raw DB ciphertext, no leaks, authorization, wrong/missing key, failed audit, repeat accesses; `test_br_integrity.py`: key preservation/migration |
+| BR8 | Officer own loans; Manager all + employee management; inactive users denied | current-user dependency; applications/legacy HTML; `routers/users.py`, Employees UI | `test_applications.py`, `test_walking_skeleton.py`, `test_privacy.py`, `test_users.py`: account CRUD/status/session revocation/role guards |
+
+All eight BRs are implemented with local automated coverage. Browser acceptance and release evidence remain pending; requirements.md is unchanged.
+
+M3 implementation is present locally. Status remains In progress until browser acceptance, teammate approval, CI and merge are evidenced; do not mark Done from code presence alone. The list supports navigation to US05; US06 history UI and US10 edit/cancel remain unimplemented. Manager approval is implemented on the details screen; browser review/CI/merge evidence remains pending.
 
 ## Manager approval (S3-37)
 
@@ -53,3 +57,6 @@ returned **17 passed**. This validates the API checks, not the browser flow.
 Follow [the approval demo](SETUP.md#11-manager-approval-demo) and record actual
 screenshots/results under [ui.md section 4](ui.md#4-what-changed-since-m2).
 Browser evidence, teammate review and S3-37 completion remain pending.
+
+
+

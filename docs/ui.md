@@ -175,6 +175,35 @@ The saved decision includes Manager name/time, and approval disables rescoring.
 Approval records an assessment decision; disbursement is outside this app.
 US10 edit/cancel is still pending.
 
+### 2.5 Protected identifiers (on application details)
+
+"The user comes here to check the customer identifiers for an application they are permitted to open."
+Calls: `POST /api/loan-applications/{id}/sensitive-data/reveal`.
+
+```text
+Protected identifiers
+Citizen ID: ********7890       Bank account: ********0123
+[View full numbers (logged)] -> Opening... -> full values + [Hide numbers]
+No values: Not provided. Error: API message, retry available.
+Numbers hide after 30 seconds, when the window loses focus or the tab is hidden.
+```
+
+### 2.6 Employee accounts `/admin/users` (Manager only)
+
+"The user comes here to create Officer accounts and control employee access while retaining loan history."
+Calls: GET/POST `/api/admin/users`, PATCH `/api/admin/users/{id}`.
+
+```text
+Employee accounts
+Create Officer: [Name] [Email] [Initial password, 12–128 chars] [Create Officer]
+Loading: Loading employees...   Empty: No employee accounts.
+Error: <API message> [Try again]
+Data: Name, email, Officer/Manager, Active/Inactive
+Officer: [Name] [Save name] [Deactivate / Reactivate]
+Confirm: <effect on access and retained records> [Confirm] [Keep current status]
+Manager: Manager accounts cannot be changed here.
+```
+
 ## 3. Error messages
 
 The frontend renders API `detail` in an alert and validation `errors` next to the
