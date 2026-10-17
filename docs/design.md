@@ -7,10 +7,10 @@
 | Component | What it is | Status |
 | --- | --- | --- |
 | **Browser** | Used by employees and managers (phone or computer). | in use |
-| **Frontend web app** | React + Vite single-page app for the screens in M1 section 6. | planned (Sprint 3) |
-| **Backend API** | FastAPI service. Owns all business logic and enforces BR1-BR8. | built (skeleton) |
+| **Frontend web app** | React + Vite single-page app for the screens in M1 section 6. | built (Sprint 3): login, dashboard, new application, application details, list, protected-identifier lookup, employee accounts |
+| **Backend API** | FastAPI service. Owns all business logic and enforces BR1-BR8, including identifier encryption/audited lookup and employee account management. | built: auth, applications, scoring, dashboard, manager approval (cancel/edit still to do) |
 | **Database** | SQLite file `credit_scoring.db` in development, PostgreSQL for a real deployment (switched by `DATABASE_URL`). | built |
-| **Scoring module** | Runs **inside the API process**, not as a separate service. Loads `model.joblib` once at startup. In: feature vector. Out: integer score 0-100 and a list of explanation strings. | planned (Sprint 4) |
+| **Scoring module** | Runs **inside the API process**, not as a separate service. Loads `model.joblib` once at startup. In: feature vector. Out: integer score 0-100 and a list of explanation strings. | built as a rule-based stand-in `rules-v0` (Sprint 3); trained model in Sprint 4 |
 | **Offline training pipeline** | Trains on the German Credit Dataset and writes `model.joblib`. The dataset is never loaded into the database; only runtime data is stored. | planned (Sprint 4) |
 
 Every arrow is labelled with what travels along it. The API reaches the database through a library (SQLAlchemy), not through another API.
@@ -85,14 +85,14 @@ Business rules enforced by the service/API, rather than by a single column const
 ## 3. API design
 
 Conventions: JSON under the `/api` prefix, `Authorization: Bearer <JWT>` on everything except login, money in whole VND,
-errors as `{"detail": "<message>"}`. This is the design for the whole product; in M2 only the page in section 4 is built.
-The order of checks when an application is submitted and scored is: BR2 (income > 0) -> save -> BR3 (set the high-risk flag) -> BR4 (bad-debt
-group: reject, model not called) -> BR5 (3 scorings per hour) -> model -> BR1 (score range) -> BR6 (label).
+errors as `{"detail": "<message>"}`. This is the design for the whole product. Built so far: the M2 page in section 4, and in Sprint 3 login, create/list/get application, score, score history and the dashboard summary.
+The order of checks when an application is submitted and scored is: BR2 (income > 0) -> save -> BR3 (set the high-risk flag) -> BR5 (3 results per hour, including CIC rejections) -> BR4 (bad-debt group: reject, model not called) -> model -> BR1 (score range) -> BR6 (label).
 
 | Method | Path | Input | Success | Error codes | Covers |
 | --- | --- | --- | --- | --- | --- |
 | POST | `/api/auth/login` | email, password | 200 + JWT | 401 wrong credentials; 422 invalid body; **423** account locked (US01, 15 min) | US01 (P0) |
-| POST | `/api/loan-applications` | monthly_income, loan_amount, loan_term_months, estimated_monthly_payment, credit_history_note, purpose, cic_debt_group?, citizen_id? | 201 + application (`pending`, high-risk flag set if DSR > 50%) | 401; **422** missing or malformed field or income <= 0; `detail` is a general correction message, `errors` contains field messages (e.g. `monthly_income`: "Monthly income is required.") | US03, US09 (P0); BR2, BR3 |
+| GET | `/api/auth/me` | - | 200 + current user (id, email, full_name, role) | 401 | US01 (added in Sprint 3) |
+| POST | `/api/loan-applications` | monthly_income, loan_amount, loan_term_months, estimated_monthly_payment, credit_history_note, purpose, cic_debt_group? , citizen_id?, bank_account? (BR7) | 201 + application (`pending`, high-risk flag set if DSR > 50%) | 401; **422** `{"detail": "<message>", "errors": {"<field>": "<message>"}}` for a missing or malformed field ("Income is required") or income <= 0 | US03, US09 (P0); BR2, BR3 |
 | GET | `/api/loan-applications` | - | 200 + list (User: own only; Admin: all) | 401 | US05 list (P1); BR8 |
 | GET | `/api/loan-applications/{id}` | - | 200 + data, score, explanation | 401; **403** not the owner; **404** "Application not found" | US05; BR8 |
 | PATCH | `/api/loan-applications/{id}` | fields to change | 200 + application | 401; 403; 404; **409** "Application already processed, cannot be edited"; 422 | US10 (P1) |
@@ -100,9 +100,13 @@ group: reject, model not called) -> BR5 (3 scorings per hour) -> model -> BR1 (s
 | POST | `/api/loan-applications/{id}/score` | - | 201 + score, label, explanation | 401; 403; 404; 409 cancelled or approved; **429** BR5 limit reached (application becomes `manual_review`) | US04 (P0); BR1, BR3-BR6 |
 | GET | `/api/loan-applications/{id}/scores` | - | 200 + history (empty list shown as "No history available") | 401; 403; 404 | US06 (P1) |
 | PATCH | `/api/loan-applications/{id}/approve` | - | 200 + application with `status: approved`; writes `loan.approved` audit event | 401; **403** not Admin; 404; **409** cancelled, rejected, already approved, or no latest `eligible` score | Manager approval; US10, BR6 |
-| GET | `/api/dashboard/summary` | - | 200 + today's `total_applications` and `average_score` (null when none) | 401 | US08 (P0) |
+| POST | `/api/loan-applications/{id}/sensitive-data/reveal` | no body; explicit lookup | 200 + citizen_id, bank_account (null if absent); audit committed first; no-store headers | 401; 403 not owner/Admin; 404; 503 key or audit unavailable | BR7, BR8 |
+| GET | `/api/admin/users` | - | 200 + accounts (no passwords/hashes) | 401; 403 not Admin | BR8 |
+| POST | `/api/admin/users` | email, full_name, password (12–128 chars) | 201 + Officer account | 401; 403; 422 invalid/unsupported input; 409 duplicate email | BR8 |
+| PATCH | `/api/admin/users/{id}` | full_name?, is_active? | 200 + Officer; audit, session revocation on status change | 401; 403 not Admin or Manager target; 404; 422 | BR8 |
+| GET | `/api/dashboard/summary` | - | 200 + today's `total_applications`, `average_score` (null when none), `high_risk_count` and `date` | 401 | US08 (P0) |
 
-Not designed yet (P2, or tied to Sprint 4 encryption): logout (US02), notifications (US07), account management (`/admin/users`), the citizen-ID lookup (BR7).
+
 
 ## 4. Walking skeleton
 
@@ -202,3 +206,22 @@ Writing the design exposed two places where M1 was unclear. Both are resolved in
    sets the `dsr_flag_high_risk` flag and leaves the status as `pending`.
 3. **Approval is now an explicit Manager action.** `approved` was already a valid status in US10, but there was no API to reach it. An Admin can now
    call `PATCH /api/loan-applications/{id}/approve` only after the latest score is `eligible`; the transition is recorded as `loan.approved` in the audit log.
+
+
+## 7. What changed since M2
+
+M2 delivered one real route (`GET /loan-applications`, HTML, no login) and a design for the rest. Sprint 3 turned the API design into working code, put a React interface on it, and added a first scoring model. Full per-change history with PR numbers: [`docs/changelog.md`](changelog.md).
+
+1. **The API went from one route to twelve JSON endpoints.** Section 3.1 is now a list of what exists, not of what is planned. Login with lockout, loan creation, list and detail, scoring, score history, dashboard summary, manager approval and employee management are built. Edit and cancel (US10) are not built.
+
+2. **Every route now needs a token.** M2 said "no authentication yet, so BR8 filtering is not applied". Now the HTML skeleton page is protected as well, and BR8 is enforced on every read: an Officer gets `403` for another Officer's application and sees only their own in lists and in the dashboard. Tokens are HS256 JWTs (8 h by default) that carry a per-user `token_version`.
+
+3. **Two columns were added to `users`:** `is_active BOOLEAN NOT NULL DEFAULT TRUE` and `token_version INTEGER NOT NULL DEFAULT 0`. A Manager deactivates an Officer with `PATCH /api/admin/users/{id}`; this increments `token_version`, so tokens issued before the change stop working, including after reactivation. `app/migrate.py` adds the two columns to an existing M2 database without deleting rows. The ERD image and the `users` table in section 2 have not been updated yet.
+
+4. **Business rules BR1, BR4, BR5 and BR6 are enforced in code** (section 3.3). BR8 gained its second half: account management by the Manager.
+
+5. **Approval is built as designed in section 6**, with one addition: the status change is a single conditional `UPDATE` that also checks the latest score has not changed, so two Managers, or a rescoring in parallel, cannot approve a stale result (`409`).
+
+6. **Response shapes grew.** The dashboard summary now also returns `date` and `high_risk_count`. List and detail responses include `owner_name`, `dsr_percent` and `latest_score`; the detail adds `approval`. Results carry `label_text`, `rejected_reason` and `model_version`.
+
+7. **The frontend is built** (React + Vite on port 5173, `/api` proxied to port 8000), so the "Frontend web app" row in section 1 is no longer "planned (Sprint 3)".
