@@ -42,6 +42,10 @@ export default function NewApplication() {
         purpose: form.purpose,
         credit_history_note: form.credit_history_note,
         cic_debt_group: form.cic_debt_group.trim() === "" ? null : form.cic_debt_group,
+        // BR7: sent as text so leading zeros survive; the server encrypts them
+        // before the insert and returns only the masked form.
+        citizen_id: form.citizen_id.trim() === "" ? null : form.citizen_id.trim(),
+        bank_account: form.bank_account.trim() === "" ? null : form.bank_account.trim(),
       };
       created = await api.createApplication(payload);
     } catch (err) {

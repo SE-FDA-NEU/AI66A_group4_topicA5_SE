@@ -124,8 +124,11 @@ class LoanApplication(Base):
     # BR7: ciphertext only, key comes from an environment variable.
     # Plain text is never written to the DB or to logs.
     citizen_id_encrypted = Column(String, nullable=True)
-    # BR7: last 4 digits only, so the UI can show "*******7890" without decrypting.
+    # BR7: last 4 digits only, so the UI can show "********7890" without decrypting.
     citizen_id_last4 = Column(String(4), nullable=True)
+    # BR7: same pair for the bank account number.
+    bank_account_encrypted = Column(String, nullable=True)
+    bank_account_last4 = Column(String(4), nullable=True)
 
     status = Column(
         str_enum(LoanStatus, "loan_status"),
