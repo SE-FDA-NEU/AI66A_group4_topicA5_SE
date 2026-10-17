@@ -11,11 +11,13 @@ from app.models import (
     EventLog,
     LoanApplication,
     LoanStatus,
+    ScoreLabel,
     ScoringResult,
     User,
     UserRole,
 )
 from app.scoring_service import LABEL_TEXT, score_application
+from app.transactions import lock_application
 
 router = APIRouter(prefix="/api", tags=["loan-applications"])
 
@@ -77,6 +79,26 @@ def loan_dict(loan: LoanApplication) -> dict:
         "updated_at": loan.updated_at.isoformat(),
         "latest_score": result_dict(latest) if latest else None,
     }
+
+
+def application_detail(db: Session, loan: LoanApplication) -> dict:
+    data = loan_dict(loan)
+    audit = (
+        db.query(EventLog, User.full_name)
+        .outerjoin(User, EventLog.actor_id == User.id)
+        .filter(
+            EventLog.loan_application_id == loan.id,
+            EventLog.action == "loan.approved",
+        )
+        .order_by(EventLog.created_at.desc(), EventLog.id.desc())
+        .first()
+    )
+    data["approval"] = None if audit is None else {
+        "actor_id": audit[0].actor_id,
+        "actor_name": audit[1] or "Former manager",
+        "approved_at": _aware(audit[0].created_at).isoformat(),
+    }
+    return data
 
 
 @router.post("/loan-applications", status_code=201)
@@ -151,7 +173,7 @@ def get_application(
     db: Annotated[Session, Depends(get_db)],
     user: Annotated[User, Depends(get_current_user)],
 ):
-    return loan_dict(_get_allowed(db, user, loan_id))
+    return application_detail(db, _get_allowed(db, user, loan_id))
 
 
 @router.post("/loan-applications/{loan_id}/score", status_code=201)
@@ -218,3 +240,92 @@ def dashboard_summary(
         "average_score": round(sum(scores) / len(scores), 1) if scores else None,
         "high_risk_count": sum(1 for loan in loans if loan.dsr_flag_high_risk),
     }
+
+
+@router.patch("/loan-applications/{loan_id}/approve")
+def approve_application(
+    loan_id: str,
+    db: Annotated[Session, Depends(get_db)],
+    user: Annotated[User, Depends(get_current_user)],
+):
+    if user.role != UserRole.ADMIN:
+        raise HTTPException(
+            403,
+            "Only a manager can approve a loan application. "
+            "Ask your manager to review this application.",
+        )
+    loan = _get_allowed(db, user, loan_id)
+    try:
+        lock_application(db, loan)
+        if loan.status in (
+            LoanStatus.CANCELLED,
+            LoanStatus.REJECTED,
+            LoanStatus.APPROVED,
+        ):
+            raise HTTPException(
+                409,
+                "This application is cancelled, rejected or already approved. "
+                "Select an application awaiting approval.",
+            )
+        latest = _latest(loan)
+        if (
+            loan.status not in (LoanStatus.SCORED, LoanStatus.MANUAL_REVIEW)
+            or latest is None
+            or latest.label != ScoreLabel.ELIGIBLE
+            or type(latest.score) is not int
+            or not 70 <= latest.score <= 100
+            or (
+                loan.cic_debt_group is not None
+                and loan.cic_debt_group >= 3
+            )
+        ):
+            raise HTTPException(
+                409,
+                "This application needs a valid eligible score before approval. "
+                "Review its data and scoring results first.",
+            )
+        latest_id = (
+            db.query(ScoringResult.id)
+            .filter(ScoringResult.loan_application_id == loan.id)
+            .order_by(ScoringResult.created_at.desc(), ScoringResult.id.desc())
+            .limit(1)
+            .scalar_subquery()
+        )
+        updated = (
+            db.query(LoanApplication)
+            .filter(
+                LoanApplication.id == loan.id,
+                LoanApplication.status == loan.status,
+                latest_id == latest.id,
+            )
+            .update(
+                {
+                    LoanApplication.status: LoanStatus.APPROVED,
+                    LoanApplication.updated_at: datetime.now(UTC),
+                },
+                synchronize_session=False,
+            )
+        )
+        if updated != 1:
+            raise HTTPException(
+                409,
+                "This application changed while you were reviewing it. "
+                "Reload the details before deciding.",
+            )
+        db.add(
+            EventLog(
+                actor_id=user.id,
+                loan_application_id=loan.id,
+                action="loan.approved",
+                detail=(
+                    f"Manager approved score {latest.score}; "
+                    f"high risk: {loan.dsr_flag_high_risk}"
+                ),
+            )
+        )
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
+    db.expire_all()
+    return application_detail(db, _get_allowed(db, user, loan_id))
