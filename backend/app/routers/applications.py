@@ -6,7 +6,14 @@ from sqlalchemy.orm import Session, joinedload
 
 from app.database import get_db
 from app.deps import get_current_user
-from app.models import EventLog, LoanApplication, LoanStatus, ScoringResult, User, UserRole
+from app.models import (
+    EventLog,
+    LoanApplication,
+    LoanStatus,
+    ScoringResult,
+    User,
+    UserRole,
+)
 from app.scoring_service import LABEL_TEXT, score_application
 
 router = APIRouter(prefix="/api", tags=["loan-applications"])
