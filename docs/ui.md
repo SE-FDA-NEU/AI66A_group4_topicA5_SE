@@ -14,7 +14,7 @@ How to run the app and which test accounts to use: see [`SETUP.md`](SETUP.md). S
 
 Also built, not P0: `/loan-applications` (list, P1, US05 partly) so a person can reach any application without typing a URL.
 
-**Screen flow:** the list is reachable from the top bar/dashboard; Submit and score opens details. The diagram below covers the P0 paths in this branch.
+**Screen flow:** the list is reachable from the top bar/dashboard; Submit and score opens details. The diagram below covers the P0 paths and the Manager approval follow-up. Confirmation and approval remain on the details route; they are not extra pages.
 
 ```mermaid
 flowchart TD
@@ -23,7 +23,13 @@ flowchart TD
     Dashboard --> List[Applications /loan-applications]
     New -->|Save, then score| Detail[Details /loan-applications/:id]
     List -->|Open| Detail
-    Detail -->|Score again| Detail
+    Detail -->|Score again, before approval| Detail
+    Detail -->|Manager: review eligible result| Confirm["Confirm approval, including High risk warning"]
+    Confirm -->|Keep reviewing| Detail
+    Confirm -->|Confirm approval: PATCH approve| Approved["Approved: Manager name and time"]
+    Confirm -->|API rejects decision: show message and reload| Detail
+    Approved -->|Reload: saved decision persists| Approved
+    Approved --> List
     Detail --> List
     New -->|Invalid data: keep form and show errors| New
     Dashboard -->|Log out or expired session| Login
@@ -61,10 +67,10 @@ Calls: `POST /api/loan-applications`, then `POST /api/loan-applications/{id}/sco
 +-----------------------------------------------+
 | New loan application                          |
 | [! Please fix these fields:                   |
-|    - Income is required                       |
-|    - Loan term is required ]                  |   <- US09 summary, nothing saved
+|    - Monthly income must be a whole number.    |
+|    - Loan term must be a whole number. ]       |   <- US09 summary, nothing saved
 | Monthly income (VND)        [______________]  |
-|   Income is required                          |   <- red text under the wrong field
+|   Monthly income must be a whole number.       |   <- red text under the wrong field
 | Loan amount (VND)           [______________]  |
 | Loan term (months)          [______________]  |
 | Estimated monthly payment   [______________]  |
@@ -160,3 +166,74 @@ Officer: Ask your branch manager to review this application.
 Ineligible: Review the data and scoring results first.
 Error: <API message> and reload current details
 ```
+
+The Officer sees Manager guidance instead of an approval button. The Manager can
+confirm only a latest eligible result (integer score 70-100), for a scored or
+manual_review application outside CIC groups 3-5. The High risk flag remains
+visible and requires explicit review; it does not disappear when approved.
+The saved decision includes Manager name/time, and approval disables rescoring.
+Approval records an assessment decision; disbursement is outside this app.
+US10 edit/cancel is still pending.
+
+## 3. Error messages
+
+The frontend renders API `detail` in an alert and validation `errors` next to the
+corresponding form fields. The strings below match the current backend. Role and
+eligibility controls normally prevent invalid approval actions; if a request is
+rejected, the details screen shows the API message and reloads the current data.
+
+| API error code | Business rule / trigger | The exact message the user sees |
+| --- | --- | --- |
+| 401 | US01: incorrect email/password | Email or password is incorrect. Check your details and try again. |
+| 423 | US01: sign-in attempted during the 15-minute lock | Too many wrong passwords. Your account is locked for 15 minutes. Try again later or ask your manager to help. |
+| 422 | BR2: monthly income is zero or negative | Monthly income must be greater than 0 VND. |
+| 422 | US09: monthly income is not a whole number | Monthly income must be a whole number. |
+| 429 | BR5: fourth scoring result requested in the rolling hour | This application has already been scored 3 times in the last hour. It is now marked 'Requires manager review'. Ask a manager to review it. |
+| 403 | Approval authorization: actor is not Admin | Only a manager can approve a loan application. Ask your manager to review this application. |
+| 409 | Approval: cancelled, rejected or already approved | This application is cancelled, rejected or already approved. Select an application awaiting approval. |
+| 409 | Approval / BR4 / BR6: no valid latest eligible result | This application needs a valid eligible score before approval. Review its data and scoring results first. |
+| 409 | Approval: application changed during review | This application changed while you were reviewing it. Reload the details before deciding. |
+
+## 4. What changed since M2
+
+### Design change: a recommendation needs a separate Manager decision
+
+Building Application details exposed the need to distinguish a model recommendation
+from a Manager's recorded decision. An eligible score does not change the loan
+to approved. The interface now offers Admin-only review and confirmation, backed
+by `PATCH /api/loan-applications/{id}/approve`. The backend commits the approved
+status and `loan.approved` audit together; detail responses expose
+`approval.actor_id`, `approval.actor_name` and `approval.approved_at` so the user
+can see who made the decision and when, including after reload. The High risk flag
+is preserved. These API and response-contract details are updated in
+[design.md, Manager approval contract](design.md#manager-approval-contract) in the
+same change. The existing broader M2-to-M3 changes remain in
+[design.md section 7](design.md#7-what-changed-since-m2).
+
+### Database data and acceptance evidence
+
+The running interface uses saved `loan_applications`, `scoring_results` and
+`event_logs` through authenticated APIs. Seed values are synthetic demonstration
+data persisted in the database; new applications and approval decisions are also
+persisted. The wireframe numbers above are illustrative, not running-app evidence.
+
+Follow [SETUP.md section 11](SETUP.md#11-manager-approval-demo) through the interface:
+
+1. As Hoang, create and score an application using the documented demo values;
+   open it from the application list without typing a details URL.
+2. Sign out and sign in as Thanh. Open the same record from the list/review queue,
+   review its input, score and reasons, then choose **Approve application** and
+   **Confirm approval**.
+3. Reload and verify **Approved**, Manager name/time and the saved data persist.
+   Verify that an Officer has no approval action and that an approved application
+   cannot be scored again. Approval does not imply disbursement.
+4. On New application, submit monthly income `0` with other required fields valid;
+   verify the BR2 message and that no new application was created.
+5. Capture the running data/decision screen and the visible business-rule error,
+   keeping the browser address bar visible. Save actual captures in `images/ui/`
+   and link them here with tester, date and observed result.
+
+**Evidence status:** browser acceptance and screenshots are pending. No running-app
+screenshots have been added in this documentation change. The 17 approval API
+checks in `backend/tests/test_approval.py` passed locally on 2026-10-18; this does
+not establish browser acceptance, GitHub CI, teammate review or completion of US10.
