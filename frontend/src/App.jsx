@@ -4,6 +4,7 @@ import Layout from "./components/Layout";
 import ApplicationDetail from "./pages/ApplicationDetail";
 import ApplicationList from "./pages/ApplicationList";
 import Dashboard from "./pages/Dashboard";
+import NewApplication from "./pages/NewApplication";
 import Login from "./pages/Login";
 
 function Protected({ children }) {
@@ -18,6 +19,7 @@ export default function App() {
       <Route path="/" element={user ? <Navigate to="/dashboard" replace /> : <Login />} />
       <Route path="/dashboard" element={<Protected><Dashboard /></Protected>} />
       <Route path="/loan-applications" element={<Protected><ApplicationList /></Protected>} />
+      <Route path="/loan-applications/new" element={<Protected><NewApplication /></Protected>} />
       <Route path="/loan-applications/:id" element={<Protected><ApplicationDetail /></Protected>} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
