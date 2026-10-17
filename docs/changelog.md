@@ -29,3 +29,5 @@ Changes recorded under process.md section 4, rule 4.
 
 - **Role-focused UI:** Officer dashboard/list emphasize own work and create/score actions; Manager dashboard adds branch-wide all-date review queue, high-risk/eligible counters, employee filters and management link. Navigation and details guidance differ by role. Uses existing authenticated APIs; no data-model or API-contract change.
 - **Frontend checks:** `npm test` runs queue/filter contracts and rendered React route checks for both roles. esbuild 0.25.12 is now explicitly a test/build dev dependency (already used by Vite); CI runs frontend tests before build.
+
+- **S3-37 documentation:** added the scoring-to-Manager-confirmation flow, exact API error messages, approval response contract and code/test traceability. `ui.md` now has all four M3 sections and explains database-backed data plus the approval design change. The approval suite passed 17 checks locally on 2026-10-18; browser screenshots/acceptance remain pending. US10 edit/cancel and disbursement are not delivered by approval.
