@@ -2,7 +2,8 @@ from datetime import UTC, datetime, timedelta, timezone
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Response
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session, joinedload
 
 from app.database import get_db
@@ -31,6 +32,8 @@ LOCAL_TZ = timezone(timedelta(hours=7))
 
 
 class ApplicationIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     monthly_income: int = Field(gt=0, le=10**13)
     loan_amount: int = Field(gt=0, le=10**13)
     loan_term_months: int = Field(gt=0, le=600)
@@ -230,34 +233,33 @@ def reveal_identifiers(
     response.headers["Cache-Control"] = "no-store"
     response.headers["Pragma"] = "no-cache"
     loan = _get_allowed(db, user, loan_id)
-    if not (loan.citizen_id_encrypted or loan.bank_account_encrypted):
-        raise HTTPException(
-            404,
-            "This application has no protected identifiers to open.",
-        )
     # Decrypt first: a wrong key must not leave a "viewed" record behind.
     values = {
         "citizen_id": decrypt_identifier(loan.citizen_id_encrypted),
         "bank_account": decrypt_identifier(loan.bank_account_encrypted),
     }
-    opened = [
-        f"citizen ID {masked(loan.citizen_id_last4)}" if loan.citizen_id_last4 else "",
-        f"bank account {masked(loan.bank_account_last4)}" if loan.bank_account_last4 else "",
-    ]
     try:
-        db.add(
-            EventLog(
-                actor_id=user.id,
-                loan_application_id=loan.id,
-                action="citizen_id.viewed",
-                # BR7: the audit row records who and when, masked numbers only.
-                detail="; ".join(note for note in opened if note),
-            )
-        )
+        for field, suffix in (
+            ("citizen_id", loan.citizen_id_last4),
+            ("bank_account", loan.bank_account_last4),
+        ):
+            if values[field] is not None:
+                db.add(
+                    EventLog(
+                        actor_id=user.id,
+                        loan_application_id=loan.id,
+                        action=f"{field}.viewed",
+                        detail=masked(suffix),
+                    )
+                )
         db.commit()
-    except Exception:
+    except SQLAlchemyError:
         db.rollback()
-        raise
+        raise HTTPException(
+            503,
+            "Access could not be recorded, so protected numbers were not opened. "
+            "Try again or ask your administrator for help.",
+        ) from None
     return values
 
 

@@ -155,27 +155,35 @@ def test_nine_and_twelve_digit_citizen_ids_are_accepted(client, seeded, login, v
 
 # --- audited reveal -----------------------------------------------------
 
-def test_owner_can_reveal_and_the_lookup_is_logged(client, seeded, login, db_session):
+@pytest.mark.parametrize("identifiers", [
+    {"citizen_id": CITIZEN_ID},
+    {"bank_account": BANK_ACCOUNT},
+    {"citizen_id": CITIZEN_ID, "bank_account": BANK_ACCOUNT},
+])
+def test_owner_can_reveal_and_the_lookup_is_logged(client, seeded, login, db_session, identifiers):
     headers = login("hoang@branch.vn")
-    created = _create(
-        client, headers, citizen_id=CITIZEN_ID, bank_account=BANK_ACCOUNT
-    )
+    created = _create(client, headers, **identifiers)
     resp = client.post(
         f"/api/loan-applications/{created['id']}/sensitive-data/reveal",
         headers=headers,
     )
     assert resp.status_code == 200
-    assert resp.json() == {"citizen_id": CITIZEN_ID, "bank_account": BANK_ACCOUNT}
+    assert resp.json() == {"citizen_id": None, "bank_account": None, **identifiers}
 
-    event = (
+    events = (
         db_session.query(EventLog)
         .filter(EventLog.loan_application_id == created["id"],
-                EventLog.action == "citizen_id.viewed")
-        .one()
+                EventLog.action.in_(("citizen_id.viewed", "bank_account.viewed")))
+        .all()
     )
-    assert event.actor_id is not None
-    assert CITIZEN_ID not in event.detail and BANK_ACCOUNT not in event.detail
-    assert "********7890" in event.detail and "********0123" in event.detail
+    assert len(events) == len(identifiers)
+    assert {event.action: event.detail for event in events} == {
+        f"{field}.viewed": f"********{value[-4:]}"
+        for field, value in identifiers.items()
+    }
+    assert all(event.actor_id == created["owner_id"] for event in events)
+    assert all(CITIZEN_ID not in event.detail and BANK_ACCOUNT not in event.detail
+               for event in events)
 
 
 def test_creation_audit_detail_is_masked(client, seeded, login, db_session):
@@ -200,9 +208,10 @@ def test_no_audit_row_is_written_when_nothing_can_be_revealed(client, seeded, lo
         f"/api/loan-applications/{created['id']}/sensitive-data/reveal",
         headers=headers,
     )
-    assert resp.status_code == 404
+    assert resp.status_code == 200
+    assert resp.json() == {"citizen_id": None, "bank_account": None}
     assert db_session.query(EventLog).filter(
-        EventLog.action == "citizen_id.viewed"
+        EventLog.action.in_(("citizen_id.viewed", "bank_account.viewed"))
     ).count() == 0
 
 
@@ -215,6 +224,17 @@ def test_br8_another_officer_cannot_reveal(client, seeded, login, db_session):
     assert resp.status_code == 403
     assert db_session.query(EventLog).filter(
         EventLog.action == "citizen_id.viewed"
+    ).count() == 0
+
+
+def test_reveal_missing_application_is_404(client, seeded, login, db_session):
+    resp = client.post(
+        "/api/loan-applications/missing/sensitive-data/reveal",
+        headers=login("hoang@branch.vn"),
+    )
+    assert resp.status_code == 404
+    assert db_session.query(EventLog).filter(
+        EventLog.action.in_(("citizen_id.viewed", "bank_account.viewed"))
     ).count() == 0
 
 
