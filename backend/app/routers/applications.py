@@ -1,8 +1,8 @@
 from datetime import UTC, datetime, timedelta, timezone
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel, Field
+from fastapi import APIRouter, Depends, HTTPException, Response
+from pydantic import BaseModel, Field, field_validator
 from sqlalchemy.orm import Session, joinedload
 
 from app.database import get_db
@@ -15,6 +15,12 @@ from app.models import (
     ScoringResult,
     User,
     UserRole,
+)
+from app.privacy import (
+    decrypt_identifier,
+    encrypt_identifier,
+    masked,
+    validate_identifier,
 )
 from app.scoring_service import LABEL_TEXT, score_application
 from app.transactions import lock_application
@@ -32,6 +38,16 @@ class ApplicationIn(BaseModel):
     purpose: str | None = Field(default=None, max_length=500)
     credit_history_note: str | None = Field(default=None, max_length=500)
     cic_debt_group: int | None = Field(default=None, ge=1, le=5)
+    # BR7: text, not int, so a citizen ID like 001234567890 keeps its leading
+    # zeros. max_length only caps the input before the digit rules run.
+    citizen_id: str | None = Field(default=None, max_length=32)
+    bank_account: str | None = Field(default=None, max_length=32)
+
+    @field_validator('citizen_id', 'bank_account')
+    @classmethod
+    def _clean_identifier(cls, value: str | None, info) -> str | None:
+        # Raises ValueError -> reported as a 422 field error beside the others.
+        return validate_identifier(info.field_name, value)
 
 
 def _aware(value: datetime) -> datetime:
@@ -78,6 +94,10 @@ def loan_dict(loan: LoanApplication) -> dict:
         "created_at": loan.created_at.isoformat(),
         "updated_at": loan.updated_at.isoformat(),
         "latest_score": result_dict(latest) if latest else None,
+        # BR7: ordinary responses carry the mask only, never the ciphertext and
+        # never the full number. Opening those needs the audited reveal route.
+        "citizen_id_masked": masked(loan.citizen_id_last4),
+        "bank_account_masked": masked(loan.bank_account_last4),
     }
 
 
@@ -107,15 +127,35 @@ def create_application(
     db: Annotated[Session, Depends(get_db)],
     user: Annotated[User, Depends(get_current_user)],
 ):
+    data = body.model_dump()
+    # BR7: identifiers leave the request body here, so they are never handed to
+    # the ORM as plain text and never reach scoring.build_features.
+    citizen_id = data.pop("citizen_id")
+    bank_account = data.pop("bank_account")
     high_risk = (
         body.estimated_monthly_payment * 100 > 50 * body.monthly_income
     )
+    # Encrypted before the INSERT: if the key is missing this raises 503 and
+    # nothing at all is saved, rather than storing a plain-text number.
+    citizen_cipher, citizen_last4 = encrypt_identifier(citizen_id)
+    bank_cipher, bank_last4 = encrypt_identifier(bank_account)
     loan = LoanApplication(
-        **body.model_dump(),
+        **data,
         created_by=user.id,
         status=LoanStatus.PENDING,
         dsr_flag_high_risk=high_risk,
+        citizen_id_encrypted=citizen_cipher,
+        citizen_id_last4=citizen_last4,
+        bank_account_encrypted=bank_cipher,
+        bank_account_last4=bank_last4,
     )
+    notes = []
+    if high_risk:
+        notes.append("high risk (DSR above 50%)")
+    if citizen_last4:
+        notes.append(f"citizen ID {masked(citizen_last4)}")
+    if bank_last4:
+        notes.append(f"bank account {masked(bank_last4)}")
     try:
         db.add(loan)
         db.flush()
@@ -124,7 +164,8 @@ def create_application(
                 actor_id=user.id,
                 loan_application_id=loan.id,
                 action="loan.created",
-                detail="high risk (DSR above 50%)" if high_risk else None,
+                # BR7: masked text only, never the full number.
+                detail="; ".join(notes) or None,
             )
         )
         db.commit()
@@ -174,6 +215,50 @@ def get_application(
     user: Annotated[User, Depends(get_current_user)],
 ):
     return application_detail(db, _get_allowed(db, user, loan_id))
+
+
+@router.post("/loan-applications/{loan_id}/sensitive-data/reveal")
+def reveal_identifiers(
+    loan_id: str,
+    response: Response,
+    db: Annotated[Session, Depends(get_db)],
+    user: Annotated[User, Depends(get_current_user)],
+):
+    """BR7: an explicit, audited lookup. BR8 still applies: owner or Manager."""
+    # BR7: the only response that carries full numbers must not be cached by the
+    # browser, a proxy or the back button.
+    response.headers["Cache-Control"] = "no-store"
+    response.headers["Pragma"] = "no-cache"
+    loan = _get_allowed(db, user, loan_id)
+    if not (loan.citizen_id_encrypted or loan.bank_account_encrypted):
+        raise HTTPException(
+            404,
+            "This application has no protected identifiers to open.",
+        )
+    # Decrypt first: a wrong key must not leave a "viewed" record behind.
+    values = {
+        "citizen_id": decrypt_identifier(loan.citizen_id_encrypted),
+        "bank_account": decrypt_identifier(loan.bank_account_encrypted),
+    }
+    opened = [
+        f"citizen ID {masked(loan.citizen_id_last4)}" if loan.citizen_id_last4 else "",
+        f"bank account {masked(loan.bank_account_last4)}" if loan.bank_account_last4 else "",
+    ]
+    try:
+        db.add(
+            EventLog(
+                actor_id=user.id,
+                loan_application_id=loan.id,
+                action="citizen_id.viewed",
+                # BR7: the audit row records who and when, masked numbers only.
+                detail="; ".join(note for note in opened if note),
+            )
+        )
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
+    return values
 
 
 @router.post("/loan-applications/{loan_id}/score", status_code=201)

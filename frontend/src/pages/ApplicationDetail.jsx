@@ -4,6 +4,7 @@ import { api, vnd } from "../api";
 import { useAuth } from "../auth";
 import { RiskBadge, StatusBadge } from "../components/Badges";
 import { ErrorBox, Loading } from "../components/States";
+import SensitiveData from "../components/SensitiveData";
 import { canApprove as eligibleForApproval } from "../review";
 
 function ScoreCard({ result, status }) {
@@ -154,6 +155,8 @@ export default function ApplicationDetail() {
           <dt>CIC debt group</dt><dd>{a.cic_debt_group ?? "Not available"}</dd>
         </dl>
       </section>
+
+      <SensitiveData application={a} />
       <p><Link to="/loan-applications">Back to the list</Link></p>
     </>
   );
