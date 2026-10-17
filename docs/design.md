@@ -108,6 +108,19 @@ The order of checks when an application is submitted and scored is: BR2 (income 
 
 
 
+### Manager approval contract
+
+The details interface separates a scoring recommendation from a Manager decision.
+Only Admin can confirm approval of a scored/manual_review application with a
+latest integer score of 70-100 labelled eligible and CIC outside groups 3-5.
+The transaction records `status=approved` and one `loan.approved` event together.
+The details response includes `approval: null` before approval, or
+`approval.actor_id`, `approval.actor_name` and `approval.approved_at` afterwards.
+The High risk flag remains visible after the decision; approved applications
+cannot be rescored. The confirmation flow and API error text are documented in
+[ui.md](ui.md#4-what-changed-since-m2). Approval is not disbursement; US10 edit/cancel
+remains pending.
+
 ## 4. Walking skeleton
 
 **4.1. Route:** `GET /loan-applications` - returns an HTML page, opened directly in the browser, no login yet.

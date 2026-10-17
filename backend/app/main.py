@@ -42,6 +42,8 @@ FIELD_LABELS = {
     "purpose": "Loan purpose",
     "credit_history_note": "Credit history",
     "cic_debt_group": "CIC debt group",
+    "citizen_id": "Citizen ID",
+    "bank_account": "Bank account",
     "email": "Email",
     "password": "Password",
 }
@@ -72,6 +74,10 @@ async def validation_error_handler(request, exc):
             message = f"{label} must not exceed {context['max_length']} characters."
         elif kind == "string_type":
             message = f"{label} must be text."
+        elif kind == "value_error":
+            # A rule from a field validator (e.g. BR7 identifier format) already
+            # carries a message written for the officer; keep it.
+            message = str(context.get("error") or f"{label} is invalid.")
         elif kind == "json_invalid":
             field = "form"
             message = "The request contains invalid JSON. Check it and try again."

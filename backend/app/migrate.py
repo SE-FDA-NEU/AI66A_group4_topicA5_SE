@@ -9,6 +9,14 @@ def ensure_schema(bind=engine):
     Base.metadata.create_all(bind)
     additions = {
         'users': {'is_active': 'BOOLEAN NOT NULL DEFAULT TRUE', 'token_version': 'INTEGER NOT NULL DEFAULT 0'},
+        # BR7: nullable, so rows created before Sprint 3 keep their data and read as
+        # "no identifier provided" instead of needing a backfill.
+        'loan_applications': {
+            'citizen_id_encrypted': 'VARCHAR NULL',
+            'citizen_id_last4': 'VARCHAR(4) NULL',
+            'bank_account_encrypted': 'VARCHAR NULL',
+            'bank_account_last4': 'VARCHAR(4) NULL',
+        },
     }
     with bind.begin() as connection:
         for table, columns in additions.items():
