@@ -29,43 +29,6 @@ flowchart TD
     Dashboard -->|Log out or expired session| Login
 ```
 
-### #157 verification record - 16 October 2026 (Vietnam)
-
-Base implementation: commit `0b88dc3` on `119-score-feedback`; integration fixes are in the `157-p0-verification` branch. Test data uses a separate local SQLite database under the ignored `.venv/` directory. No production database or source-repository data is used.
-
-**Browser acceptance: pending.** The computer-use session reported no connected browsers. Attempts to open Chrome and the in-app browser both returned `Browser is not available`. No five-story browser walkthrough or screenshots were produced. All five stories remain **partly works**; the checks below are not browser evidence.
-
-Integration defects reproduced before fixing:
-
-- **Missing New application route:** the existing top-bar/dashboard links matched `/loan-applications/:id` with `id=new`, rather than the existing form. Reproduced with React Router's `matchRoutes` against the actual App routes. Copied the form import and `/loan-applications/new` route from the source App into [App.jsx](../frontend/src/App.jsx).
-- **Blank optional CIC rejected:** the actual form payload with `cic_debt_group: ""` returned HTTP 422 from the running API. [NewApplication.jsx](../frontend/src/pages/NewApplication.jsx) now uses the guide's A22b payload mapping, converting blank CIC to `null` and sending only fields supported by the current application schema. Valid numeric strings and invalid entries are left for field-level API validation.
-
-Non-browser checks completed on this branch:
-
-| Check | Result | Evidence type |
-| --- | --- | --- |
-| Sign-in, wrong passwords and three-attempt lockout | Passed; normal login 200, bad credentials 401, locked account 423 | Live API, synthetic demo accounts |
-| Officer / Manager visibility | Passed; initial Hoang 7, Linh 5, Thanh 12; Linh cannot open Hoang's new record (403), Manager can | Live API |
-| Empty and populated dashboard | Passed; initially zero today, then one new application and its latest score | Live API |
-| Missing/text/zero income | Passed; 422 field messages and no extra database records | Live API |
-| Optional CIC + saved detail data | Passed using the actual form payload mapping; blank and whitespace CIC become null; owner and DSR are returned | Form mapping + live API |
-| New application navigation | Passed after route fix; `/loan-applications/new` matches its own route instead of `:id` | Actual React Router matching, not browser navigation |
-| Scoring, high risk, CIC rejection and hourly limit | Passed; integer score/reasons, DSR 75% risk flag, CIC 4 null-score rejection, fourth scoring 429 followed by manual_review | Live API |
-| Score display and error branches | Passed normal factors, rejected label, BR1 invalid-score text, unscored and manual-review states | Actual ScoreCard server rendering, not browser evidence |
-| Existing backend suite | 67 passed before these frontend-only integration fixes | pytest |
-| Frontend production build | Passed with Vite 6.4.3 / Node 24.21.0 after the route and payload fixes | Vite build |
-
-Remaining browser checklist (navigate through controls, without typing screen URLs):
-
-1. Open the frontend once; sign in as `hoang@branch.vn` / `Demo@2026` (**US01**). Check wrong-password and lockout messages separately.
-2. Inspect the initial dashboard and return through **My dashboard** after creating data (**US08**).
-3. Click **New application**, submit empty/text/zero income, read the summary and field errors, then correct them (**US09**).
-4. Submit income `20000000`, loan `100000000`, term `24`, payment `5000000`; leave optional CIC blank and confirm details open (**US03**).
-5. Read score, label and reasons; reopen through **My applications > Open**, use **Score again**, and deliberately reach the BR5 limit (**US04**). Use a separate CIC 4 application to check BR4; BR1 is covered by existing automated API tests, not a claimed browser test.
-6. Submit a high-risk case with payment `15000000`. Log out and compare Linh's own list with Thanh's branch list. Confirm details retry/error states and that cancelled/approved records have no rescore action.
-
-Record the actual browser, tested commit, account, results and screenshot links here when browser access is available. Independent clean-machine `Tested by` remains S3-17 (#154).
-
 ## 2. Wireframes
 
 Each wireframe says why the person comes here and which API endpoints the screen calls.
@@ -117,3 +80,83 @@ Calls: `POST /api/loan-applications`, then `POST /api/loan-applications/{id}/sco
 ```
 
 ![Wireframe 2](images/ui/wireframe-2.svg)
+
+### 2.3 Dashboard `/dashboard` (by role, all four states)
+
+"The Officer comes here to see their own activity and create/track applications. The Manager comes here to review branch activity and the backlog, and manage employee access."
+Calls: `GET /api/dashboard/summary`; Manager also calls `GET /api/loan-applications` for the review queue. All counters use database data. The daily summary is Vietnam-local today; backlog counts cover all dates.
+
+```text
+Officer workspace: My applications overview        [New application]
++ Empty -------------------------+  + Loading ------------------------+
+| My activity today: 0 / - / 0   |  | Loading your overview...         |
+| 0 applications today.          |  +----------------------------------+
+| [New application]              |  + Error --------------------------+
+| [My applications]              |  | <API message> [Try again]        |
++-------------------------------+  +----------------------------------+
++ Data ---------------------------------------------------------------+
+| My activity today: [3 applications] [75 average] [1 high risk]        |
+| Follow my applications -> [My applications]                          |
+| Your branch manager makes the approval decision.                    |
++--------------------------------------------------------------------+
+
+Manager workspace: Branch review overview           [Open review queue]
++ Empty -------------------------+  + Loading ------------------------+
+| Branch today: 0 / - / 0        |  | Loading branch overview and queue|
+| Queue: 0 / 0 / 0               |  +----------------------------------+
+| No applications awaiting      |  + Error --------------------------+
+| manager review.               |  | <API message> [Try again]        |
+| [Manage employees]            |  +----------------------------------+
++-------------------------------+
++ Data ---------------------------------------------------------------+
+| Branch today: [total] [average score] [high-risk count]               |
+| Manager review queue: ALL DATES                                      |
+| [Needs review] [High-risk reviews] [Eligible for decision]            |
+| ID / Officer / created time | Loan / score | Review reason | [Review] |
+| Up to 8: high risk, manual review, then oldest first                  |
+| [View full queue]                     [Manage employees]             |
++--------------------------------------------------------------------+
+```
+
+Zero applications today does not clear the Manager backlog. Approved, rejected and cancelled records are excluded from the queue. Eligible means a decision can be made, not automatically approved. Branch applications has risk/eligibility/employee filters; My applications displays the Officer's records without branch controls. Both roles retain navigation to New application because the existing API permits authenticated users to create records.
+
+![Wireframe 3](images/ui/wireframe-3.svg)
+
+### 2.4 Application details `/loan-applications/:id`
+
+"The user comes here to read the score, the reasons behind it, and the data the officer entered."
+Calls: `GET /api/loan-applications/{id}`, `POST /api/loan-applications/{id}/score`, `PATCH /api/loan-applications/{id}/approve` (Manager), `POST /api/loan-applications/{id}/sensitive-data/reveal` (explicit lookup)
+
+```
++-----------------------------------------------------+
+| Application #3f9a1c2e  [Scored]                     |
+| [! High risk. Installment is 62.5% of monthly income|
+|    ... A manager must review it.]                   |   <- only if DSR > 50%
+| Credit score                                        |
+|   95 / 100   Eligible for proposal                  |
+|   Main factors                                      |
+|    - +20: Installment is only 25% of income ...     |
+|    - +10: CIC debt group 1 ...                      |
+|   [ Score again ]                                   |
+| Application data                                    |
+|   Monthly income | Loan amount | Term | Purpose ... |
++-----------------------------------------------------+
+Other states: Loading ("Loading the application..."), Error ("Application not found..." with
+[Try again] and a link back to the list), Rejected (score < 40: "Recommendation Rejected" + the reasons).
+```
+
+![Wireframe 4](images/ui/wireframe-4.svg)
+
+
+Manager decision wireframe (Application details, same screen purpose and APIs as section 2.4):
+
+```text
+Manager decision
+Score is a recommendation; Manager reviews data and reasons.
+[Approve application] -> Confirm review (including High risk)
+[Confirm approval] [Keep reviewing]
+Success: Approved by <manager> on <time>
+Officer: Ask your branch manager to review this application.
+Ineligible: Review the data and scoring results first.
+Error: <API message> and reload current details
+```
