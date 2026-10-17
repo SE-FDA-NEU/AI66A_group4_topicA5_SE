@@ -1,4 +1,5 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
@@ -21,17 +22,20 @@ class LoginIn(BaseModel):
 
 
 def user_dict(user: User) -> dict:
-    return {"id": user.id, "email": user.email, "full_name": user.full_name, "role": user.role.value}
+    return {"id": user.id, "email": user.email, "full_name": user.full_name, "role": user.role.value, "is_active": user.is_active}
 
 
 def _aware(dt: datetime) -> datetime:
-    return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
+    return dt if dt.tzinfo else dt.replace(tzinfo=UTC)
 
 
 @router.post("/login")
-def login(body: LoginIn, db: Session = Depends(get_db)):
-    now = datetime.now(timezone.utc)
+def login(body: LoginIn, db: Annotated[Session, Depends(get_db)]):
+    now = datetime.now(UTC)
     user = db.query(User).filter(User.email == body.email.strip().lower()).one_or_none()
+
+    if user is not None and not user.is_active:
+        raise HTTPException(403, "This employee account is inactive. Ask your manager to reactivate it.")
 
     # US01: after 3 wrong passwords in a row, the account is locked for 15 minutes.
     if user and user.locked_until and _aware(user.locked_until) > now:
@@ -53,9 +57,9 @@ def login(body: LoginIn, db: Session = Depends(get_db)):
     user.failed_login_count = 0
     user.locked_until = None
     db.commit()
-    return {"access_token": create_access_token(user.id, user.role.value), "token_type": "bearer", "user": user_dict(user)}
+    return {"access_token": create_access_token(user.id, user.role.value, user.token_version), "token_type": "bearer", "user": user_dict(user)}
 
 
 @router.get("/me")
-def me(user: User = Depends(get_current_user)):
+def me(user: Annotated[User, Depends(get_current_user)]):
     return user_dict(user)

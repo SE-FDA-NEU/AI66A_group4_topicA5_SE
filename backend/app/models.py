@@ -1,21 +1,22 @@
 import enum
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from sqlalchemy import (
     JSON,
     BigInteger,
-    CheckConstraint,
-    Index,
     Boolean,
+    CheckConstraint,
     Column,
     DateTime,
     Enum,
     ForeignKey,
+    Index,
     Integer,
     String,
     Text,
     false,
+    true,
 )
 from sqlalchemy.orm import relationship
 
@@ -23,7 +24,7 @@ from app.database import Base
 
 
 def now_utc():
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 def gen_uuid():
@@ -76,6 +77,8 @@ class User(Base):
     )
     failed_login_count = Column(Integer, nullable=False, default=0, server_default="0")
     locked_until = tz_datetime(nullable=True)
+    is_active = Column(Boolean, nullable=False, default=True, server_default=true())
+    token_version = Column(Integer, nullable=False, default=0, server_default="0")
 
     created_at = tz_datetime(nullable=False, default=now_utc)
 

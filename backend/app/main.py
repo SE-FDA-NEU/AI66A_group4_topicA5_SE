@@ -1,19 +1,20 @@
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
-
-from app import models  # noqa: F401  (registers every table on Base.metadata)
-from app.database import Base, engine
-from app.routers import applications, auth, loans
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse, RedirectResponse, Response
+
+from app import models  # noqa: F401  (registers every table on Base.metadata)
+from app.database import engine
+from app.migrate import ensure_schema
+from app.routers import applications, auth, loans, users
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Create the tables if they do not exist yet. Doing it at startup (not at import
     # time) keeps `import app.main` free of side effects, which matters for tests.
-    Base.metadata.create_all(bind=engine)
+    ensure_schema(engine)
     yield
 
 
@@ -30,6 +31,7 @@ app = FastAPI(
 app.include_router(loans.router)
 app.include_router(auth.router)
 app.include_router(applications.router)
+app.include_router(users.router)
 
 
 FIELD_LABELS = {
