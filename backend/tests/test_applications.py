@@ -1,5 +1,6 @@
 import pytest
 
+from app.models import LoanApplication, LoanStatus, User
 from tests.conftest import VALID_APPLICATION
 
 
@@ -11,7 +12,13 @@ def test_create_saves_a_pending_application(client, seeded, login):
     resp = _create(client, login("hoang@branch.vn"))
     assert resp.status_code == 201
     body = resp.json()
-    assert body["status"] == "pending" and body["dsr_flag_high_risk"] is False and body["dsr_percent"] == 25.0
+    assert body["status"] == "pending" and body["dsr_flag_high_risk"] is False
+    persisted = seeded.get(LoanApplication, body["id"])
+    owner = seeded.query(User).filter_by(email="hoang@branch.vn").one()
+    assert persisted is not None and persisted.status == LoanStatus.PENDING
+    assert persisted.monthly_income == VALID_APPLICATION["monthly_income"]
+    assert persisted.estimated_monthly_payment == VALID_APPLICATION["estimated_monthly_payment"]
+    assert persisted.created_by == body["owner_id"] == owner.id
 
 
 def test_br3_dsr_above_50_percent_is_flagged_but_still_saved(client, seeded, login):
@@ -27,16 +34,16 @@ def test_br3_exactly_50_percent_is_not_flagged(client, seeded, login):
 def test_br2_zero_income_is_rejected_with_a_clear_message(client, seeded, login):
     resp = _create(client, login("hoang@branch.vn"), monthly_income=0)
     assert resp.status_code == 422
-    assert "greater than 0" in resp.json()["detail"]
-    assert "monthly_income" in resp.json()["errors"]
+    assert resp.json()["errors"]["monthly_income"] == "Monthly income must be greater than 0 VND."
+    assert resp.json()["detail"] == "Please correct the highlighted fields and submit again."
 
 
 def test_us09_missing_income_names_the_field(client, seeded, login):
     body = {k: v for k, v in VALID_APPLICATION.items() if k != "monthly_income"}
     resp = client.post("/api/loan-applications", headers=login("hoang@branch.vn"), json=body)
     assert resp.status_code == 422
-    assert resp.json()["errors"]["monthly_income"] == "Income is required"
-    assert "Income is required" in resp.json()["detail"]
+    assert resp.json()["errors"]["monthly_income"] == "Monthly income is required."
+    assert resp.json()["detail"] == "Please correct the highlighted fields and submit again."
 
 
 def test_us09_text_income_is_rejected_and_nothing_is_saved(client, seeded, login):
@@ -44,7 +51,7 @@ def test_us09_text_income_is_rejected_and_nothing_is_saved(client, seeded, login
     before = len(client.get("/api/loan-applications", headers=headers).json())
     resp = _create(client, headers, monthly_income="abc")
     assert resp.status_code == 422
-    assert resp.json()["errors"]["monthly_income"] == "Income must be a whole number"
+    assert resp.json()["errors"]["monthly_income"] == "Monthly income must be a whole number."
     assert len(client.get("/api/loan-applications", headers=headers).json()) == before
 
 
@@ -61,7 +68,8 @@ def test_cic_group_must_be_1_to_5(client, seeded, login, group):
 
 def test_br8_user_sees_only_own_applications(client, seeded, login):
     mine = client.get("/api/loan-applications", headers=login("hoang@branch.vn")).json()
-    assert len(mine) == 7 and {a["owner_name"] for a in mine} == {"Do Viet Hoang"}
+    owner = seeded.query(User).filter_by(email="hoang@branch.vn").one()
+    assert len(mine) == 7 and {a["owner_id"] for a in mine} == {owner.id}
 
 
 def test_br8_admin_sees_all_applications(client, seeded, login):

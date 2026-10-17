@@ -92,7 +92,7 @@ group: reject, model not called) -> BR5 (3 scorings per hour) -> model -> BR1 (s
 | Method | Path | Input | Success | Error codes | Covers |
 | --- | --- | --- | --- | --- | --- |
 | POST | `/api/auth/login` | email, password | 200 + JWT | 401 wrong credentials; 422 invalid body; **423** account locked (US01, 15 min) | US01 (P0) |
-| POST | `/api/loan-applications` | monthly_income, loan_amount, loan_term_months, estimated_monthly_payment, credit_history_note, purpose, cic_debt_group?, citizen_id? | 201 + application (`pending`, high-risk flag set if DSR > 50%) | 401; **422** missing or malformed field ("Income is required") or income <= 0 | US03, US09 (P0); BR2, BR3 |
+| POST | `/api/loan-applications` | monthly_income, loan_amount, loan_term_months, estimated_monthly_payment, credit_history_note, purpose, cic_debt_group?, citizen_id? | 201 + application (`pending`, high-risk flag set if DSR > 50%) | 401; **422** missing or malformed field or income <= 0; `detail` is a general correction message, `errors` contains field messages (e.g. `monthly_income`: "Monthly income is required.") | US03, US09 (P0); BR2, BR3 |
 | GET | `/api/loan-applications` | - | 200 + list (User: own only; Admin: all) | 401 | US05 list (P1); BR8 |
 | GET | `/api/loan-applications/{id}` | - | 200 + data, score, explanation | 401; **403** not the owner; **404** "Application not found" | US05; BR8 |
 | PATCH | `/api/loan-applications/{id}` | fields to change | 200 + application | 401; 403; 404; **409** "Application already processed, cannot be edited"; 422 | US10 (P1) |
