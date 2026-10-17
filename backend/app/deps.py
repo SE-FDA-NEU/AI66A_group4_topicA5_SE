@@ -1,3 +1,5 @@
+from typing import Annotated
+
 import jwt
 from fastapi import Depends, HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -11,8 +13,8 @@ _bearer = HTTPBearer(auto_error=False)
 
 
 def get_current_user(
-    creds: HTTPAuthorizationCredentials | None = Depends(_bearer),
-    db: Session = Depends(get_db),
+    creds: Annotated[HTTPAuthorizationCredentials | None, Depends(_bearer)],
+    db: Annotated[Session, Depends(get_db)],
 ) -> User:
     if creds is None:
         raise HTTPException(401, "Please sign in to continue.")
@@ -21,6 +23,6 @@ def get_current_user(
     except jwt.PyJWTError:
         raise HTTPException(401, "Your session has expired. Please sign in again.")
     user = db.get(User, payload.get("sub"))
-    if user is None:
+    if user is None or not user.is_active or payload.get("ver", 0) != user.token_version:
         raise HTTPException(401, "Your session has expired. Please sign in again.")
     return user
