@@ -1,66 +1,83 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { api } from "../api";
+import { api, vnd } from "../api";
+import { useAuth } from "../auth";
+import { canApprove, reviewQueue, reviewReason } from "../review";
+import { RiskBadge, StatusBadge } from "../components/Badges";
 import { Empty, ErrorBox, Loading } from "../components/States";
 
 export default function Dashboard() {
-  const [attempt, setAttempt] = useState(0);
+  const { user } = useAuth();
+  const manager = user.role === "admin";
   const [state, setState] = useState({ status: "loading" });
-
-  useEffect(() => {
+  const load = useCallback(() => {
     let active = true;
-    api.summary().then(
-      (data) => {
-        if (active) {
-          setState({ status: data.total_applications === 0 ? "empty" : "data", data });
-        }
-      },
-      (err) => {
-        if (active) setState({ status: "error", message: err.message });
-      },
+    setState({ status: "loading" });
+    Promise.all([api.summary(), manager ? api.listApplications() : Promise.resolve([])]).then(
+      ([data, applications]) => { if (active) setState({ status: "ok", data, applications }); },
+      (err) => { if (active) setState({ status: "error", message: err.message }); }
     );
     return () => { active = false; };
-  }, [attempt]);
+  }, [manager]);
+  useEffect(load, [load]);
 
-  const retry = () => {
-    setState({ status: "loading" });
-    setAttempt((value) => value + 1);
-  };
+  const heading = <div className="page-heading">
+    <div>
+      <p className="eyebrow">{manager ? "Manager workspace" : "Officer workspace"}</p>
+      <h1>{manager ? "Branch review overview" : "My applications overview"}</h1>
+      <p className="muted">{manager
+        ? "Review applications across the branch, decide on eligible proposals and manage employee access."
+        : "Create and score your loan applications, check the reasons and follow the manager's decision."}</p>
+    </div>
+    <Link className="button primary" to={manager ? "/loan-applications?view=review" : "/loan-applications/new"}>
+      {manager ? "Open review queue" : "New application"}
+    </Link>
+  </div>;
+  if (state.status === "loading") return <>{heading}<Loading text={manager ? "Loading branch overview and review queue..." : "Loading your overview..."} /></>;
+  if (state.status === "error") return <>{heading}<ErrorBox message={state.message} onRetry={load} /></>;
 
-  return (
-    <>
-      <h1>Dashboard</h1>
-      <p className="muted">An overview of today's applications and credit scores.</p>
-      <nav className="actions" aria-label="Dashboard actions">
-        <Link className="button primary" to="/loan-applications/new">New application</Link>
-        <Link className="button" to="/loan-applications">Applications</Link>
-      </nav>
-
-      {state.status === "loading" && <Loading text="Loading dashboard..." />}
-      {state.status === "error" && <ErrorBox message={state.message} onRetry={retry} />}
-      {(state.status === "empty" || state.status === "data") && (
-        <section aria-labelledby="today-title">
-          <h2 id="today-title">Activity today <small>{state.data.date}</small></h2>
-          <div className="tiles">
-            <div className="card tile">
-              <span className="num">{state.data.total_applications}</span>
-              applications today
-            </div>
-            <div className="card tile">
-              <span className="num">{state.data.average_score ?? "-"}</span>
-              average score
-              {state.data.average_score == null && <small> (nothing scored yet)</small>}
-            </div>
-            <div className="card tile">
-              <span className="num">{state.data.high_risk_count}</span>
-              flagged high risk today
-            </div>
-          </div>
-          {state.status === "empty" && (
-            <Empty text="No applications today. Use New application to create your first one." />
-          )}
-        </section>
-      )}
-    </>
-  );
+  const { data } = state;
+  const queue = reviewQueue(state.applications);
+  return <>
+    {heading}
+    <section aria-labelledby="today-title">
+      <h2 id="today-title">{manager ? "Branch activity today" : "My activity today"} <small>{data.date}</small></h2>
+      <div className="tiles">
+        <div className="card tile"><span className="num">{data.total_applications}</span>{manager ? "branch applications today" : "my applications today"}</div>
+        <div className="card tile"><span className="num">{data.average_score ?? "-"}</span>average score{data.average_score == null && <small> (nothing scored yet)</small>}</div>
+        <div className="card tile"><span className="num">{data.high_risk_count}</span>flagged high risk today</div>
+      </div>
+      {data.total_applications === 0 && <p className="muted">0 applications today.{manager ? " Earlier applications awaiting review are listed below." : " Use New application to start your first one today."}</p>}
+    </section>
+    {manager ? <>
+      <section className="review-section" aria-labelledby="queue-title">
+        <h2 id="queue-title">Manager review queue</h2>
+        <p className="muted">All dates · High-risk applications first, then manual reviews, then oldest first. Review data and reasons before approving.</p>
+        <div className="tiles">
+          <Link className="card tile metric-link" to="/loan-applications?view=review"><span className="num">{queue.length}</span>awaiting manager review →</Link>
+          <Link className="card tile metric-link" to="/loan-applications?view=high-risk"><span className="num">{queue.filter((a) => a.dsr_flag_high_risk).length}</span>high-risk reviews →</Link>
+          <Link className="card tile metric-link" to="/loan-applications?view=eligible"><span className="num">{queue.filter(canApprove).length}</span>eligible for an approval decision →</Link>
+        </div>
+        {queue.length === 0 ? <Empty text="No applications awaiting manager review." /> : <>
+          <div className="scroll"><table>
+            <thead><tr><th>Application / Officer</th><th>Loan / score</th><th>Review reason</th><th /></tr></thead>
+            <tbody>{queue.slice(0, 8).map((a) => <tr key={a.id}>
+              <td><strong>#{a.id.slice(0, 8)}</strong><br />{a.owner_name}<br /><small>{new Date(a.created_at).toLocaleString()}</small></td>
+              <td>{vnd(a.loan_amount)}<br />Score: {a.latest_score?.score ?? "Not available"}</td>
+              <td className="wrap-cell"><StatusBadge status={a.status} /> <RiskBadge high={a.dsr_flag_high_risk} /><p>{reviewReason(a)}</p></td>
+              <td><Link to={`/loan-applications/${a.id}`}>Review application</Link></td>
+            </tr>)}</tbody>
+          </table></div>
+          <p><Link to="/loan-applications?view=review">View the full review queue ({queue.length})</Link></p>
+        </>}
+      </section>
+      <div className="card role-task">
+        <div><h2>Employee accounts</h2><p>Create Officer accounts and control their access while keeping loan records.</p></div>
+        <Link className="button" to="/admin/users">Manage employees</Link>
+      </div>
+    </> : <section className="card role-task">
+      <div><h2>Follow my applications</h2><p>Open your saved applications to check scores, protected identifiers and approval status. Only your branch manager can approve an eligible proposal.</p></div>
+      <Link className="button" to="/loan-applications">My applications</Link>
+    </section>}
+  </>;
 }
