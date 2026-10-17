@@ -21,3 +21,13 @@ export function reviewQueue(applications) {
   return applications.filter(needsReview).sort((a, b) =>
     priority(a) - priority(b) || Date.parse(a.created_at) - Date.parse(b.created_at) || a.id.localeCompare(b.id));
 }
+
+export function filterApplications(applications, view = "all", owner = "all") {
+  return applications.filter((a) => {
+    if (owner !== "all" && a.owner_id !== owner) return false;
+    if (view === "review") return needsReview(a);
+    if (view === "high-risk") return needsReview(a) && a.dsr_flag_high_risk;
+    if (view === "eligible") return canApprove(a);
+    return true;
+  });
+}

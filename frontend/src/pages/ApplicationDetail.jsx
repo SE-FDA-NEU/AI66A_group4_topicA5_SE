@@ -4,6 +4,7 @@ import { api, vnd } from "../api";
 import { useAuth } from "../auth";
 import { RiskBadge, StatusBadge } from "../components/Badges";
 import { ErrorBox, Loading } from "../components/States";
+import SensitiveData from "../components/SensitiveData";
 import { canApprove as eligibleForApproval } from "../review";
 
 function ScoreCard({ result, status }) {
@@ -90,9 +91,15 @@ export default function ApplicationDetail() {
 
   const a = state.app;
   const canApprove = eligibleForApproval(a);
+  const manager = user.role === "admin";
   return (
     <>
+      <p className="eyebrow">{manager ? "Manager · Application review" : "Officer · My application"}</p>
       <h1>Application <small className="muted">#{a.id.slice(0, 8)}</small> <StatusBadge status={a.status} /></h1>
+      <p className="muted">{manager
+        ? `Created by ${a.owner_name}. Review the data, score and risk warnings before making an approval decision below.`
+        : "You can check the data and scoring reasons here. Your branch manager makes the approval decision."}</p>
+      {manager && <p><Link to="/loan-applications?view=review">Back to manager review queue</Link></p>}
       {notice && <div className="alert" role="alert">{notice}</div>}
       {a.dsr_flag_high_risk && (
         <div className="alert warn" role="alert">
@@ -110,8 +117,8 @@ export default function ApplicationDetail() {
         )}
       </section>
 
-      <section className={`card ${user.role === "admin" ? "manager-decision" : ""}`}>
-        <h2>{user.role === "admin" ? "Your approval decision" : "Manager decision"}</h2>
+      <section className={`card ${manager ? "manager-decision" : ""}`}>
+        <h2>{manager ? "Your approval decision" : "Manager decision"}</h2>
         {approvalError && <div className="alert" role="alert">{approvalError}</div>}
         {a.status === "approved" ? (
           <div role="status">
@@ -154,6 +161,7 @@ export default function ApplicationDetail() {
           <dt>CIC debt group</dt><dd>{a.cic_debt_group ?? "Not available"}</dd>
         </dl>
       </section>
+      <SensitiveData key={a.id} application={a} />
       <p><Link to="/loan-applications">Back to the list</Link></p>
     </>
   );
