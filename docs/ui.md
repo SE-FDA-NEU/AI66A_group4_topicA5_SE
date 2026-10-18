@@ -14,23 +14,24 @@ How to run the app and which test accounts to use: see [`SETUP.md`](SETUP.md). S
 
 Also built, not P0: `/loan-applications` (list, P1, US05 partly) so a person can reach any application without typing a URL.
 
-**Screen flow:** the list is reachable from the top bar/dashboard; Submit and score opens details. The diagram below covers the P0 paths and the Manager approval follow-up. Confirmation and approval remain on the details route; they are not extra pages.
+**Screen flow (updated from M1):** the list is reachable from the top bar/dashboard; Submit and score opens details. Manager navigation now includes Employees (`/admin/users`), and details includes protected identifier lookup.
 
 ```mermaid
 flowchart TD
     Login[Login /] --> Dashboard[Dashboard /dashboard]
     Dashboard --> New[New application /loan-applications/new]
     Dashboard --> List[Applications /loan-applications]
+    Dashboard -->|Manager: review all dates| Queue[Review queue /loan-applications?view=review]
+    Queue -->|Filter risk, eligibility and employee| Queue
+    Queue -->|Review| Detail
     New -->|Save, then score| Detail[Details /loan-applications/:id]
     List -->|Open| Detail
-    Detail -->|Score again, before approval| Detail
-    Detail -->|Manager: review eligible result| Confirm["Confirm approval, including High risk warning"]
-    Confirm -->|Keep reviewing| Detail
-    Confirm -->|Confirm approval: PATCH approve| Approved["Approved: Manager name and time"]
-    Confirm -->|API rejects decision: show message and reload| Detail
-    Approved -->|Reload: saved decision persists| Approved
-    Approved --> List
+    Detail -->|Score again| Detail
     Detail --> List
+    Detail -->|View full numbers: authorized and logged| Detail
+    Dashboard -->|Manager: Employees| Users[Employee accounts /admin/users]
+    Users -->|Create, rename, deactivate or reactivate Officer| Users
+    Detail -->|Manager: eligible result, review and confirm| Approved[Approved: Manager and time]
     New -->|Invalid data: keep form and show errors| New
     Dashboard -->|Log out or expired session| Login
 ```
@@ -58,36 +59,8 @@ Calls: `POST /api/auth/login`
 
 ![Wireframe 1](images/ui/wireframe-1.svg)
 
-### 2.2 New application `/loan-applications/new`
 
-"The user comes here to enter a customer's loan application and get a credit score."
-Calls: `POST /api/loan-applications`, then `POST /api/loan-applications/{id}/score`
-
-```
-+-----------------------------------------------+
-| New loan application                          |
-| [! Please fix these fields:                   |
-|    - Monthly income must be a whole number.    |
-|    - Loan term must be a whole number. ]       |   <- US09 summary, nothing saved
-| Monthly income (VND)        [______________]  |
-|   Monthly income must be a whole number.       |   <- red text under the wrong field
-| Loan amount (VND)           [______________]  |
-| Loan term (months)          [______________]  |
-| Estimated monthly payment   [______________]  |
-|   (over half of income = High risk)           |
-| Loan purpose                [______________]  |
-| Credit history              [______________]  |
-| CIC debt group (1-5)        [______________]  |
-| Citizen ID (optional)       [______________]  |
-| Bank account (optional)     [______________]  |
-| Numbers encrypted before storage             |
-| [ Submit and score ]   <- "Saving the application..." / "Scoring the application..." |
-+-----------------------------------------------+
-```
-
-![Wireframe 2](images/ui/wireframe-2.svg)
-
-### 2.3 Dashboard `/dashboard` (by role, all four states)
+### 2.2 Dashboard `/dashboard` (by role, all four states)
 
 "The Officer comes here to see their own activity and create/track applications. The Manager comes here to review branch activity and the backlog, and manage employee access."
 Calls: `GET /api/dashboard/summary`; Manager also calls `GET /api/loan-applications` for the review queue. All counters use database data. The daily summary is Vietnam-local today; backlog counts cover all dates.
@@ -126,7 +99,35 @@ Manager workspace: Branch review overview           [Open review queue]
 
 Zero applications today does not clear the Manager backlog. Approved, rejected and cancelled records are excluded from the queue. Eligible means a decision can be made, not automatically approved. Branch applications has risk/eligibility/employee filters; My applications displays the Officer's records without branch controls. Both roles retain navigation to New application because the existing API permits authenticated users to create records.
 
+### 2.3 New application `/loan-applications/new`
+
+"The user comes here to enter a customer's loan application and get a credit score."
+Calls: `POST /api/loan-applications`, then `POST /api/loan-applications/{id}/score`
+
+```
++-----------------------------------------------+
+| New loan application                          |
+| [! Please fix these fields:                   |
+|    - Income is required                       |
+|    - Loan term is required ]                  |   <- US09 summary, nothing saved
+| Monthly income (VND)        [______________]  |
+|   Income is required                          |   <- red text under the wrong field
+| Loan amount (VND)           [______________]  |
+| Loan term (months)          [______________]  |
+| Estimated monthly payment   [______________]  |
+|   (over half of income = High risk)           |
+| Loan purpose                [______________]  |
+| Credit history              [______________]  |
+| CIC debt group (1-5)        [______________]  |
+| Citizen ID (optional)       [______________]  |
+| Bank account (optional)     [______________]  |
+| Numbers encrypted before storage             |
+| [ Submit and score ]   <- "Saving the application..." / "Scoring the application..." |
++-----------------------------------------------+
+```
+
 ![Wireframe 3](images/ui/wireframe-3.svg)
+
 
 ### 2.4 Application details `/loan-applications/:id`
 
@@ -167,14 +168,6 @@ Ineligible: Review the data and scoring results first.
 Error: <API message> and reload current details
 ```
 
-The Officer sees Manager guidance instead of an approval button. The Manager can
-confirm only a latest eligible result (integer score 70-100), for a scored or
-manual_review application outside CIC groups 3-5. The High risk flag remains
-visible and requires explicit review; it does not disappear when approved.
-The saved decision includes Manager name/time, and approval disables rescoring.
-Approval records an assessment decision; disbursement is outside this app.
-US10 edit/cancel is still pending.
-
 ### 2.5 Protected identifiers (on application details)
 
 "The user comes here to check the customer identifiers for an application they are permitted to open."
@@ -206,22 +199,24 @@ Manager: Manager accounts cannot be changed here.
 
 ## 3. Error messages
 
-The frontend renders API `detail` in an alert and validation `errors` next to the
-corresponding form fields. The strings below match the current backend. Role and
-eligibility controls normally prevent invalid approval actions; if a request is
-rejected, the details screen shows the API message and reloads the current data.
-
-| API error code | Business rule / trigger | The exact message the user sees |
+| API code | Rule | The user sees |
 | --- | --- | --- |
-| 401 | US01: incorrect email/password | Email or password is incorrect. Check your details and try again. |
-| 423 | US01: sign-in attempted during the 15-minute lock | Too many wrong passwords. Your account is locked for 15 minutes. Try again later or ask your manager to help. |
-| 422 | BR2: monthly income is zero or negative | Monthly income must be greater than 0 VND. |
-| 422 | US09: monthly income is not a whole number | Monthly income must be a whole number. |
-| 429 | BR5: fourth scoring result requested in the rolling hour | This application has already been scored 3 times in the last hour. It is now marked 'Requires manager review'. Ask a manager to review it. |
-| 403 | Approval authorization: actor is not Admin | Only a manager can approve a loan application. Ask your manager to review this application. |
-| 409 | Approval: cancelled, rejected or already approved | This application is cancelled, rejected or already approved. Select an application awaiting approval. |
-| 409 | Approval / BR4 / BR6: no valid latest eligible result | This application needs a valid eligible score before approval. Review its data and scoring results first. |
-| 409 | Approval: application changed during review | This application changed while you were reviewing it. Reload the details before deciding. |
+| `401` | US01 | "Email or password is incorrect. Check your details and try again." |
+| `423` | US01 (3 wrong passwords) | "Too many wrong passwords. Your account is locked for 15 minutes. Try again later or ask your manager to help." |
+| `422` | BR2 (income must be > 0) | "Monthly income must be greater than 0 VND. Enter the customer's real monthly income and submit again." |
+| `422` | US09 (missing or malformed field) | "Please fix these fields:" then one line per field, e.g. "Income is required", "Income must be a whole number", "Loan term is required" |
+| `429` | BR5 (3 scorings per hour) | "This application has already been scored 3 times in the last hour. It is now marked 'Requires manager review'. Ask a manager to review it." |
+| `403` | BR8 (own applications only) | "You can only open applications you created. Ask your manager if you need access to this one." |
+| `404` | US05 | "Application not found. It may have been removed. Check the link or go back to the list." |
+| `409` | US10 (cancelled or approved) | "This application is cancelled or already approved, so it cannot be scored again. Go back to the list or ask your manager for help." |
+| `401` (token expired) | US01 | "Your session has expired. Please sign in again." (shown on the login screen) |
+| `503` | BR7 audit unavailable | "Access could not be recorded, so protected numbers were not opened. Try again or ask your administrator for help." |
+| `403` | BR8 account management | "Only a manager can manage employee accounts. Ask your branch manager for help." |
+| `403` | BR8 inactive account | "This employee account is inactive. Ask your manager to reactivate it." |
+| `409` | BR8 duplicate account | "An account already uses this email. Use another email or update the existing employee." |
+| no answer | - | "We can't reach the server. Check your connection and try again." |
+| `201` (not an error) | BR4 (CIC group 3-5) | Score shows "-", label "Recommendation Rejected", reason: "CIC debt group 4 (bad debt). Groups 3-5 are rejected automatically." |
+| `201` (not an error) | BR1 (score out of range) | "The model returned an invalid score, so no score is shown. A manager will review this application." |
 
 ## 4. What changed since M2
 
@@ -288,7 +283,17 @@ Follow [SETUP.md section 11](SETUP.md#11-manager-approval-demo) through the inte
    keeping the browser address bar visible. Save actual captures in `images/ui/`
    and link them here with tester, date and observed result.
 
-**Evidence status:** browser acceptance and screenshots are pending. No running-app
-screenshots have been added in this documentation change. The 17 approval API
-checks in `backend/tests/test_approval.py` passed locally on 2026-10-18; this does
-not establish browser acceptance, GitHub CI, teammate review or completion of US10.
+**Evidence status:** running-app screenshots are included below.
+Browser checks without recorded results remain pending.
+
+### Running-app screenshots
+
+![Login screen](images/ui/login-screen.png)
+
+![Officer application data, score and explanations](images/ui/officer-saved-application.png)
+
+![Monthly income validation error](images/ui/income-validation-error.png)
+
+![Manager filters by eligibility and employee](images/ui/manager-application-filters.png)
+
+![Approved application with Manager name and time](images/ui/manager-approved-application.png)

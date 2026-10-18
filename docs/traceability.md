@@ -5,13 +5,13 @@ This table is the single source of truth for Milestone 1 Section 6 and for the M
 
 | Route | Purpose | Access | Priority | Feature | Story issue | PR | Status |
 |-------|---------|--------|----------|---------|-------------|-----|--------|
-| `/` | Landing page | G | P0 | F1 - Login/Logout | US01 (#9), US02 (#19) | | In progress (login/logout interface implemented; browser acceptance pending) |
-| `/dashboard` | Overview of the number of applications and the average score for the day | U | P0 | F2 - Overview Dashboard | US08 (#13) | | In progress (implemented; browser acceptance pending) |
-| `/loan-applications/new` | Create a new loan application | U | P0 | F3 - Loan Application Entry & Validation | US03 (#10), US09 (#14) | | In progress (implemented; browser acceptance pending) |
-| `/loan-applications/:id` | View saved application data, latest score and explanation (history UI pending) | U | P0 | F4 - Scoring & Result Explanation | US04 (#11), US05 (#20) | | In progress (implemented; browser acceptance pending) |
-| `/loan-applications` | List of all processed loan applications | U | P1 | F5 - Application History & Management | US06 (#12), US10 (#22) | | In progress (list/navigation implemented; history UI and edit/cancel pending) |
-| `/loan-applications/:id` | Review eligible score, confirm Manager approval and view decision actor/time | A | P1 | F5 - Manager decision | US10 (#22), BR3/BR6; tasks S3-34-S3-37 | | In progress (API/UI present; browser evidence pending) |
+| `/` | Landing page | G | P0 | F1 - Login/Logout | US01 (#9), US02 (#19) | | In progress (login works, log out is a button) |
+| `/dashboard` | Overview of the number of applications and the average score for the day | U | P0 | F2 - Overview Dashboard | US08 (#13) | | In progress |
+| `/loan-applications/new` | Create a new loan application | U | P0 | F3 - Loan Application Entry & Validation | US03 (#10), US09 (#14) | | In progress |
+| `/loan-applications/:id` | View application details: information, score, explanation, and history | U | P0 | F4 - Scoring & Result Explanation | US04 (#11), US05 (#20) | | In progress |
+| `/loan-applications` | List of all processed loan applications | U | P1 | F5 - Application History & Management | US06 (#12), US10 (#22) | | In progress (list only) |
 
+| `/admin/users` | Create/rename/deactivate/reactivate Officer accounts | A | P2 | BR8 account management | BR8; follow-up tasks S3-40/S3-41, actual issue pending | | In progress (API/UI tested locally; browser/review/merge pending) |
 
 **Access codes:** G = guest (not logged in) · U = authenticated user · A = admin
 
