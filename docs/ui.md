@@ -1,6 +1,4 @@
-# UI - Credit Scoring Demo (Milestone 3)
-
-How to run the app and which test accounts to use: see [`SETUP.md`](SETUP.md). Screens are React pages (`frontend/src/pages`) that call the FastAPI backend under `/api`.
+# UI - Credit Scoring Demo
 
 ## 1. P0 stories and status
 
@@ -14,27 +12,39 @@ How to run the app and which test accounts to use: see [`SETUP.md`](SETUP.md). S
 
 Also built, not P0: `/loan-applications` (list, P1, US05 partly) so a person can reach any application without typing a URL.
 
-**Screen flow (updated from M1):** the list is reachable from the top bar/dashboard; Submit and score opens details. Manager navigation now includes Employees (`/admin/users`), and details includes protected identifier lookup.
+**Screen flow (updated from M1):** people reach application records from the navigation, list or Manager review queue without typing a details URL.
 
 ```mermaid
 flowchart TD
-    Login[Login /] --> Dashboard[Dashboard /dashboard]
-    Dashboard --> New[New application /loan-applications/new]
-    Dashboard --> List[Applications /loan-applications]
-    Dashboard -->|Manager: review all dates| Queue[Review queue /loan-applications?view=review]
-    Queue -->|Filter risk, eligibility and employee| Queue
-    Queue -->|Review| Detail
-    New -->|Save, then score| Detail[Details /loan-applications/:id]
-    List -->|Open| Detail
-    Detail -->|Score again| Detail
-    Detail --> List
-    Detail -->|View full numbers: authorized and logged| Detail
-    Dashboard -->|Manager: Employees| Users[Employee accounts /admin/users]
-    Users -->|Create, rename, deactivate or reactivate Officer| Users
-    Detail -->|Manager: eligible result, review and confirm| Approved[Approved: Manager and time]
-    New -->|Invalid data: keep form and show errors| New
-    Dashboard -->|Log out or expired session| Login
+    Login["Login<br/>/"] -->|"Sign in successfully"| Dashboard["Dashboard<br/>/dashboard"]
+    Login -->|"Invalid credentials or account locked: show message"| Login
+
+    Dashboard -->|"Both roles: New application"| New["New application<br/>/loan-applications/new"]
+    Dashboard -->|"My applications / Branch applications"| List["Application list<br/>/loan-applications"]
+    Dashboard -->|"Manager: review queue across all dates"| Queue["Manager review filter on the application list<br/>/loan-applications?view=review"]
+    Dashboard -->|"Manager: Employees"| Users["Employee accounts<br/>/admin/users"]
+
+    New -->|"Invalid input: keep form and show field errors"| New
+    New -->|"Save, then score"| Details["Application details<br/>/loan-applications/:id"]
+    New -.->|"Saved but scoring failed: open with a notice"| Details
+    List -->|"Open / Review"| Details
+    List -->|"New application"| New
+    Queue -->|"Filter review, risk, eligibility and employee"| Queue
+    Queue -->|"Review"| Details
+
+    Details -->|"Back to the list"| List
+    Details -->|"Manager: back to review queue"| Queue
+    Details -->|"Score again unless approved or cancelled"| Details
+    Details -->|"Authorized View full numbers / Hide numbers"| Details
+    Details -->|"Manager: eligible result, review and confirm"| Approved["Approved state on the same Details screen<br/>Saved Manager name and approval time"]
+    Approved -->|"Back to the list"| List
+    Approved -->|"Manager: return to queue; approved record is excluded"| Queue
+
+    Users -->|"Create Officer, rename, confirm deactivate or reactivate"| Users
+    Dashboard -->|"Log out / API returns 401"| Login
 ```
+
+Both roles can create applications and use the top bar to return to the dashboard or list. The review queue is a Manager filter of the application list; Approved is a persisted state of Application details. Scoring is a recommendation, followed by a separate Manager decision. The backend enforces ownership and Manager-only actions. Log out from any protected page, or an API response of 401 for an expired/invalid session, returns the user to Login. Full identifiers hide after 30 seconds, window blur or tab hiding.
 
 ## 2. Wireframes
 
@@ -45,18 +55,6 @@ Each wireframe says why the person comes here and which API endpoints the screen
 "The user comes here to sign in with their branch account."
 Calls: `POST /api/auth/login`
 
-```
-+------------------------------------+
-|          Credit Scoring            |
-|   Sign in with your branch account |
-|  [! Email or password is incorrect.|
-|      Check your details ...      ] |   <- shown only after an error
-|  Email    [______________________] |
-|  Password [______________________] |
-|  [          Sign in             ]  |   <- "Signing in..." and disabled while waiting
-+------------------------------------+
-```
-
 ![Wireframe 1](images/ui/wireframe-1.svg)
 
 
@@ -65,37 +63,6 @@ Calls: `POST /api/auth/login`
 "The Officer comes here to see their own activity and create/track applications. The Manager comes here to review branch activity and the backlog, and manage employee access."
 Calls: `GET /api/dashboard/summary`; Manager also calls `GET /api/loan-applications` for the review queue. All counters use database data. The daily summary is Vietnam-local today; backlog counts cover all dates.
 
-```text
-Officer workspace: My applications overview        [New application]
-+ Empty -------------------------+  + Loading ------------------------+
-| My activity today: 0 / - / 0   |  | Loading your overview...         |
-| 0 applications today.          |  +----------------------------------+
-| [New application]              |  + Error --------------------------+
-| [My applications]              |  | <API message> [Try again]        |
-+-------------------------------+  +----------------------------------+
-+ Data ---------------------------------------------------------------+
-| My activity today: [3 applications] [75 average] [1 high risk]        |
-| Follow my applications -> [My applications]                          |
-| Your branch manager makes the approval decision.                    |
-+--------------------------------------------------------------------+
-
-Manager workspace: Branch review overview           [Open review queue]
-+ Empty -------------------------+  + Loading ------------------------+
-| Branch today: 0 / - / 0        |  | Loading branch overview and queue|
-| Queue: 0 / 0 / 0               |  +----------------------------------+
-| No applications awaiting      |  + Error --------------------------+
-| manager review.               |  | <API message> [Try again]        |
-| [Manage employees]            |  +----------------------------------+
-+-------------------------------+
-+ Data ---------------------------------------------------------------+
-| Branch today: [total] [average score] [high-risk count]               |
-| Manager review queue: ALL DATES                                      |
-| [Needs review] [High-risk reviews] [Eligible for decision]            |
-| ID / Officer / created time | Loan / score | Review reason | [Review] |
-| Up to 8: high risk, manual review, then oldest first                  |
-| [View full queue]                     [Manage employees]             |
-+--------------------------------------------------------------------+
-```
 
 ![Dashboard wireframe](images/ui/wireframe-3.svg)
 
@@ -105,28 +72,6 @@ Zero applications today does not clear the Manager backlog. Approved, rejected a
 
 "The user comes here to enter a customer's loan application and get a credit score."
 Calls: `POST /api/loan-applications`, then `POST /api/loan-applications/{id}/score`
-
-```
-+-----------------------------------------------+
-| New loan application                          |
-| [! Please fix these fields:                   |
-|    - Monthly income must be a whole number.   |
-|    - Loan term must be a whole number. ]      |   <- US09 summary, nothing saved
-| Monthly income (VND)        [______________]  |
-|   Monthly income must be a whole number.      |   <- red text under the wrong field
-| Loan amount (VND)           [______________]  |
-| Loan term (months)          [______________]  |
-| Estimated monthly payment   [______________]  |
-|   (over half of income = High risk)           |
-| Loan purpose                [______________]  |
-| Credit history              [______________]  |
-| CIC debt group (1-5)        [______________]  |
-| Citizen ID (optional)       [______________]  |
-| Bank account (optional)     [______________]  |
-| Numbers encrypted before storage             |
-| [ Submit and score ]   <- "Saving the application..." / "Scoring the application..." |
-+-----------------------------------------------+
-```
 
 ![New application wireframe](images/ui/wireframe-2.svg)
 
@@ -141,68 +86,24 @@ This wording gap remains open; the acceptance criterion has not been changed.
 "The user comes here to read the score, the reasons behind it, and the data the officer entered."
 Calls: `GET /api/loan-applications/{id}`, `POST /api/loan-applications/{id}/score`, `PATCH /api/loan-applications/{id}/approve` (Manager), `POST /api/loan-applications/{id}/sensitive-data/reveal` (explicit lookup)
 
-```
-+-----------------------------------------------------+
-| Application #3f9a1c2e  [Scored]                     |
-| [! High risk. Installment is 62.5% of monthly income|
-|    ... A manager must review it.]                   |   <- only if DSR > 50%
-| Credit score                                        |
-|   95 / 100   Eligible for proposal                  |
-|   Main factors                                      |
-|    - +20: Installment is only 25% of income ...     |
-|    - +10: CIC debt group 1 ...                      |
-|   [ Score again ]                                   |
-| Application data                                    |
-|   Monthly income | Loan amount | Term | Purpose ... |
-+-----------------------------------------------------+
-Other states: Loading ("Loading the application..."), Error ("Application not found..." with
-[Try again] and a link back to the list), Rejected (score < 40: "Recommendation Rejected" + the reasons).
-```
-
 ![Wireframe 4](images/ui/wireframe-4.svg)
 
 
-Manager decision wireframe (Application details, same screen purpose and APIs as section 2.4):
-
-```text
-Manager decision
-Score is a recommendation; Manager reviews data and reasons.
-[Approve application] -> Confirm review (including High risk)
-[Confirm approval] [Keep reviewing]
-Success: Approved by <manager> on <time>
-Officer: Ask your branch manager to review this application.
-Ineligible: Review the data and scoring results first.
-Error: <API message> and reload current details
-```
+Manager decision wireframe (Application details, same screen purpose and APIs)
 
 ### 2.5 Protected identifiers (on application details)
 
 "The user comes here to check the customer identifiers for an application they are permitted to open."
 Calls: `POST /api/loan-applications/{id}/sensitive-data/reveal`.
 
-```text
-Protected identifiers
-Citizen ID: ********7890       Bank account: ********0123
-[View full numbers (logged)] -> Opening... -> full values + [Hide numbers]
-No values: Not provided. Error: API message, retry available.
-Numbers hide after 30 seconds, when the window loses focus or the tab is hidden.
-```
+![Protected identifiers wireframe](images/ui/wireframe-5.svg)
 
 ### 2.6 Employee accounts `/admin/users` (Manager only)
 
 "The user comes here to create Officer accounts and control employee access while retaining loan history."
 Calls: GET/POST `/api/admin/users`, PATCH `/api/admin/users/{id}`.
 
-```text
-Employee accounts
-Create Officer: [Name] [Email] [Initial password, 12–128 chars] [Create Officer]
-Loading: Loading employees...   Empty: No employee accounts.
-Error: <API message> [Try again]
-Data: Name, email, Officer/Manager, Active/Inactive
-Officer: [Name] [Save name] [Deactivate / Reactivate]
-Confirm: <effect on access and retained records> [Confirm] [Keep current status]
-Manager: Manager accounts cannot be changed here.
-```
+![Employee accounts wireframe](images/ui/wireframe-6.svg)
 
 ## 3. Error messages
 
@@ -260,14 +161,11 @@ by `PATCH /api/loan-applications/{id}/approve`. The backend commits the approved
 status and `loan.approved` audit together; detail responses expose
 `approval.actor_id`, `approval.actor_name` and `approval.approved_at` so the user
 can see who made the decision and when, including after reload. The High risk flag
-is preserved. These API and response-contract details are updated in
-[design.md, Manager approval contract](design.md#manager-approval-contract) in the
-same change. The existing broader M2-to-M3 changes remain in
-[design.md section 7](design.md#7-what-changed-since-m2).
+is preserved.
 
 ### Design change: role-focused workspaces
 
-The shared Dashboard did not make clear what an Officer or a Manager should do next. Officer now sees My activity, My applications and a primary New application action. Manager sees a Branch overview, a database-backed review queue across all dates, review/high-risk/eligible filters, a Created by employee filter and a Manage employees shortcut. The details page names the current role and highlights the Manager's approval decision. No API rule changed: BR8 (Officer sees own records, Manager sees all) is still enforced by the backend, and the interface does not create any permission. See [design.md section 12](design.md#12-role-specific-entry-points-and-manager-backlog).
+The shared Dashboard did not make clear what an Officer or a Manager should do next. Officer now sees My activity, My applications and a primary New application action. Manager sees a Branch overview, a database-backed review queue across all dates, review/high-risk/eligible filters, a Created by employee filter and a Manage employees shortcut. The details page names the current role and highlights the Manager's approval decision. No API rule changed: BR8 (Officer sees own records, Manager sees all) is still enforced by the backend, and the interface does not create any permission.
 
 | | Officer | Manager |
 | --- | --- | --- |
@@ -278,49 +176,7 @@ The shared Dashboard did not make clear what an Officer or a Manager should do n
 
 US07 notifications, US06 history UI and US10 edit/cancel remain pending; the review queue is not a notification feature.
 
-### Officer and Manager comparison in the browser
-
-Run [SETUP.md section 13](SETUP.md#13-compare-officer-and-manager-workspaces) from the updated checkout and fill the table from what you actually see. Keep the address bar visible in every screenshot and save the images in `images/ui/`.
-
-| Check | Expected | Result | Tester / date | Screenshot |
-| --- | --- | --- | --- | --- |
-| Hoang (Officer): navigation and dashboard | My dashboard, My applications, no Employees | pending | | |
-| Hoang: list | Only Hoang's applications, no branch filters | pending | | |
-| Thanh (Manager): navigation and dashboard | Branch overview, Employees, review queue with earlier-day records | pending | | |
-| Thanh: filters | Review / high-risk / eligible and Created by combine; URL keeps the view | pending | | |
-| Thanh approves an eligible record | Status Approved with Manager name and time; reload keeps it | pending | | |
-| Approved record leaves the queue | Reopen the queue: the approved record is not listed | pending | | |
-
-### Database data and acceptance evidence
-
-The running interface uses saved `loan_applications`, `scoring_results` and
-`event_logs` through authenticated APIs. Seed values are synthetic demonstration
-data persisted in the database; new applications and approval decisions are also
-persisted. The wireframe numbers above are illustrative, not running-app evidence.
-
-Follow [SETUP.md section 11](SETUP.md#11-manager-approval-demo) through the interface:
-
-1. As Hoang, create and score an application using the documented demo values;
-   open it from the application list without typing a details URL.
-2. Sign out and sign in as Thanh. Open the same record from the list/review queue,
-   review its input, score and reasons, then choose **Approve application** and
-   **Confirm approval**.
-3. Reload and verify **Approved**, Manager name/time and the saved data persist.
-   Verify that an Officer has no approval action and that an approved application
-   cannot be scored again. Approval does not imply disbursement.
-4. On New application, submit monthly income `0` with other required fields valid;
-   verify the BR2 message and that no new application was created.
-5. Capture the running data/decision screen and the visible business-rule error,
-   keeping the browser address bar visible. Save actual captures in `images/ui/`
-   and link them here with tester, date and observed result.
-
-**Evidence status:** five running-app screenshots are included below. They
-document the visible screens and messages, but do not by themselves establish
-reload persistence, access separation, queue removal or an independent tester
-result. Fill the table above with the actual tester, date and observed outcome;
-checks without recorded results remain pending. The 17-test approval API check
-recorded in [traceability.md](traceability.md#manager-approval-s3-37) does not
-replace these browser checks.
+**Evidence status:** five running-app screenshots are included below.
 
 ### Running-app screenshots
 
