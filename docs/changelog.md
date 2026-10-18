@@ -1,9 +1,5 @@
 # Project changelog — API and AI input/output
 
-This file records implemented changes for team synchronization under process.md section 4, rule 4. Entries describe local implementation; they do not establish GitHub review, CI, merge, or browser acceptance. Current design and reasons for M2-to-M3 changes remain in [design.md](design.md), especially section 7.
-
-Changes recorded under process.md section 4, rule 4.
-
 - **Added** `GET /api/auth/me`.
 - **Added** `POST /api/loan-applications`, `GET /api/loan-applications`, `GET /api/loan-applications/{id}`, `POST /api/loan-applications/{id}/score`, `GET /api/loan-applications/{id}/scores`, `GET /api/dashboard/summary` (all as designed in `design.md` section 3).
 - **Changed** `422` body of `POST /api/loan-applications`: `{"detail": "<message>", "errors": {"<field>": "<message>"}}`.
