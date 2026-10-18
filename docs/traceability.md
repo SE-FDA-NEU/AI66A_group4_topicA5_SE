@@ -36,6 +36,27 @@ All eight BRs are implemented with local automated coverage. Browser acceptance 
 
 M3 implementation is present locally. Status remains In progress until browser acceptance, teammate approval, CI and merge are evidenced; do not mark Done from code presence alone. The list supports navigation to US05; US06 history UI and US10 edit/cancel remain unimplemented. Manager approval is implemented on the details screen; browser review/CI/merge evidence remains pending.
 
-Manager approval: `/loan-applications/:id` -> `PATCH /api/loan-applications/{id}/approve` -> US10 (#22) / BR3 / BR6 / Admin authorization -> `tests/test_approval.py`. Local implementation; do not mark US10 Done until its edit/cancel criteria are met.
+## Manager approval (S3-37)
 
-Role-focused UI follow-up: US08 (#13) -> Officer daily overview vs Manager branch summary/review queue; US05 (#20)/BR8 -> Manager filters vs Officer own list; approval -> role-specific guidance on details. API scope is unchanged. `frontend/tests/review.test.js` covers queue and filters; `roles.render.test.js` renders the actual routes to verify role entry points and Manager-only Employees guidance. Browser/review/CI/merge evidence remains pending.
+The Officer creates/scores an application and the Manager reaches the same record
+through the application list or review queue. Eligible is a recommendation, not
+approval. Confirmation calls `PATCH /api/loan-applications/{id}/approve`; approval
+persists the decision and access-controlled actor/time metadata. It does not
+implement disbursement. US10 remains In progress because edit/cancel is pending.
+
+| Responsibility | Implementation | Automated coverage |
+| --- | --- | --- |
+| Admin authorization, latest eligible score, state/CIC guards | [approve_application](../backend/app/routers/applications.py) | [test_approval.py](../backend/tests/test_approval.py): Officer/anonymous denial, missing loan, invalid states/scores, CIC and latest result |
+| Persist approved status and one audit; show actor/time after reload | [approve_application / application_detail](../backend/app/routers/applications.py) | `test_manager_approval_persists_actor_time_and_blocks_rescoring`, `test_repeat_approval_does_not_duplicate_audit` |
+| High-risk review and BR5 manual-review resolution | Approval API and [ApplicationDetail.jsx](../frontend/src/pages/ApplicationDetail.jsx) | `test_manager_can_review_high_risk_eligible_result`, `test_br5_review_can_be_resolved_by_manager_with_eligible_score` |
+| Role guidance, confirmation and decision/error display | [ApplicationDetail.jsx](../frontend/src/pages/ApplicationDetail.jsx), [review.js](../frontend/src/review.js) | API coverage above; browser acceptance pending |
+
+Local check on 2026-10-18: from `backend/`,
+`.venv/Scripts/python.exe -B -m pytest tests/test_approval.py -q -p no:cacheprovider`
+returned **17 passed**. This validates the API checks, not the browser flow.
+Follow [the approval demo](SETUP.md#11-manager-approval-demo) and record actual
+screenshots/results under [ui.md section 4](ui.md#4-what-changed-since-m2).
+Browser evidence, teammate review and S3-37 completion remain pending.
+
+
+Role-focused UI follow-up: US08 (#13) -> Officer daily overview vs Manager branch summary/review queue; US05 (#20)/BR8 -> Manager filters vs Officer own list; approval -> role-specific guidance on details. API scope is unchanged. `frontend/tests/review.test.js` covers queue and filters; `roles.render.test.js` renders the actual routes to verify role entry points and Manager-only Employees guidance. Browser/review/CI/merge evidence remains pending. US07 notifications, US06 history UI and US10 edit/cancel remain pending.

@@ -238,3 +238,53 @@ M2 delivered one real route (`GET /loan-applications`, HTML, no login) and a des
 6. **Response shapes grew.** The dashboard summary now also returns `date` and `high_risk_count`. List and detail responses include `owner_name`, `dsr_percent` and `latest_score`; the detail adds `approval`. Results carry `label_text`, `rejected_reason` and `model_version`.
 
 7. **The frontend is built** (React + Vite on port 5173, `/api` proxied to port 8000), so the "Frontend web app" row in section 1 is no longer "planned (Sprint 3)".
+
+## 8. What changed since M3
+
+Building the screens changed the design in four places. Details and the reasons are also in `docs/ui.md` section 4.
+
+1. **Field-level validation errors.** A `422` on `POST /api/loan-applications` now carries `errors` (one message per field) next to the string `detail`, so the form can mark the wrong input and list every problem at once (US09).
+2. **`GET /api/auth/me` added**, and the dashboard summary returns `date` and `high_risk_count`. "Today" is computed in Vietnam time (UTC+7).
+3. **Scoring in Sprint 3 is a rule-based stand-in (`rules-v0`).** The interface from Decision 2 is unchanged. Its best case is 95 points, so a normal run never trips BR1; BR1 stays as a guard for the Sprint 4 model.
+4. **BR7 is implemented in Sprint 3.** Optional Citizen ID/account fields are validated and encrypted before storage. Ordinary responses are masked; a dedicated authorized lookup decrypts and commits access logs before returning numbers. See section 11.
+
+
+Implementation change history is recorded separately in [changelog.md](changelog.md).
+
+## 9. M3 implementation clarifications
+
+- `pending` is the stored status for US03 "Scoring in progress". The UI saves the application, requests scoring, then opens its details. A scoring error preserves the application and offers retry.
+- BR5 is checked before BR4, including CIC groups 3-5. Invalid/noninteger model output is hidden under BR1.
+- The retained HTML route requires a token and filters owners. The public entry on port 8000 redirects to that protected route; use port 5173 for normal browser navigation.
+- BR7 and employee management (BR8) are implemented and tested. US07 notifications, US06 history UI and US10 edit/cancel remain pending. Manager approval is implemented with an audit event and frontend confirmation.
+
+## 10. Sprint 4 model plan
+
+Candidate dataset: German Credit. Validate licensing, feature meanings and target mapping before use. Split train/validation/test before preprocessing; compare a logistic-regression baseline with a tree model using ROC-AUC, precision/recall and calibration. Keep synthetic runtime demo records separate from training data. Dataset features must map explicitly to the application's available inputs; unresolved mappings block replacing `rules-v0`. Export a versioned preprocessing/model artifact, preserve `predict(features) -> (integer score, reasons)`, and test BR1/BR4/BR6 before enabling it. Document how probability maps to 0-100 and how explanations are computed.
+
+
+## 10. Manager decision after scoring
+
+Scoring is a recommendation, not approval. An officer creates/scores a loan application and opens its details. Manager Thanh signs in, uses Applications -> Open, reviews the data/reasons and (when the latest score is eligible, 70-100) selects Approve application -> Confirm approval. Only Admin can call `PATCH /api/loan-applications/{id}/approve`; no request body is required. The state changes from scored/manual_review to approved and `loan.approved` records actor, time, score and high-risk flag in the same transaction. GET details and PATCH approve return an `approval` object (actor_id, actor_name, approved_at), or null if none exists. No database migration is needed; the existing event_logs table supplies the approval history.
+
+Cancelled/rejected/approved applications, unscored or noneligible latest results and CIC groups 3-5 are refused. High-risk flags are retained; an explicit Manager decision reviews the BR3 warning. BR5 manual_review may be resolved by a Manager only if the latest result is eligible. A stale status/result fails the conditional update with 409. Once approved, scoring remains blocked. Approval does not perform a payment or disbursement; the product tracks application assessment and the Manager decision. US10 edit/cancel remains a separate pending feature, so this addition does not mark all US10 acceptance criteria Done.
+
+## 11. Identifier protection and employee accounts (BR7/BR8)
+
+`privacy.py` uses authenticated Fernet encryption from `cryptography`, with a locally generated `DATA_ENCRYPTION_KEY` supplied through `.env`. The key is outside the database and Git. Citizen ID accepts 9/12 ASCII digits; account number accepts 6–20 ASCII digits, preserving leading zeros. Neither identifier is a scoring feature or part of `input_snapshot`. Raw invalid input and raw invalid model output are never echoed into application audit logs. Normal create/list/detail/score responses contain only `citizen_id_masked`/`bank_account_masked` (or null).
+
+The owner or Admin explicitly calls POST sensitive-data/reveal. BR8 is checked before decryption. Successful reads create `citizen_id.viewed` and/or `bank_account.viewed` events with actor_id, loan_application_id, created_at and only masked last four digits in detail. Audit commit failure or wrong/missing key returns 503 without releasing numbers. Responses set Cache-Control no-store/private. The UI retains full numbers only in component memory, masks after 30 seconds/blur/tab hiding, and discards pending stale reveal responses. It does not save numbers to browser storage.
+
+Manager-only `/admin/users` supports listing accounts, creating Officers (hashed password), updating names and active status. Inactive accounts cannot log in or use existing tokens. Incrementing token_version prevents old tokens working after reactivation. Account events store the target UUID and status, without names, email or passwords. Officer ownership remains enforced on list/detail/history/score/reveal/legacy HTML; Managers see the branch data. Manager accounts cannot be modified through employee management, and client-supplied roles/owners/ciphertext/state are rejected.
+
+`python -m app.migrate` adds bank-account and user active/version columns to existing databases, without deleting rows. New tables use the full current schema. The seed and API startup run the same idempotent migration. `python -m app.init_secrets` initializes local secrets once, preserving a valid existing key. See SETUP.md for upgrade and key-backup instructions.
+
+## 12. Role-specific entry points and Manager backlog
+
+Both roles use `/dashboard`, but the Officer sees their own daily metrics and create/track actions. Manager sees branch-wide daily metrics plus an all-date review queue and employee-management action. The API's BR8 filter supplies the correct scope; there is no client-side substitute for authorization.
+
+The Manager Dashboard combines the existing GET dashboard summary with GET applications. The queue contains `pending`, `scored`, `manual_review`; it excludes approved/rejected/cancelled records even if high-risk. Sort high-risk first, then manual review, then oldest creation date and ID. Show eight rows and a link to the complete queue. No queue state is stored separately, so reopening/reloading the Dashboard reflects approval. Pending rows are visible for follow-up/scoring, but cannot be approved until a valid eligible score exists.
+
+`/loan-applications?view=review|high-risk|eligible` links open the matching Manager filter; `owner` combines an employee filter. All-date counts are labelled separately from today's statistics. Officer sees My applications; Manager sees Branch applications/Created by and filter controls. Details and queue use the same UI eligibility helper, while PATCH approve still independently validates server-side. New application remains available to Admin because BR8 does not prohibit creation. This queue is not the unread-notification feature (US07).
+
+Frontend validation: Node tests exercise queue membership/order, old backlog with zero-today activity, final-state exclusion, eligibility and combined filters. The actual React routes are rendered for both roles to verify different headings, navigation and Manager-only route guidance. Interactive browser acceptance remains required.

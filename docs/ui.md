@@ -220,26 +220,73 @@ Manager: Manager accounts cannot be changed here.
 
 ## 4. What changed since M2
 
-1. **`POST /api/loan-applications` returns the errors per field.** Building the form showed that one sentence is not enough to point at the wrong input. A `422` now returns `{"detail": "<message>", "errors": {"monthly_income": "Income is required", ...}}`; `detail` stays a string, so the M2 convention still holds. Also changed in `design.md` section 3.
-2. **Scoring is a rule-based stand-in (`rules-v0`) in Sprint 3.** The screens need a real score before the trained model exists (Sprint 4). It keeps the same interface (features in, score and reasons out), so Sprint 4 only swaps `predict`.
-3. **`GET /api/dashboard/summary` also returns `date` and `high_risk_count`**, and `GET /api/auth/me` was added so the app can read the current user. Both are in `design.md` section 3. "Today" follows Vietnam time (UTC+7).
-4. **BR7/BR8 are built:** optional encrypted identifiers, masked/audited lookup and Manager-only Employees screen. US10 edit/cancel, US06 history UI and US07 notifications remain pending.
+### Design change: a recommendation needs a separate Manager decision
 
+Building Application details exposed the need to distinguish a model recommendation
+from a Manager's recorded decision. An eligible score does not change the loan
+to approved. The interface now offers Admin-only review and confirmation, backed
+by `PATCH /api/loan-applications/{id}/approve`. The backend commits the approved
+status and `loan.approved` audit together; detail responses expose
+`approval.actor_id`, `approval.actor_name` and `approval.approved_at` so the user
+can see who made the decision and when, including after reload. The High risk flag
+is preserved. These API and response-contract details are updated in
+[design.md, Manager approval contract](design.md#manager-approval-contract) in the
+same change. The existing broader M2-to-M3 changes remain in
+[design.md section 7](design.md#7-what-changed-since-m2).
 
-5. **BR8 applies to the old M2 HTML page too.** `/loan-applications` on the API port now requires a bearer token and filters by owner. Use the React interface on port 5173 for the demo; no financial data is publicly exposed.
-6. **BR5 runs before BR4**, so CIC-rejected results also count toward the three-result hourly limit.
-7. **US03 state mapping:** the persisted `pending` value means "Scoring in progress" on screen. Creation and scoring are separate requests; if scoring fails, the saved application remains accessible with a retry button.
+### Design change: role-focused workspaces
 
-Release evidence still required: actual GitHub board URL, review/approval/merge, browser acceptance, clean-machine tester, board screenshots, app screenshots with address bar, and `Team04_M3.pdf`.
+The shared Dashboard did not make clear what an Officer or a Manager should do next. Officer now sees My activity, My applications and a primary New application action. Manager sees a Branch overview, a database-backed review queue across all dates, review/high-risk/eligible filters, a Created by employee filter and a Manage employees shortcut. The details page names the current role and highlights the Manager's approval decision. No API rule changed: BR8 (Officer sees own records, Manager sees all) is still enforced by the backend, and the interface does not create any permission. See [design.md section 12](design.md#12-role-specific-entry-points-and-manager-backlog).
 
+| | Officer | Manager |
+| --- | --- | --- |
+| Navigation | My dashboard, My applications, New application | Branch overview, Branch applications, New application, Employees |
+| Data scope | Own applications only (daily metrics and list) | Branch daily metrics; review queue across all dates; all employees' applications |
+| Details | Can score; sees who makes the approval decision | Can approve an eligible score after confirmation |
+| Not available | Approval, branch filters, Employees | Changing Manager accounts |
 
-8. **Manager approval is implemented.** Details includes Manager decision, Approve application, confirmation, and persisted approver/time. Officer sees who must approve; Manager sees eligibility or the reason approval is unavailable. No score automatically sets approved. See design.md section 10. Additional messages: 403 "Only a manager can approve a loan application. Ask your manager to review this application."; 409 "This application needs a valid eligible score before approval. Review its data and scoring results first." Approval browser acceptance is pending.
+US07 notifications, US06 history UI and US10 edit/cancel remain pending; the review queue is not a notification feature.
 
-9. **BR7/BR8 completion:** design.md section 11 documents the new identifier fields, encryption key, additive schema migration, audited reveal API and account management. New application clears entered identifiers after saving; details masks by default, and lookup failures are shown with recovery instructions. Employee status changes revoke old sessions without removing their loans.
+### Officer and Manager comparison in the browser
 
-10. **Role-focused workspaces:** the shared Dashboard was insufficiently clear about Officer vs Manager tasks. Officer now has My activity/My applications and a primary New application action. Manager has Branch overview, a database-backed all-date review queue, filters and a Manage employees shortcut. Details explains the current role and highlights the Manager's approval decision. No API authorization rule was weakened; BR8 remains enforced on the backend. See design.md section 12.
+Run [SETUP.md section 13](SETUP.md#13-compare-officer-and-manager-workspaces) from the updated checkout and fill the table from what you actually see. Keep the address bar visible in every screenshot and save the images in `images/ui/`.
 
-## 5. Running-app screenshots
+| Check | Expected | Result | Tester / date | Screenshot |
+| --- | --- | --- | --- | --- |
+| Hoang (Officer): navigation and dashboard | My dashboard, My applications, no Employees | pending | | |
+| Hoang: list | Only Hoang's applications, no branch filters | pending | | |
+| Thanh (Manager): navigation and dashboard | Branch overview, Employees, review queue with earlier-day records | pending | | |
+| Thanh: filters | Review / high-risk / eligible and Created by combine; URL keeps the view | pending | | |
+| Thanh approves an eligible record | Status Approved with Manager name and time; reload keeps it | pending | | |
+| Approved record leaves the queue | Reopen the queue: the approved record is not listed | pending | | |
+
+### Database data and acceptance evidence
+
+The running interface uses saved `loan_applications`, `scoring_results` and
+`event_logs` through authenticated APIs. Seed values are synthetic demonstration
+data persisted in the database; new applications and approval decisions are also
+persisted. The wireframe numbers above are illustrative, not running-app evidence.
+
+Follow [SETUP.md section 11](SETUP.md#11-manager-approval-demo) through the interface:
+
+1. As Hoang, create and score an application using the documented demo values;
+   open it from the application list without typing a details URL.
+2. Sign out and sign in as Thanh. Open the same record from the list/review queue,
+   review its input, score and reasons, then choose **Approve application** and
+   **Confirm approval**.
+3. Reload and verify **Approved**, Manager name/time and the saved data persist.
+   Verify that an Officer has no approval action and that an approved application
+   cannot be scored again. Approval does not imply disbursement.
+4. On New application, submit monthly income `0` with other required fields valid;
+   verify the BR2 message and that no new application was created.
+5. Capture the running data/decision screen and the visible business-rule error,
+   keeping the browser address bar visible. Save actual captures in `images/ui/`
+   and link them here with tester, date and observed result.
+
+**Evidence status:** running-app screenshots are included below.
+Browser checks without recorded results remain pending.
+
+### Running-app screenshots
 
 ![Login screen](images/ui/login-screen.png)
 
