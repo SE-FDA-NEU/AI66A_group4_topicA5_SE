@@ -5,7 +5,9 @@ __pycache__/
 venv/
 .env
 # Data & models (too large for Git)
-data/raw/*.csv
+# Raw/local datasets and exports (CSV, JSON and other formats)
+data/raw/
+data/local/
 *.pkl
 checkpoints/
 # Editor / OS junk

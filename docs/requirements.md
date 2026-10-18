@@ -1,5 +1,13 @@
 # Requirements — Credit Scoring Demo
 
+This document is the product requirement baseline. Implementation and acceptance
+status for Sprint 3 are tracked in [ui.md](ui.md#1-p0-stories-and-status) and
+[traceability.md](traceability.md); a requirement appearing here does not mean it
+is already implemented. US06 history UI, US07 notifications and US10 edit/cancel
+remain pending. The US09 exact empty-income message is an open acceptance gap
+described in [ui.md](ui.md#3-error-messages); its acceptance criterion below is
+retained unchanged.
+
 ## 1. Product vision
 
 A system tailored for **credit assessment officers and branch managers** at small to medium-sized financial institutions/banks — enabling them to input loan applications and instantly receive credit scores accompanied by clear explanations, replacing manual fragmented spreadsheet calculations or waiting for manual data scientist approvals, which are slow and lead to inconsistent decisions across personnel.
