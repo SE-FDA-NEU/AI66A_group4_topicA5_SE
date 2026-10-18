@@ -19,13 +19,15 @@ Run the app first ([`docs/SETUP.md`](docs/SETUP.md), about 5 minutes), then open
 | US08 Dashboard | `/dashboard` | Shown right after login: today's applications and average score |
 | US03 Input a loan application | `/loan-applications/new` | Top bar > **New application**, fill the form, **Submit and score** |
 | US09 Data validation | `/loan-applications/new` | Submit with an empty or text income and read the messages |
-| US04 Score with explanation | `/loan-applications/:id` | Opens after Submit; also from the list (**Applications** > **Open**) |
+| US04 Score with explanation | `/loan-applications/:id` | Opens after Submit; also from the list (**My applications** > **Open**, or Manager **Branch applications** > **Review**) |
 
 UI documentation (stories, wireframes, error messages): [`docs/ui.md`](docs/ui.md)
 
 ## Project Board
 
-🔗 Project Board: **pending actual GitHub Projects URL from the team**. Repository: https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE
+🔗 Project Board: **the actual team board URL has not been recorded in this repository; add it before submission**. Repository: https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE
+
+Sprint records: [Sprint log](docs/sprint-log.md), including the [Sprint 3 scope and review record](docs/sprint-log/sprint-log3.md). The log distinguishes proposed estimates from confirmed commitment and accepted results.
 
 ## Definition of Done
 
@@ -66,14 +68,25 @@ Open http://localhost:5173. The API is on port 8000; `/health` is public, while 
 pytest
 ```
 
+From `frontend/`:
+
+```bash
+npm test
+npm run build
+```
+
+Local checks on 2026-10-18 passed 170 backend tests, 6 frontend tests and the
+production build. These are local results; clean-machine/browser acceptance and
+the corresponding PR CI/review evidence are recorded separately.
+
 ## Docs
 
 - Implementation history: [docs/changelog.md](docs/changelog.md).
 
 - Design and requirements are in the `docs/` folder. See `docs/design.md` and `docs/requirements.md` for more details.
 
-M3 verification: follow the demos in [docs/SETUP.md](docs/SETUP.md) and compare the UI with [docs/ui.md](docs/ui.md); browser and submission evidence is still required. The temporary issue-planning Markdown is not required to run or understand this project.
+M3 verification: follow the demos in [docs/SETUP.md](docs/SETUP.md) and compare the UI with [docs/ui.md](docs/ui.md); five running-app screenshots are linked there, while the tester/date/results checklist and final submission evidence still need to be completed. The temporary issue-planning Markdown is not required to run or understand this project.
 
-Manager flow: after an officer scores an eligible application, sign in as `thanh@branch.vn`, use **Applications -> Open -> Approve application -> Confirm approval**. The details record approver/time. Scoring alone does not approve; disbursement is outside this demo.
+Manager flow: after an officer scores an eligible application, sign in as `thanh@branch.vn`, use **Branch applications -> Review -> Approve application -> Confirm approval**. The details record approver/time. Scoring alone does not approve; disbursement is outside this demo.
 
 BR7/BR8: New application accepts optional Citizen ID and bank account numbers, encrypted before storage. Details shows masked values; **View full numbers (logged)** performs an authorized, audited lookup. Manager navigation includes **Employees** to create Officers, rename, deactivate and reactivate accounts. See [business-rule coverage](docs/traceability.md#business-rules). Keep the locally generated `.env` encryption key with the database backup.

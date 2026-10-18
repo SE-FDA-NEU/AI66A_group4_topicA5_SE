@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1560" height="1120" viewBox="0 0 1560 1120" role="img" aria-labelledby="title desc">
+<title id="title">M3 runtime architecture - Credit Scoring Demo</title>
+<desc id="desc">React and FastAPI runtime, SQLite data, in-process rules-v0 scoring, additive migrations and local encryption secrets; trained model is future work.</desc>
+<defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="#52647c"/></marker></defs>
+<rect width="1560" height="1120" fill="#f5f8fc"/>
+<text x="40" y="51" font-family="Arial, sans-serif" font-size="32" font-weight="bold" fill="#172b4d">Credit Scoring Demo: implemented M3 architecture</text>
+<rect x="40" y="95" width="610" height="115" rx="16" fill="#ffffff" stroke="#aabbd1" stroke-width="2"/>
+<text x="64" y="132" font-family="Arial, sans-serif" font-size="25" font-weight="bold" fill="#172b4d">Browser: Officer / Manager</text>
+<text x="64" y="170" font-family="Arial, sans-serif" font-size="20" font-weight="normal" fill="#172b4d">Login and navigate through the React interface</text>
+<rect x="40" y="265" width="610" height="215" rx="16" fill="#ffffff" stroke="#aabbd1" stroke-width="2"/>
+<text x="64" y="302" font-family="Arial, sans-serif" font-size="25" font-weight="bold" fill="#172b4d">React + Vite :5173</text>
+<text x="64" y="340" font-family="Arial, sans-serif" font-size="20" font-weight="normal" fill="#172b4d">Dashboard, applications, details and approval</text>
+<text x="64" y="369" font-family="Arial, sans-serif" font-size="20" font-weight="normal" fill="#172b4d">Masked identifiers / explicit reveal</text>
+<text x="64" y="398" font-family="Arial, sans-serif" font-size="20" font-weight="normal" fill="#172b4d">Manager employees and review filters</text>
+<text x="64" y="427" font-family="Arial, sans-serif" font-size="20" font-weight="normal" fill="#172b4d">Vite proxies /api to the backend</text>
+<polyline points="345,210 345,265" fill="none" stroke="#52647c" stroke-width="2.5" marker-end="url(#arrow)"/>
+<text x="365" y="244" font-family="Arial, sans-serif" font-size="18" font-weight="normal" fill="#40546e">UI actions</text>
+<rect x="820" y="265" width="700" height="215" rx="16" fill="#ffffff" stroke="#aabbd1" stroke-width="2"/>
+<text x="844" y="302" font-family="Arial, sans-serif" font-size="25" font-weight="bold" fill="#172b4d">FastAPI :8000</text>
+<text x="844" y="340" font-family="Arial, sans-serif" font-size="20" font-weight="normal" fill="#172b4d">auth.py / applications.py / users.py</text>
+<text x="844" y="369" font-family="Arial, sans-serif" font-size="20" font-weight="normal" fill="#172b4d">JWT, token_version and BR8 authorization</text>
+<text x="844" y="398" font-family="Arial, sans-serif" font-size="20" font-weight="normal" fill="#172b4d">Schema validation, approval and audited reveal</text>
+<text x="844" y="427" font-family="Arial, sans-serif" font-size="20" font-weight="normal" fill="#172b4d">Protected legacy HTML and public /health</text>
+<polyline points="650,340 820,340" fill="none" stroke="#52647c" stroke-width="2.5" marker-end="url(#arrow)"/>
+<text x="665" y="327" font-family="Arial, sans-serif" font-size="18" font-weight="normal" fill="#40546e">JSON + JWT</text>
+<polyline points="820,420 650,420" fill="none" stroke="#52647c" stroke-width="2.5" marker-end="url(#arrow)"/>
+<text x="667" y="450" font-family="Arial, sans-serif" font-size="18" font-weight="normal" fill="#40546e">JSON / errors</text>
+<rect x="820" y="565" width="700" height="190" rx="16" fill="#ffffff" stroke="#aabbd1" stroke-width="2"/>
+<text x="844" y="602" font-family="Arial, sans-serif" font-size="25" font-weight="bold" fill="#172b4d">Scoring inside the API process</text>
+<text x="844" y="640" font-family="Arial, sans-serif" font-size="20" font-weight="normal" fill="#172b4d">scoring_service.py: lock + BR5 / BR4 / BR1 / BR6</text>
+<text x="844" y="669" font-family="Arial, sans-serif" font-size="20" font-weight="normal" fill="#172b4d">scoring.py: build_features -&gt; predict</text>
+<text x="844" y="698" font-family="Arial, sans-serif" font-size="20" font-weight="normal" fill="#172b4d">rules-v0: integer score + explanation strings</text>
+<text x="844" y="727" font-family="Arial, sans-serif" font-size="20" font-weight="normal" fill="#172b4d">No model.joblib or training during runtime</text>
+<polyline points="1170,480 1170,565" fill="none" stroke="#52647c" stroke-width="2.5" marker-end="url(#arrow)"/>
+<text x="1190" y="527" font-family="Arial, sans-serif" font-size="18" font-weight="normal" fill="#40546e">Features / score + reasons</text>
+<rect x="40" y="565" width="610" height="190" rx="16" fill="#ffffff" stroke="#aabbd1" stroke-width="2"/>
+<text x="64" y="602" font-family="Arial, sans-serif" font-size="25" font-weight="bold" fill="#172b4d">SQLAlchemy -&gt; SQLite credit_scoring.db</text>
+<text x="64" y="640" font-family="Arial, sans-serif" font-size="20" font-weight="normal" fill="#172b4d">users / loan_applications</text>
+<text x="64" y="669" font-family="Arial, sans-serif" font-size="20" font-weight="normal" fill="#172b4d">scoring_results / event_logs</text>
+<text x="64" y="698" font-family="Arial, sans-serif" font-size="20" font-weight="normal" fill="#172b4d">Persisted demo + user-created application data</text>
+<text x="64" y="727" font-family="Arial, sans-serif" font-size="20" font-weight="normal" fill="#172b4d">Additive migration; no separate database API</text>
+<polyline points="820,465 720,465 720,660 650,660" fill="none" stroke="#52647c" stroke-width="2.5" marker-end="url(#arrow)"/>
+<text x="485" y="534" font-family="Arial, sans-serif" font-size="18" font-weight="normal" fill="#40546e">Queries / transactions</text>
+<rect x="40" y="825" width="610" height="170" rx="16" fill="#e9f2ff" stroke="#aabbd1" stroke-width="2"/>
+<text x="64" y="862" font-family="Arial, sans-serif" font-size="25" font-weight="bold" fill="#172b4d">Local setup and secrets</text>
+<text x="64" y="900" font-family="Arial, sans-serif" font-size="20" font-weight="normal" fill="#172b4d">app.migrate; then app.seed</text>
+<text x="64" y="929" font-family="Arial, sans-serif" font-size="20" font-weight="normal" fill="#172b4d">API startup also calls ensure_schema</text>
+<text x="64" y="958" font-family="Arial, sans-serif" font-size="20" font-weight="normal" fill="#172b4d">init_secrets preserves existing valid keys</text>
+<polyline points="345,825 345,755" fill="none" stroke="#52647c" stroke-width="2.5" marker-end="url(#arrow)"/>
+<text x="367" y="799" font-family="Arial, sans-serif" font-size="18" font-weight="normal" fill="#40546e">Schema / demo rows</text>
+<rect x="820" y="825" width="700" height="170" rx="16" fill="#fff4dc" stroke="#aabbd1" stroke-width="2"/>
+<text x="844" y="862" font-family="Arial, sans-serif" font-size="25" font-weight="bold" fill="#172b4d">Future work: Sprint 4</text>
+<text x="844" y="900" font-family="Arial, sans-serif" font-size="20" font-weight="normal" fill="#172b4d">Validate dataset and application feature mapping</text>
+<text x="844" y="929" font-family="Arial, sans-serif" font-size="20" font-weight="normal" fill="#172b4d">Train/evaluate a versioned model artifact</text>
+<text x="844" y="958" font-family="Arial, sans-serif" font-size="20" font-weight="normal" fill="#172b4d">Integrate model loading and test before enabling</text>
+<text x="40" y="1054" font-family="Arial, sans-serif" font-size="21" font-weight="normal" fill="#172b4d">DATA_ENCRYPTION_KEY and JWT secret live in local .env, outside Git/database.</text>
+<text x="40" y="1086" font-family="Arial, sans-serif" font-size="20" font-weight="normal" fill="#172b4d">privacy.py encrypts identifiers; reveal commits a separate masked audit for each returned number.</text>
+</svg>

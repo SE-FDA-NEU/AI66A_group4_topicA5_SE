@@ -69,7 +69,7 @@ Expected output:
 Seeded: users=3, loan_applications=12
 ```
 
-This creates the file `credit_scoring.db` (all 4 tables from `docs/design.md`) and fills it with 3 users and 12 loan applications. Migration also works on an existing M2/M3 database: it adds account-status/token-version and encrypted-bank-account columns without deleting rows. Startup and seed also run this additive migration. Seed never overwrites existing accounts or applications.
+This creates the file `credit_scoring.db` (all 4 tables from `docs/design.md`) and fills it with 3 users and 12 loan applications. Migration also works on an existing M2/M3 database: it adds any missing identifier ciphertext/last-four and account-status/token-version columns without deleting rows. API startup runs the same additive migration. The seed command only creates missing tables and inserts demo rows; it does not add columns to existing tables. Always run `python -m app.migrate` before `python -m app.seed` when upgrading an old database. Seed preserves existing accounts and applications.
 
 **Test accounts** (demo data only, password for all three: `Demo@2026`):
 
@@ -100,11 +100,11 @@ Open **http://localhost:5173**, sign in with a test account above. The dashboard
 
 ## 7. Verify the M3 interface
 
-Open http://localhost:5173. Sign in as `hoang@branch.vn`, use **New application**, enter income `20000000`, loan `100000000`, term `24`, payment `5000000`, then **Submit and score**. Details must show the saved data, integer score and reasons. Use **Applications** and **Open** to find the saved record without typing a URL.
+Open http://localhost:5173. Sign in as `hoang@branch.vn`, use **New application**, enter income `20000000`, loan `100000000`, term `24`, payment `5000000`, then **Submit and score**. Details must show the saved data, integer score and reasons. Use **My applications** and **Open** to find the saved record without typing a URL; Manager uses **Branch applications** and **Review**.
 
 Submit income `0` to see a BR2 message and no new record. Submit valid data with payment `15000000` to see the high-risk banner. Score a record three times total, then once more to see BR5. Sign out and sign in as `linh@branch.vn`: Hoang's record must not appear. Manager `thanh@branch.vn` sees all records.
 
-Seeded records are from previous days, so today's dashboard starts at zero. Create one to populate today's metrics. `/health` returns `{"status":"ok"}`. The legacy HTML `/loan-applications` on port 8000 is now protected; a bare browser request returns 401. Use the frontend, not the legacy URL, for M3.
+On a fresh seed, all demo records are from previous days, so today's dashboard starts at zero. Create one to populate today's metrics. Daily totals use the application's creation date in Vietnam time (UTC+7); the average uses the latest available score for each application created that day, excluding null scores. The Manager backlog covers all dates. `/health` returns `{"status":"ok"}`. The legacy HTML `/loan-applications` on port 8000 is now protected; a bare browser request returns 401. Use the frontend, not the legacy URL, for M3.
 
 ## 8. Run the automated tests
 
@@ -120,22 +120,22 @@ Expected: all tests pass (the count changes as regressions are added). Tests use
 | --- | --- | --- |
 | `ModuleNotFoundError: No module named 'fastapi'` (or `pytest` / `dotenv`) | The virtual environment is not active, or step 3 was skipped | Activate it again (`source .venv/bin/activate` or `.venv\Scripts\Activate.ps1`), then run `pip install -r requirements.txt` |
 | `ModuleNotFoundError: No module named 'app'` | The command was run outside the `backend/` folder | `cd` into `backend/` and run it again |
-| The page says "Loan applications (0)" / "No loan applications yet." | Step 5 (seeding) was skipped, or it ran in another folder so another `credit_scoring.db` was created | Run `python -m app.seed` from `backend/`, then reload the page |
+| Officer sees "You have no applications yet."; Manager sees "No applications match this view." | No records are accessible to this account, Manager filters exclude the records, or the intended demo database was not seeded | Manager: choose Show all branch applications / Clear filters first. Check the signed-in account and DATABASE_URL; if the intended database has no loan applications, migrate then run `python -m app.seed` from `backend/` and reload |
 | PowerShell: "running scripts is disabled on this system" | Execution policy blocks the activate script | Use `.venv\Scripts\python.exe` directly instead of activating, or use `cmd` and `.venv\Scripts\activate.bat` |
 | `Address already in use` when starting `uvicorn` | Port 8000 is taken by another process | Run `uvicorn app.main:app --reload --port 8001`, change the frontend API proxy to port 8001, and use http://localhost:5173 |
 | The login says the password is wrong for every demo account | The database was created in Sprint 2, before demo accounts had a password; seed does not overwrite existing accounts | Stop the server, keep the old database and its encryption key, set DATABASE_URL to a separate new demo file (`sqlite:///./credit_scoring_demo.db`), run `python -m app.seed`, restart |
 | `Python was not found` | Windows Store alias is being used instead of an installed interpreter | Try `py -3.12 -m venv .venv`; if `py` is absent, install Python 3.12 with PATH enabled. Once created, use `.venv\Scripts\python.exe` directly |
 | Identifier protection is not configured (503) | Encryption key missing or invalid | Run `python -m app.init_secrets` from backend and restart; for an existing encrypted DB restore its original valid key |
 | Saved identifier cannot be opened (503) | Wrong key or damaged ciphertext | Restore the original `.env` key and matching database backup; do not generate a replacement key |
-| `no such column: users.is_active` | Existing schema not upgraded | Stop the old server, run `python -m app.migrate`, restart |
+| `no such column: users.is_active` or an identifier column | Existing schema not upgraded; seed does not add columns | Stop the old server, keep its database/key, run `python -m app.migrate` from backend, then seed if needed and restart |
 | Employee account is inactive (403) | Manager deactivated the account | Manager: Employees -> Reactivate; employee must sign in again |
 | `npm: command not found`, or `npm ci` fails | Node.js is missing or too old | Install Node.js 20.19+ from nodejs.org, then run `npm ci` again |
 | The page loads but every action says "We can't reach the server" | The backend is not running, or it runs on another port | Start `uvicorn` (step 6); if you used a port other than 8000, change the `/api` proxy URL in `frontend/vite.config.js` |
-| You want a clean demo database | The seed only runs on an empty database | Stop the server, set DATABASE_URL to a separate new demo SQLite file, seed and restart. Keep the original database and its `.env` encryption key |
+| You want a clean demo database | The seed inserts demo rows only when there are no loan applications | Stop the server, set DATABASE_URL to a separate new demo SQLite file, seed and restart. Keep the original database and its `.env` encryption key |
 
 ## 10. Tested by
 
-> **Sprint 3 - to be filled in by a teammate who did not write the code:** name, machine, date, minutes.
+> **Sprint 3 clean-machine tester: not yet recorded.** After a teammate who did not write the code actually follows this guide, record their name, machine, date, elapsed minutes and result. Existing screenshots and local automated tests do not establish a clean-clone setup test.
 
 Sprint 2:
 
@@ -144,7 +144,7 @@ Sprint 2:
 
 ## 11. Manager approval demo
 
-As Hoang, create and score a valid application (income 20000000, loan 100000000, term 24, payment 5000000, history "3 years, on time", CIC 1). It is Scored / Eligible for proposal and waits for Manager review. Log out; log in as `thanh@branch.vn` with the demo password. Applications -> Open the record -> review data/reasons -> Approve application -> Confirm approval. Status becomes Approved with Manager name/time; reload preserves it. Officer cannot approve. Scores below 70, CIC groups 3-5, unscored/cancelled/rejected records cannot be approved. Approval records an assessment decision; disbursement is outside this app.
+As Hoang, create and score a valid application (income 20000000, loan 100000000, term 24, payment 5000000, history "3 years, on time", CIC 1). It is Scored / Eligible for proposal and waits for Manager review. Log out; log in as `thanh@branch.vn` with the demo password. **Branch applications -> Review** the record -> review data/reasons -> **Approve application -> Confirm approval**. Status becomes Approved with Manager name/time; reload preserves it. Officer cannot approve. Scores below 70, CIC groups 3-5, unscored/cancelled/rejected records cannot be approved. Approval records an assessment decision; disbursement is outside this app.
 
 ## 12. BR7 and employee-management demo
 
@@ -170,4 +170,4 @@ Run Vite from the updated `AI66A_group4_topicA5_SE/frontend` checkout. Stop olde
 
 An empty daily summary does not mean the Manager has no backlog. Seeded applications from earlier days appear in the review queue if still open. Creating applications is still available to both authenticated roles, consistent with the API. UI role cues do not grant permissions; the server enforces BR8.
 
-Frontend checks (from frontend/): `npm test`, `npm run build`. Tests render React routes and exercise queue filters without accessing the user's database; they do not replace the browser acceptance checklist.
+Frontend checks (from frontend/): `npm test`, `npm run build`. Tests render React routes and exercise queue filters without accessing the user's database; they do not replace the browser acceptance checklist. The latest local documentation audit on 2026-10-18 passed 170 backend tests, 6 frontend tests and the production build. Link actual screenshots and recorded browser outcomes in [ui.md](ui.md#4-what-changed-since-m2); confirmed sprint commitment/completion belongs in [the Sprint 3 log](sprint-log/sprint-log3.md).
