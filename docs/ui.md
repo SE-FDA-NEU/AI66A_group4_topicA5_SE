@@ -239,6 +239,32 @@ is preserved. These API and response-contract details are updated in
 same change. The existing broader M2-to-M3 changes remain in
 [design.md section 7](design.md#7-what-changed-since-m2).
 
+### Design change: role-focused workspaces
+
+The shared Dashboard did not make clear what an Officer or a Manager should do next. Officer now sees My activity, My applications and a primary New application action. Manager sees a Branch overview, a database-backed review queue across all dates, review/high-risk/eligible filters, a Created by employee filter and a Manage employees shortcut. The details page names the current role and highlights the Manager's approval decision. No API rule changed: BR8 (Officer sees own records, Manager sees all) is still enforced by the backend, and the interface does not create any permission. See [design.md section 12](design.md#12-role-specific-entry-points-and-manager-backlog).
+
+| | Officer | Manager |
+| --- | --- | --- |
+| Navigation | My dashboard, My applications, New application | Branch overview, Branch applications, New application, Employees |
+| Data scope | Own applications only (daily metrics and list) | Branch daily metrics; review queue across all dates; all employees' applications |
+| Details | Can score; sees who makes the approval decision | Can approve an eligible score after confirmation |
+| Not available | Approval, branch filters, Employees | Changing Manager accounts |
+
+US07 notifications, US06 history UI and US10 edit/cancel remain pending; the review queue is not a notification feature.
+
+### Officer and Manager comparison in the browser
+
+Run [SETUP.md section 13](SETUP.md#13-compare-officer-and-manager-workspaces) from the updated checkout and fill the table from what you actually see. Keep the address bar visible in every screenshot and save the images in `images/ui/`.
+
+| Check | Expected | Result | Tester / date | Screenshot |
+| --- | --- | --- | --- | --- |
+| Hoang (Officer): navigation and dashboard | My dashboard, My applications, no Employees | pending | | |
+| Hoang: list | Only Hoang's applications, no branch filters | pending | | |
+| Thanh (Manager): navigation and dashboard | Branch overview, Employees, review queue with earlier-day records | pending | | |
+| Thanh: filters | Review / high-risk / eligible and Created by combine; URL keeps the view | pending | | |
+| Thanh approves an eligible record | Status Approved with Manager name and time; reload keeps it | pending | | |
+| Approved record leaves the queue | Reopen the queue: the approved record is not listed | pending | | |
+
 ### Database data and acceptance evidence
 
 The running interface uses saved `loan_applications`, `scoring_results` and

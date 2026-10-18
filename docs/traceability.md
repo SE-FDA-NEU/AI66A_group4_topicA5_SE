@@ -59,4 +59,4 @@ screenshots/results under [ui.md section 4](ui.md#4-what-changed-since-m2).
 Browser evidence, teammate review and S3-37 completion remain pending.
 
 
-
+Role-focused UI follow-up: US08 (#13) -> Officer daily overview vs Manager branch summary/review queue; US05 (#20)/BR8 -> Manager filters vs Officer own list; approval -> role-specific guidance on details. API scope is unchanged. `frontend/tests/review.test.js` covers queue and filters; `roles.render.test.js` renders the actual routes to verify role entry points and Manager-only Employees guidance. Browser/review/CI/merge evidence remains pending. US07 notifications, US06 history UI and US10 edit/cancel remain pending.
