@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="828" height="752" viewBox="0 0 828 752" role="img" aria-labelledby="title description">
+  <title id="title">Employee accounts wireframe</title>
+  <desc id="description">Manager-only Officer account creation, list states, read-only Manager accounts and status confirmation.</desc>
+  <rect width="100%" height="100%" fill="white"/>
+  <g font-family="monospace" font-size="14" fill="#172b4d" xml:space="preserve">
+    <text x="16" y="28">2.6 Employee accounts - /admin/users (Manager only)</text>
+    <text x="16" y="48">The user comes here to manage Officer access while retaining loan history.</text>
+    <text x="16" y="68">Calls: GET/POST /api/admin/users; PATCH /api/admin/users/{id}</text>
+    <text x="16" y="88"></text>
+    <text x="16" y="108">+ Create Officer - remains above the list in every list state -----------------------------+</text>
+    <text x="16" y="128">| Name [_________________]      Email [________________________]                           |</text>
+    <text x="16" y="148">| Initial password (12-128 characters) [**********************]                            |</text>
+    <text x="16" y="168">| [ Create Officer ] -&gt; [ Creating... ] (disabled while saving)                            |</text>
+    <text x="16" y="188">| Creation error: &lt;API message&gt;. Initial password is cleared after submission.             |</text>
+    <text x="16" y="208">+------------------------------------------------------------------------------------------+</text>
+    <text x="16" y="228"></text>
+    <text x="16" y="248">+ List: loading / empty / error -----------------------------------------------------------+</text>
+    <text x="16" y="268">| Loading: Loading employees...                                                            |</text>
+    <text x="16" y="288">| Empty: No employee accounts.                                                             |</text>
+    <text x="16" y="308">| Error: &lt;API message&gt; [ Try again ]                                                       |</text>
+    <text x="16" y="328">+------------------------------------------------------------------------------------------+</text>
+    <text x="16" y="348"></text>
+    <text x="16" y="368">+ List: data ------------------------------------------------------------------------------+</text>
+    <text x="16" y="388">| Officer Name                                                                             |</text>
+    <text x="16" y="408">| officer@example.test | Officer | Active                                                  |</text>
+    <text x="16" y="428">| Employee name [Officer Name____________] [ Save name ]                                   |</text>
+    <text x="16" y="448">| [ Deactivate ] (or [ Reactivate ] for an inactive Officer)                               |</text>
+    <text x="16" y="468">|                                                                                          |</text>
+    <text x="16" y="488">| Manager Name                                                                             |</text>
+    <text x="16" y="508">| manager@example.test | Manager | Active                                                  |</text>
+    <text x="16" y="528">| Manager accounts cannot be changed here.                                                 |</text>
+    <text x="16" y="548">+------------------------------------------------------------------------------------------+</text>
+    <text x="16" y="568"></text>
+    <text x="16" y="588">+ Confirm employee status change ----------------------------------------------------------+</text>
+    <text x="16" y="608">| Deactivate this Officer? Existing sessions will stop working; loan records are retained. |</text>
+    <text x="16" y="628">| OR: Reactivate this Officer? They must sign in again.                                    |</text>
+    <text x="16" y="648">| [ Confirm ] [ Keep current status ]                                                      |</text>
+    <text x="16" y="668">+------------------------------------------------------------------------------------------+</text>
+    <text x="16" y="688"></text>
+    <text x="16" y="708">Deactivation keeps loan history and invalidates the Officer&#x27;s earlier sessions.</text>
+    <text x="16" y="728">Officer accounts cannot open this management screen.</text>
+  </g>
+</svg>
