@@ -1,5 +1,12 @@
 # Project changelog — API and AI input/output
 
+- **S4-06 — login validation and exact lock expiry:** email is limited to 254
+  characters and password to 128; blank login values receive clear 422 field errors.
+  Validation failures leave the failure counter and lock unchanged. Password text
+  is preserved. Added input/body/counter regressions and fixed-clock tests that
+  create the three-failure lock, verify exactly 15 minutes and check expiry at
+  -1, 0 and +1 microsecond. The existing runtime expiry comparison remains unchanged.
+
 - **S4-05 — application validation and BR9:** missing, blank or null income now returns
   exactly `Income is required`; monetary/term/CIC inputs reject booleans and malformed
   whole-number text. Optional CIC/text blanks become NULL and text is trimmed before

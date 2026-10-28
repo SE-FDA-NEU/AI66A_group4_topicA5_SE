@@ -98,7 +98,7 @@ The create flow validates BR2/BR9/input, computes BR3 and saves a pending applic
 
 | Method | Path | Input | Success | Error codes | Covers |
 | --- | --- | --- | --- | --- | --- |
-| POST | `/api/auth/login` | email, password | 200 + access_token, token_type and user | 401 wrong credentials; 403 inactive; 422 invalid body; 423 account locked for 15 min | US01 (P0) |
+| POST | `/api/auth/login` | nonblank email (max 254 chars), password (max 128 chars) | 200 + access_token, token_type and user | 401 wrong credentials; 403 inactive; 422 invalid body; 423 account locked for 15 min | US01 (P0) |
 | GET | `/api/auth/me` | - | 200 + id, email, full_name, role, is_active | 401 | US01 |
 | POST | `/api/loan-applications` | monthly_income, loan_amount, loan_term_months, estimated_monthly_payment; optional credit_history_note, purpose, cic_debt_group, citizen_id, bank_account | 201 + application (`pending`, high-risk flag when DSR > 50%) | 401; 422 field errors/extra fields; 503 identifier key unavailable | US03, US09 (P0); BR2, BR3, BR7, BR9 |
 | GET | `/api/loan-applications` | - | 200 + list (Officer: own; Admin: all), newest first | 401 | US05; BR8 |
@@ -153,6 +153,24 @@ return 422 with `errors.estimated_monthly_payment` set respectively to
 When loan/term is already invalid, skip the dependent BR9 check and report that field.
 All validation failures save no new loan. Unknown fields and non-object/malformed bodies
 receive clear field/form errors through the shared validation handler.
+
+
+### Login input and lock expiry (S4-06)
+
+`POST /api/auth/login` requires nonblank text: email is at most 254 characters
+and password at most 128. Missing, null, empty or whitespace-only values return
+422 with `Email is required.` or `Password is required.`; wrong types and
+overlong values receive field-specific messages. Malformed/non-object bodies
+receive a form error. Schema validation runs before authentication and does not
+increment `failed_login_count`, change `locked_until` or issue a token. Password
+text is preserved; the existing email lookup remains case-insensitive.
+
+Three consecutive wrong passwords create a lock for exactly 15 minutes. Those
+failed attempts return 401; subsequent valid requests while `now < locked_until`
+return 423. At `now == locked_until` and afterwards, a correct password permits
+login and clears the counter and lock. The fixed-clock regression test checks
+lock creation and expiry at -1, 0 and +1 microsecond.
+
 
 ## 4. Walking skeleton retained from M2
 

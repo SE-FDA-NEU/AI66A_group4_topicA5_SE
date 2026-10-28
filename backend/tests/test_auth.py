@@ -1,5 +1,7 @@
 from datetime import UTC
 
+import pytest
+
 from app.models import User
 from app.seed import TEST_PASSWORD
 
@@ -111,3 +113,59 @@ def test_expired_token_is_refused(client, seeded):
     resp = client.get("/api/auth/me", headers={"Authorization": f"Bearer {token}"})
     assert resp.status_code == 401
     assert "sign in again" in resp.json()["detail"]
+
+def _failed_count(db, email):
+    db.expire_all()
+    return db.query(User).filter_by(email=email).one().failed_login_count
+
+
+# TC-US01-09
+@pytest.mark.parametrize(
+    ("payload", "field", "message"),
+    [
+        ({"email": "", "password": "x"}, "email", "Email is required."),
+        ({"email": "   ", "password": "x"}, "email", "Email is required."),
+        ({"email": None, "password": "x"}, "email", "Email is required."),
+        ({"password": "x"}, "email", "Email is required."),
+        ({"email": "hoang@branch.vn", "password": ""}, "password", "Password is required."),
+        ({"email": "hoang@branch.vn", "password": "   "}, "password", "Password is required."),
+        ({"email": "hoang@branch.vn", "password": None}, "password", "Password is required."),
+        ({"email": "hoang@branch.vn"}, "password", "Password is required."),
+        ({"email": 123, "password": "x"}, "email", "Email must be text."),
+        ({"email": ["a"], "password": "x"}, "email", "Email must be text."),
+        ({"email": "hoang@branch.vn", "password": 123}, "password", "Password must be text."),
+        ({"email": "hoang@branch.vn", "password": ["a"]}, "password", "Password must be text."),
+        ({"email": "a" * 255, "password": "x"}, "email", "Email must not exceed 254 characters."),
+        ({"email": "hoang@branch.vn", "password": "p" * 129}, "password", "Password must not exceed 128 characters."),
+    ],
+)
+def test_invalid_login_input_is_422_and_not_counted_as_a_failure(client, seeded, payload, field, message):
+    resp = client.post("/api/auth/login", json=payload)
+    assert resp.status_code == 422
+    assert resp.json()["errors"][field] == message
+    assert _failed_count(seeded, "hoang@branch.vn") == 0
+    assert _post(client, "hoang@branch.vn", TEST_PASSWORD).status_code == 200
+
+
+# TC-US01-10
+def test_login_edge_lengths_are_accepted_as_input(client, seeded):
+    # Exactly at the limits: passes validation, then fails as a normal wrong login.
+    resp = client.post("/api/auth/login", json={"email": "a" * 254, "password": "p" * 128})
+    assert resp.status_code == 401
+
+
+# TC-US01-11
+@pytest.mark.parametrize("body", [b"{bad", b"[]", b"null", b""])
+def test_malformed_login_body_is_422_and_not_counted(client, seeded, body):
+    resp = client.post("/api/auth/login", content=body, headers={"content-type": "application/json"})
+    assert resp.status_code == 422
+    assert list(resp.json()["errors"]) == ["form"]
+    assert _failed_count(seeded, "hoang@branch.vn") == 0
+
+
+# TC-US01-12
+def test_validation_error_does_not_add_to_an_existing_failure_count(client, seeded):
+    assert _post(client, "hoang@branch.vn", "wrong").status_code == 401
+    assert _failed_count(seeded, "hoang@branch.vn") == 1
+    assert client.post("/api/auth/login", json={"email": "hoang@branch.vn", "password": ""}).status_code == 422
+    assert _failed_count(seeded, "hoang@branch.vn") == 1
