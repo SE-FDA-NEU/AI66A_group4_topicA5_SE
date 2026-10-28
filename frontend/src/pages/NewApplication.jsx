@@ -1,6 +1,18 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../api";
+import { validateApplication } from "../validation";
+
+const FIELD_ORDER = [
+  "monthly_income", "loan_amount", "loan_term_months", "estimated_monthly_payment",
+  "citizen_id", "bank_account", "purpose", "credit_history_note", "cic_debt_group",
+];
+const fieldId = (name) => `field-${name}`;
+
+function focusFirstInvalid(errors) {
+  const first = FIELD_ORDER.find((name) => errors[name]);
+  if (first) document.getElementById(fieldId(first))?.focus();
+}
 
 const EMPTY = {
   monthly_income: "", loan_amount: "", loan_term_months: "", estimated_monthly_payment: "",
@@ -10,13 +22,23 @@ const EMPTY = {
 function Field({ name, label, hint, form, setForm, errors, area }) {
   const Tag = area ? "textarea" : "input";
   const props = area ? { rows: 2 } : { type: "text", inputMode: name === "purpose" ? "text" : "numeric" };
+  const id = fieldId(name);
+  const error = errors[name];
+  const describedBy = [hint && `${id}-hint`, error && `${id}-error`].filter(Boolean).join(" ");
   return (
-    <label className={errors[name] ? "has-error" : ""}>
-      {label}
-      <Tag {...props} value={form[name]} onChange={(e) => setForm({ ...form, [name]: e.target.value })} />
-      {hint && <small className="muted">{hint}</small>}
-      {errors[name] && <small className="field-error">{errors[name]}</small>}
-    </label>
+    <div className={error ? "field has-error" : "field"}>
+      <label htmlFor={id}>{label}</label>
+      <Tag
+        {...props}
+        id={id}
+        value={form[name]}
+        aria-invalid={error ? "true" : undefined}
+        aria-describedby={describedBy || undefined}
+        onChange={(e) => setForm({ ...form, [name]: e.target.value })}
+      />
+      {hint && <small id={`${id}-hint`} className="muted">{hint}</small>}
+      {error && <small id={`${id}-error`} className="field-error">{error}</small>}
+    </div>
   );
 }
 
@@ -29,8 +51,15 @@ export default function NewApplication() {
 
   const submit = async (e) => {
     e.preventDefault();
-    setErrors({});
     setMessage("");
+    const problems = validateApplication(form);
+    if (Object.keys(problems).length > 0) {
+      setErrors(problems);
+      setMessage("Please correct the highlighted fields and submit again.");
+      focusFirstInvalid(problems);
+      return;
+    }
+    setErrors({});
     setBusy("Saving the application...");
     let created;
     try {
@@ -49,7 +78,9 @@ export default function NewApplication() {
       };
       created = await api.createApplication(payload);
     } catch (err) {
-      setErrors(err.fields || {});
+      const fields = err.fields || {};
+      setErrors(fields);
+      focusFirstInvalid(fields);
       setMessage(err.message);
       setBusy("");
       return;
@@ -67,15 +98,16 @@ export default function NewApplication() {
   };
 
   const f = { form, setForm, errors };
-  const errorList = Object.values(errors);
+  const errorList = Object.entries(errors);
+  const showList = errorList.length > 1 || errorList.some(([name]) => name === "form");
   return (
     <>
       <h1>New loan application</h1>
       <form className="card form" onSubmit={submit} noValidate>
         {message && (
           <div className="alert" role="alert">
-            <strong>{errorList.length > 1 ? "Please fix these fields:" : message}</strong>
-            {errorList.length > 1 && <ul>{errorList.map((m) => <li key={m}>{m}</li>)}</ul>}
+            <strong>{showList ? "Please fix these fields:" : message}</strong>
+            {showList && <ul>{errorList.map(([name, m]) => <li key={name}>{m}</li>)}</ul>}
           </div>
         )}
         <Field {...f} name="monthly_income" label="Monthly income (VND)" hint="e.g. 20000000" />
