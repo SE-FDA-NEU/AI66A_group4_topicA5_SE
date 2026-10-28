@@ -8,6 +8,8 @@ from app import models  # noqa: F401  (registers every table on Base.metadata)
 from app.database import engine
 from app.migrate import ensure_schema
 from app.routers import applications, auth, loans, users
+from app.routers.applications import ApplicationIn
+from app.routers.auth import LoginIn
 
 
 @asynccontextmanager
@@ -49,6 +51,19 @@ FIELD_LABELS = {
 }
 
 
+# Fields that have no default in a request model: a blank value there means "not given".
+REQUIRED_FIELDS = {
+    name
+    for model in (ApplicationIn, LoginIn)
+    for name, info in model.model_fields.items()
+    if info.is_required()
+}
+
+
+def _is_blank(value) -> bool:
+    return value is None or (isinstance(value, str) and value.strip() == "")
+
+
 @app.exception_handler(RequestValidationError)
 async def validation_error_handler(request, exc):
     errors = {}
@@ -59,8 +74,16 @@ async def validation_error_handler(request, exc):
         kind = error["type"]
         context = error.get("ctx", {})
 
-        if kind == "missing":
-            message = f"{label} is required."
+        if len(location) == 1 and kind in ("missing", "model_attributes_type", "dict_type", "model_type"):
+            # The body itself is absent, null, or not an object (array, number, text).
+            field = "form"
+            message = "The request body must be a JSON object."
+        elif kind == "missing" or (
+            field in REQUIRED_FIELDS and len(location) > 1 and _is_blank(error.get("input"))
+        ):
+            message = "Income is required" if field == "monthly_income" else f"{label} is required."
+        elif kind == "extra_forbidden":
+            message = f"Unknown field '{field}' is not accepted."
         elif kind in ("int_parsing", "int_type", "int_from_float"):
             message = f"{label} must be a whole number."
         elif kind == "greater_than":

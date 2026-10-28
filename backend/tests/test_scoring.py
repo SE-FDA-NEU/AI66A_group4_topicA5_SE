@@ -37,7 +37,7 @@ def test_same_input_gives_same_score(client, seeded, login):
 def test_low_score_is_rejected_with_at_least_two_reasons(client, seeded, login):
     h = login("hoang@branch.vn")
     loan_id = _new(client, h, monthly_income=8_000_000, loan_amount=600_000_000,
-                   estimated_monthly_payment=6_000_000, credit_history_note="None", cic_debt_group=2)
+                   estimated_monthly_payment=25_000_000, credit_history_note="None", cic_debt_group=2)
     body = _score(client, h, loan_id).json()
     assert body["result"]["score"] < 40 and body["result"]["label"] == "rejected"
     assert len(body["result"]["explanation"]) >= 2 and body["application"]["status"] == "rejected"

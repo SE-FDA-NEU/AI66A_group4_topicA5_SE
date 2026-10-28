@@ -45,8 +45,18 @@ def test_us09_missing_income_names_the_field(client, seeded, login):
     body = {k: v for k, v in VALID_APPLICATION.items() if k != "monthly_income"}
     resp = client.post("/api/loan-applications", headers=login("hoang@branch.vn"), json=body)
     assert resp.status_code == 422
-    assert resp.json()["errors"]["monthly_income"] == "Monthly income is required."
+    assert resp.json()["errors"]["monthly_income"] == "Income is required"
     assert resp.json()["detail"] == "Please correct the highlighted fields and submit again."
+
+
+# TC-US09-03
+def test_us09_empty_string_income_is_reported_as_required(client, seeded, login):
+    headers = login("hoang@branch.vn")
+    before = seeded.query(LoanApplication).count()
+    resp = _create(client, headers, monthly_income="")
+    assert resp.status_code == 422
+    assert resp.json()["errors"]["monthly_income"] == "Income is required"
+    assert seeded.query(LoanApplication).count() == before
 
 
 # TC-US09-02

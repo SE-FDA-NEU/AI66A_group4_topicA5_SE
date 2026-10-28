@@ -4,9 +4,9 @@ This document is the product requirement baseline. Implementation and acceptance
 status for Sprint 3 are tracked in [ui.md](ui.md#1-p0-stories-and-status) and
 [traceability.md](traceability.md); a requirement appearing here does not mean it
 is already implemented. US06 history UI, US07 notifications and US10 edit/cancel
-remain pending. The US09 exact empty-income message is an open acceptance gap
-described in [ui.md](ui.md#3-error-messages); its acceptance criterion below is
-retained unchanged.
+remain pending. S4-05 fixes the API's exact empty-income message while retaining
+the US09 acceptance criterion below. Independent browser acceptance still needs
+a recorded result; see [ui.md](ui.md#3-error-messages).
 
 ## 1. Product vision
 
@@ -140,6 +140,7 @@ With 2 years of experience in the profession, Hoang processes an average of 1 to
 | BR6 | Score **< 40** -> receives "Proposal rejected"; **40-69** -> "Requires further review"; **>= 70** -> "Eligible for proposal" | Application gets 35 points -> automatically labeled "Proposal rejected", no further Manager approval needed |
 | BR7 | Do not store full ID card (CMND/CCCD) numbers or bank account numbers in **system logs** - only store the last 4 digits. In the **main database**, these fields must be **encrypted at rest**, and only decrypted upon valid lookup requests with access logged | CCCD 001234567890 entered into form -> log only records *******7890; stored in DB in encrypted format, anyone viewing plain text is logged "user X viewed CCCD of application #45 at 10:03" |
 | BR8 | Employees (role **User**) can only view applications created by themselves; Managers (role **Admin**) can view all branch applications, including employee account management | Employee Hoang (User) creates application #45 -> other employees (role User) cannot see application #45; Manager Thanh (Admin) can see all |
+| BR9 | The estimated monthly payment must not exceed the loan amount; payment x loan term must cover the loan amount. Invalid input returns 422 on `estimated_monthly_payment`, with no loan saved. Skip this dependent check while loan or term is invalid. | Loan 100,000,000 over 25 months with payment 4,000,000 is accepted; increasing the loan to 100,000,001 is rejected. |
 
 ## 6. Screens and flow
 
@@ -155,3 +156,10 @@ With 2 years of experience in the profession, Hoang processes an average of 1 to
 **Flow diagram:** see `docs/images/screen-flow.jpg`
 
 ![Screen flow](images/screen-flow.jpg)
+
+### S4-05 validation clarification
+
+US09 empty/missing/null income returns exactly `Income is required`. Numeric fields
+reject booleans and malformed numeric text; optional blank CIC/text are normalized to
+NULL, and text limits apply after trimming. The API returns clear field/form errors and
+saves nothing on a validation failure. BR9 is implemented in the request schema.
