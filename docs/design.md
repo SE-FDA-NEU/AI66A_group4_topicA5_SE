@@ -10,7 +10,7 @@ The editable diagram source is [architecture-m3.svg](images/architecture-m3.svg)
 | --- | --- | --- |
 | **Browser** | Used by employees and managers (phone or computer). | in use |
 | **Frontend web app** | React + Vite single-page app for the screens in M1 section 6. | built (Sprint 3): login, dashboard, new application, application details, list, protected-identifier lookup, employee accounts |
-| **Backend API** | FastAPI service. Owns all business logic and enforces BR1-BR8, including identifier encryption/audited lookup and employee account management. | built: auth, applications, scoring, dashboard, manager approval (cancel/edit still to do) |
+| **Backend API** | FastAPI service. Owns all business logic and enforces BR1-BR9, including identifier encryption/audited lookup and employee account management. | built: auth, applications, scoring, dashboard, manager approval (cancel/edit still to do) |
 | **Database** | SQLite file `credit_scoring.db`, accessed through SQLAlchemy. PostgreSQL is a future deployment option that also needs a driver, configuration and integration/concurrency testing. | SQLite built/tested; PostgreSQL planned |
 | **Scoring module** | `app/scoring_service.py` applies rule guards and calls `build_features` / `predict` in `app/scoring.py` inside the API process. `rules-v0` returns an integer score and explanation strings; no model artifact is loaded. | deterministic rules built in Sprint 3; trained model planned for Sprint 4 |
 | **Offline training pipeline** | Planned evaluation of German Credit and a versioned preprocessing/model artifact, subject to feature mapping and licensing checks. No training pipeline or `model.joblib` loading exists in M3. Training records are separate from runtime application records. | planned (Sprint 4) |
@@ -94,13 +94,13 @@ Conventions: JSON under `/api`, money in whole VND, and `Authorization: Bearer <
 
 There are **13 implemented API operations** in the first table. The two US10 edit/cancel operations are a product design only, listed separately; they are not registered routes. Ordinary application responses include masked identifiers and a latest-result summary; only the explicit authorized reveal response returns full numbers.
 
-The create flow validates BR2/input, computes BR3 and saves a pending application. Scoring is a separate request: it acquires a database write lock, rejects cancelled/approved states, builds features, checks BR5 before BR4, then calls `rules-v0`, validates BR1 and assigns the BR6 label. A high-risk flag is independent of the numeric score. See [scoring_service.py](../backend/app/scoring_service.py) and [transactions.py](../backend/app/transactions.py).
+The create flow validates BR2/BR9/input, computes BR3 and saves a pending application. Scoring is a separate request: it acquires a database write lock, rejects cancelled/approved states, builds features, checks BR5 before BR4, then calls `rules-v0`, validates BR1 and assigns the BR6 label. A high-risk flag is independent of the numeric score. See [scoring_service.py](../backend/app/scoring_service.py) and [transactions.py](../backend/app/transactions.py).
 
 | Method | Path | Input | Success | Error codes | Covers |
 | --- | --- | --- | --- | --- | --- |
 | POST | `/api/auth/login` | email, password | 200 + access_token, token_type and user | 401 wrong credentials; 403 inactive; 422 invalid body; 423 account locked for 15 min | US01 (P0) |
 | GET | `/api/auth/me` | - | 200 + id, email, full_name, role, is_active | 401 | US01 |
-| POST | `/api/loan-applications` | monthly_income, loan_amount, loan_term_months, estimated_monthly_payment; optional credit_history_note, purpose, cic_debt_group, citizen_id, bank_account | 201 + application (`pending`, high-risk flag when DSR > 50%) | 401; 422 field errors/extra fields; 503 identifier key unavailable | US03, US09 (P0); BR2, BR3, BR7 |
+| POST | `/api/loan-applications` | monthly_income, loan_amount, loan_term_months, estimated_monthly_payment; optional credit_history_note, purpose, cic_debt_group, citizen_id, bank_account | 201 + application (`pending`, high-risk flag when DSR > 50%) | 401; 422 field errors/extra fields; 503 identifier key unavailable | US03, US09 (P0); BR2, BR3, BR7, BR9 |
 | GET | `/api/loan-applications` | - | 200 + list (Officer: own; Admin: all), newest first | 401 | US05; BR8 |
 | GET | `/api/loan-applications/{id}` | - | 200 + application, latest_score, approval metadata | 401; 403 not owner/Admin; 404 missing application | US05; BR8 |
 | POST | `/api/loan-applications/{id}/score` | - | 201 + `result` and `application`; BR1/BR4 outcomes are persisted results | 401; 403; 404; 409 cancelled/approved; 429 BR5 limit, changes status to `manual_review` | US04 (P0); BR1, BR3-BR6 |
@@ -114,7 +114,7 @@ The create flow validates BR2/input, computes BR3 and saves a pending applicatio
 
 The dashboard selects applications **created during today's Vietnam calendar day (UTC+7)**, using UTC start/end boundaries. It averages the latest result of each selected application only when that result has a numeric score; it does not fall back to an earlier result. It does not average all scoring attempts or select attempts by the scoring date. Officer scope is their own applications; Manager scope is the whole branch. Seed loans have earlier creation dates, so a fresh seed can correctly show zero applications today.
 
-For 422 schema errors the common `detail` is `Please correct the highlighted fields and submit again.` The exact field messages are listed in [ui.md section 3](ui.md#3-error-messages). A missing `monthly_income` key returns `Monthly income is required.`; an empty string or nonnumeric value currently returns `Monthly income must be a whole number.` The empty-form wording does not yet meet the distinct required-field message in US09; this remains an acceptance gap, not a completed criterion.
+For 422 schema errors the common `detail` is `Please correct the highlighted fields and submit again.` The exact field messages are listed in [ui.md section 3](ui.md#3-error-messages). S4-05 makes missing, empty, whitespace-only and null `monthly_income` return exactly `Income is required`; nonnumeric or malformed numeric input returns `Monthly income must be a whole number.` The API wording gap is fixed; independent browser acceptance still needs a recorded result. BR9 errors identify `estimated_monthly_payment` and invalid requests save no new application.
 
 **Planned operations (not implemented in M3):**
 
@@ -136,6 +136,23 @@ The High risk flag remains visible after the decision; approved applications
 cannot be rescored. The confirmation flow and API error text are documented in
 [ui.md](ui.md#4-what-changed-since-m2). Approval is not disbursement; US10 edit/cancel
 remains pending.
+
+
+### Application input validation and BR9 (S4-05)
+
+`POST /api/loan-applications` accepts whole-number monetary inputs and a whole-number
+term/CIC group, rejecting booleans and malformed numeric text such as `1_000`, `1.5`
+and `+5`. Surrounding whitespace is trimmed. Missing, blank or null required income
+returns exactly `Income is required`; optional blank CIC becomes NULL. Optional purpose
+and credit-history text are trimmed before the 500-character limit and blank text becomes NULL.
+
+BR9 requires payment <= loan amount and payment x term >= loan amount. Invalid requests
+return 422 with `errors.estimated_monthly_payment` set respectively to
+`Estimated monthly payment must not exceed the loan amount.` or
+`Estimated monthly payment multiplied by the loan term must cover the loan amount.`
+When loan/term is already invalid, skip the dependent BR9 check and report that field.
+All validation failures save no new loan. Unknown fields and non-object/malformed bodies
+receive clear field/form errors through the shared validation handler.
 
 ## 4. Walking skeleton retained from M2
 

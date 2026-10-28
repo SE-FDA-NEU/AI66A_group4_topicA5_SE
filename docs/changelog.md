@@ -1,5 +1,15 @@
 # Project changelog — API and AI input/output
 
+- **S4-05 — application validation and BR9:** missing, blank or null income now returns
+  exactly `Income is required`; monetary/term/CIC inputs reject booleans and malformed
+  whole-number text. Optional CIC/text blanks become NULL and text is trimmed before
+  length validation. Unknown fields and malformed/non-object bodies receive clear
+  field/form errors. BR9 rejects payment above loan amount or payment x term below loan
+  amount with a 422 on `estimated_monthly_payment`; invalid inputs save nothing.
+  Added validation regressions and adjusted the low-score test fixture to repay its
+  600,000,000 loan over 24 months, without changing the scoring model.
+
+
 - **Added** `GET /api/auth/me`.
 - **Added** `POST /api/loan-applications`, `GET /api/loan-applications`, `GET /api/loan-applications/{id}`, `POST /api/loan-applications/{id}/score`, `GET /api/loan-applications/{id}/scores`, `GET /api/dashboard/summary` (all as designed in `design.md` section 3).
 - **Changed** `422` body of `POST /api/loan-applications`: `{"detail": "<message>", "errors": {"<field>": "<message>"}}`.

@@ -1,8 +1,10 @@
+import re
 from datetime import UTC, datetime, timedelta, timezone
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Response
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator
+from pydantic_core import PydanticCustomError
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session, joinedload
 
@@ -31,6 +33,15 @@ router = APIRouter(prefix="/api", tags=["loan-applications"])
 LOCAL_TZ = timezone(timedelta(hours=7))
 
 
+_WHOLE_NUMBER = re.compile(r"-?[0-9]+")
+_HUGE = 10**30  # digit strings longer than this are clamped so int() never hits Python's digit limit
+
+
+def _not_whole_number() -> PydanticCustomError:
+    # Type 'int_type' is mapped to "<label> must be a whole number." by the 422 handler.
+    return PydanticCustomError("int_type", "Input should be a whole number")
+
+
 class ApplicationIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -45,6 +56,51 @@ class ApplicationIn(BaseModel):
     # zeros. max_length only caps the input before the digit rules run.
     citizen_id: str | None = Field(default=None, max_length=32)
     bank_account: str | None = Field(default=None, max_length=32)
+
+    @field_validator(
+        "monthly_income", "loan_amount", "loan_term_months",
+        "estimated_monthly_payment", "cic_debt_group", mode="before",
+    )
+    @classmethod
+    def _strict_whole_number(cls, value, info: ValidationInfo):
+        # bool is an int subclass (True would become 1); text must be digits only,
+        # so "1_000", "12a" and "1.5" are rejected. Blank text stays "" for a
+        # required field (reported as "is required") and means "not provided" for CIC.
+        if isinstance(value, bool):
+            raise _not_whole_number()
+        if isinstance(value, str):
+            text = value.strip()
+            if text == "":
+                return None if info.field_name == "cic_debt_group" else text
+            if not _WHOLE_NUMBER.fullmatch(text):
+                raise _not_whole_number()
+            if len(text) > 30:
+                return -_HUGE if text.startswith("-") else _HUGE
+            return int(text)
+        return value
+
+    @field_validator("purpose", "credit_history_note", mode="before")
+    @classmethod
+    def _blank_text_is_none(cls, value):
+        if isinstance(value, str):
+            return value.strip() or None
+        return value
+
+    @field_validator("estimated_monthly_payment")
+    @classmethod
+    def _br9_payment_must_cover_loan(cls, value: int, info: ValidationInfo) -> int:
+        # BR9. Skipped when the loan fields are missing or invalid (they report their own error).
+        loan = info.data.get("loan_amount")
+        term = info.data.get("loan_term_months")
+        if loan is None or term is None:
+            return value
+        if value > loan:
+            raise ValueError("Estimated monthly payment must not exceed the loan amount.")
+        if value * term < loan:
+            raise ValueError(
+                "Estimated monthly payment multiplied by the loan term must cover the loan amount."
+            )
+        return value
 
     @field_validator('citizen_id', 'bank_account')
     @classmethod

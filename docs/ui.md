@@ -8,7 +8,7 @@
 | US03 Input a loan application | New application | `/loan-applications/new` | partly works (implemented; independent browser acceptance pending; saves, flags High risk when DSR > 50%, scores right away) | #10 |
 | US04 View the credit score with explanations | Application details | `/loan-applications/:id` | partly works (implemented; independent browser acceptance pending; score 0-100, label, factors, CIC group; rule-based model `rules-v0`, the trained model comes in Sprint 4) | #11 |
 | US08 Overview dashboard | Dashboard | `/dashboard` | partly works (implemented; independent browser acceptance pending; today's total, average score, high-risk count; shows "0 applications today" when empty) | #13 |
-| US09 Alert on missing or malformed data | New application | `/loan-applications/new` | partly works (field errors and no-save behavior implemented; empty-income wording differs from the US09 acceptance criterion; independent browser acceptance pending) | #14 |
+| US09 Alert on missing or malformed data | New application | `/loan-applications/new` | partly works (field errors and no-save behavior implemented; API required-income wording fixed in S4-05; independent browser acceptance pending) | #14 |
 
 Also built, not P0: `/loan-applications` (list, P1, US05 partly) so a person can reach any application without typing a URL.
 
@@ -75,10 +75,10 @@ Calls: `POST /api/loan-applications`, then `POST /api/loan-applications/{id}/sco
 
 ![New application wireframe](images/ui/wireframe-2.svg)
 
-The image preserves the original required-field wording from the design. Current
-empty/text income input displays "Monthly income must be a whole number."; the
-US09 acceptance criterion still requires "Income is required" for an empty box.
-This wording gap remains open; the acceptance criterion has not been changed.
+The wireframe preserves the required-field design. S4-05 makes an empty, blank,
+missing or null income return "Income is required" from the API; malformed numeric
+input returns "Monthly income must be a whole number." The API saves nothing on
+validation failure. Independent browser acceptance and a new error capture remain pending.
 
 
 ### 2.4 Application details `/loan-applications/:id`
@@ -118,8 +118,10 @@ fields and submit again." and the message beside the field.
 | `401` | US01 | "Email or password is incorrect. Check your details and try again." |
 | `423` | US01 (request while locked after 3 wrong passwords) | "Too many wrong passwords. Your account is locked for 15 minutes. Try again later or ask your manager to help." |
 | `422` | BR2 (income equals 0) | "Monthly income must be greater than 0 VND." |
-| `422` | US09 (empty or text income sent by the form) | "Monthly income must be a whole number." |
-| `422` | US09 (API request omits `monthly_income`) | "Monthly income is required." |
+| `422` | US09 (nonnumeric or malformed income text) | "Monthly income must be a whole number." |
+| `422` | US09 (missing, empty, whitespace-only or null income) | "Income is required" |
+| `422` | BR9 (payment exceeds loan amount) | "Estimated monthly payment must not exceed the loan amount." |
+| `422` | BR9 (payment x term does not cover loan amount) | "Estimated monthly payment multiplied by the loan term must cover the loan amount." |
 | `422` | BR7 (invalid Citizen ID format) | "Citizen ID must be 9 or 12 digits, with no spaces, letters or separators." |
 | `422` | BR7 (invalid bank account format) | "Bank account must be 6 to 20 digits, with no spaces, letters or separators." |
 | `429` | BR5 (fourth scoring request in the rolling hour) | "This application has already been scored 3 times in the last hour. It is now marked 'Requires manager review'. Ask a manager to review it." |
@@ -143,12 +145,10 @@ fields and submit again." and the message beside the field.
 | `201` (not an error) | BR4 (CIC group 4 example) | Score shows "-", label "Recommendation Rejected", reason: "CIC debt group 4 (bad debt). Groups 3-5 are rejected automatically." |
 | `201` (not an error) | BR1 (score out of range) | "The model returned an invalid score, so no score is shown. A manager will review this application." |
 
-**Open US09 wording gap:** an empty income box is sent as an empty string, so it
-currently follows the whole-number error, not the required-field error. The
-requirements still specify "Income is required" for this case. Rejecting the
-request without saving is implemented; that exact acceptance message is not yet
-implemented. Do not treat the missing-field API test as browser acceptance of an
-empty form field.
+**S4-05 API validation:** an empty income string now follows the required-field
+branch and returns exactly "Income is required". Whitespace-only, null and omitted
+income use the same message. Regression tests cover these inputs, BR9 and no-save
+behavior. Automated API results do not establish independent browser acceptance.
 
 ## 4. What changed since M2
 
@@ -185,6 +185,8 @@ US07 notifications, US06 history UI and US10 edit/cancel remain pending; the rev
 ![Officer application data, score and explanations](images/ui/officer-saved-application.png)
 
 ![Monthly income validation error](images/ui/income-validation-error.png)
+
+This existing Sprint 3 capture is historical evidence; it is not a new capture proving the S4-05 message.
 
 ![Manager filters by eligibility and employee](images/ui/manager-application-filters.png)
 
