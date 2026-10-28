@@ -1,6 +1,6 @@
 from app.models import LoanApplication, LoanStatus, User, UserRole
-from app.seed import seed_database
 from app.security import create_access_token
+from app.seed import seed_database
 
 
 def _headers(user):
@@ -15,15 +15,15 @@ def _user(db):
 
 
 def _loan(db, user, **overrides):
-    data = dict(
-        created_by=user.id,
-        monthly_income=10_000_000,
-        loan_amount=50_000_000,
-        loan_term_months=12,
-        estimated_monthly_payment=2_000_000,
-        purpose="Test",
-        status=LoanStatus.PENDING,
-    )
+    data = {
+        "created_by": user.id,
+        "monthly_income": 10_000_000,
+        "loan_amount": 50_000_000,
+        "loan_term_months": 12,
+        "estimated_monthly_payment": 2_000_000,
+        "purpose": "Test",
+        "status": LoanStatus.PENDING,
+    }
     data.update(overrides)
     db.add(LoanApplication(**data))
     db.commit()

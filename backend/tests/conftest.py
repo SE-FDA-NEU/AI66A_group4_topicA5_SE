@@ -1,18 +1,19 @@
 import os
 
 os.environ["DATABASE_URL"] = "sqlite://"
-from cryptography.fernet import Fernet  # noqa: E402
-os.environ['DATA_ENCRYPTION_KEY'] = Fernet.generate_key().decode("ascii")  # noqa: E402
+from cryptography.fernet import Fernet
+
+os.environ['DATA_ENCRYPTION_KEY'] = Fernet.generate_key().decode("ascii")
 
 
-import pytest  # noqa: E402
-from fastapi.testclient import TestClient  
-from sqlalchemy import create_engine  
-from sqlalchemy.orm import sessionmaker  
-from sqlalchemy.pool import StaticPool  
+import pytest
+from fastapi.testclient import TestClient
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import StaticPool
 
-from app.database import Base, get_db  
-from app.main import app  
+from app.database import Base, get_db
+from app.main import app
 
 
 @pytest.fixture

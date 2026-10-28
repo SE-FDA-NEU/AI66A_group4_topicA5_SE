@@ -8,6 +8,7 @@ def _create(client, headers, **overrides):
     return client.post("/api/loan-applications", headers=headers, json={**VALID_APPLICATION, **overrides})
 
 
+# TC-US03-01
 def test_create_saves_a_pending_application(client, seeded, login):
     resp = _create(client, login("hoang@branch.vn"))
     assert resp.status_code == 201
@@ -31,6 +32,7 @@ def test_br3_exactly_50_percent_is_not_flagged(client, seeded, login):
     assert body["dsr_flag_high_risk"] is False
 
 
+# TC-US03-02
 def test_br2_zero_income_is_rejected_with_a_clear_message(client, seeded, login):
     resp = _create(client, login("hoang@branch.vn"), monthly_income=0)
     assert resp.status_code == 422
@@ -38,6 +40,7 @@ def test_br2_zero_income_is_rejected_with_a_clear_message(client, seeded, login)
     assert resp.json()["detail"] == "Please correct the highlighted fields and submit again."
 
 
+# TC-US09-01
 def test_us09_missing_income_names_the_field(client, seeded, login):
     body = {k: v for k, v in VALID_APPLICATION.items() if k != "monthly_income"}
     resp = client.post("/api/loan-applications", headers=login("hoang@branch.vn"), json=body)
@@ -46,6 +49,7 @@ def test_us09_missing_income_names_the_field(client, seeded, login):
     assert resp.json()["detail"] == "Please correct the highlighted fields and submit again."
 
 
+# TC-US09-02
 def test_us09_text_income_is_rejected_and_nothing_is_saved(client, seeded, login):
     headers = login("hoang@branch.vn")
     before = len(client.get("/api/loan-applications", headers=headers).json())
@@ -55,6 +59,7 @@ def test_us09_text_income_is_rejected_and_nothing_is_saved(client, seeded, login
     assert len(client.get("/api/loan-applications", headers=headers).json()) == before
 
 
+# TC-US03-03
 def test_all_field_errors_are_reported_together(client, seeded, login):
     resp = client.post("/api/loan-applications", headers=login("hoang@branch.vn"), json={})
     assert set(resp.json()["errors"]) == {
@@ -62,6 +67,7 @@ def test_all_field_errors_are_reported_together(client, seeded, login):
 
 
 @pytest.mark.parametrize("group", [0, 6, "x"])
+# TC-US03-04
 def test_cic_group_must_be_1_to_5(client, seeded, login, group):
     assert _create(client, login("hoang@branch.vn"), cic_debt_group=group).status_code == 422
 
@@ -88,6 +94,7 @@ def test_unknown_application_is_404_with_a_message(client, seeded, login):
     assert resp.status_code == 404 and "Application not found" in resp.json()["detail"]
 
 
+# TC-US08-01
 def test_dashboard_counts_todays_applications(client, seeded, login):
     headers = login("hoang@branch.vn")
     empty = client.get("/api/dashboard/summary", headers=headers).json()
@@ -99,5 +106,6 @@ def test_dashboard_counts_todays_applications(client, seeded, login):
     assert summary["total_applications"] == 2 and summary["average_score"] is not None
 
 
+# TC-US08-02
 def test_dashboard_requires_login(client, seeded):
     assert client.get("/api/dashboard/summary").status_code == 401

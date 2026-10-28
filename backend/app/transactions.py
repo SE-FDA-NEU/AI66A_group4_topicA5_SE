@@ -1,5 +1,6 @@
 """Serialize decisions on one loan in the database, across worker processes."""
 from sqlalchemy import update
+
 from app.models import LoanApplication
 
 

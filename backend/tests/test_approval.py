@@ -1,7 +1,7 @@
 import pytest
 
 from app import scoring
-from app.models import EventLog, LoanApplication, LoanStatus, ScoringResult, ScoreLabel
+from app.models import EventLog, LoanApplication, LoanStatus
 from tests.conftest import VALID_APPLICATION
 
 
