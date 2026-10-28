@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useAuth } from "../auth";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const required = (label) => `Please enter your ${label}.`;
 
 const LENS_R = 34;    // magnifier radius (px), must match .magnifier width / 2
 const TEXT_LEFT = 43; // input border (1px) + left padding (42px)
@@ -125,9 +126,9 @@ export default function Login() {
 
   const validate = () => {
     const errs = {};
-    if (!email.trim()) errs.email = "Please enter your email.";
+    if (!email.trim()) errs.email = required("email");
     else if (!EMAIL_RE.test(email.trim())) errs.email = "Invalid email address.";
-    if (!password) errs.password = "Please enter your password.";
+    if (!password) errs.password = required("password");
     return errs;
   };
 
