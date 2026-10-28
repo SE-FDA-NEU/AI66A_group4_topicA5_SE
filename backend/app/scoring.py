@@ -1,14 +1,30 @@
-MODEL_VERSION = 'rules-v0'
+import re
+import unicodedata
+
+MODEL_VERSION = 'rules-v1'
+
+# Normalised (lowercase, no accents, no punctuation) notes that mean "no history".
+NO_HISTORY_PHRASES = frozenset({
+    "", "none", "no", "na", "nil", "0", "khong", "khong co", "chua co", "chua",
+    "no credit history", "no history",
+})
+
+
+def has_history(note) -> bool:
+    text = unicodedata.normalize("NFD", (note or "").lower().replace("đ", "d"))
+    text = "".join(c for c in text if not unicodedata.combining(c))
+    text = "".join(c for c in text if unicodedata.category(c)[0] not in "PS")
+    return re.sub(r"\s+", " ", text).strip() not in NO_HISTORY_PHRASES
+
 
 def build_features(loan) -> dict:
     income = loan.monthly_income
-    history = (loan.credit_history_note or "").strip().lower()
     return {
         "dsr": loan.estimated_monthly_payment / income,
         "loan_to_annual_income": loan.loan_amount / (income * 12),
         "term_months": loan.loan_term_months,
         "cic_debt_group": loan.cic_debt_group,
-        "has_history": history not in ("", "none", "no credit history"),
+        "has_history": has_history(loan.credit_history_note),
     }
 
 
