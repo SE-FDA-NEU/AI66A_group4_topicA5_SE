@@ -1,11 +1,18 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
 from app import scoring
+from app.models import (
+    EventLog,
+    LoanApplication,
+    LoanStatus,
+    ScoreLabel,
+    ScoringResult,
+    User,
+)
 from app.transactions import lock_application
-from app.models import EventLog, LoanApplication, LoanStatus, ScoreLabel, ScoringResult, User
 
 MAX_SCORINGS_PER_HOUR = 3
 
@@ -37,7 +44,7 @@ def score_application(db: Session, loan: LoanApplication, user: User) -> Scoring
     snapshot = {k: v for k, v in features.items()}
 
     # BR5: at most 3 scorings per application in one hour; the 4th is blocked and flagged.
-    since = datetime.now(timezone.utc) - timedelta(hours=1)
+    since = datetime.now(UTC) - timedelta(hours=1)
     recent = (
         db.query(ScoringResult)
         .filter(ScoringResult.loan_application_id == loan.id, ScoringResult.created_at >= since)

@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from app.database import Base, SessionLocal, engine
 from app.models import LoanApplication, LoanStatus, User, UserRole
@@ -8,9 +8,9 @@ from app.security import hash_password
 TEST_PASSWORD = "Demo@2026"
 
 USERS = [
-    dict(email="hoang@branch.vn", full_name="Do Viet Hoang", role=UserRole.USER),
-    dict(email="linh@branch.vn", full_name="Nguyen Thu Linh", role=UserRole.USER),
-    dict(email="thanh@branch.vn", full_name="Do Hong Thanh", role=UserRole.ADMIN),
+    {"email": "hoang@branch.vn", "full_name": "Do Viet Hoang", "role": UserRole.USER},
+    {"email": "linh@branch.vn", "full_name": "Nguyen Thu Linh", "role": UserRole.USER},
+    {"email": "thanh@branch.vn", "full_name": "Do Hong Thanh", "role": UserRole.ADMIN},
 ]
 
 P, R, C = LoanStatus.PENDING, LoanStatus.REJECTED, LoanStatus.CANCELLED
@@ -46,7 +46,7 @@ def seed_database(db) -> dict:
         users[data["email"]] = user
     db.flush()
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     for i, (owner, income, amount, term, payment, purpose, history, cic, status) in enumerate(LOANS):
         created = now - timedelta(days=len(LOANS) - i)
         db.add(
@@ -67,7 +67,7 @@ def seed_database(db) -> dict:
         )
 
     db.commit()
-    return dict(users=len(users), loan_applications=len(LOANS))
+    return {"users": len(users), "loan_applications": len(LOANS)}
 
 
 def main():

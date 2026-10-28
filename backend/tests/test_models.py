@@ -1,5 +1,5 @@
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from sqlalchemy import text
@@ -24,13 +24,13 @@ def owner(db_session):
 
 
 def make_loan(owner, **overrides):
-    data = dict(
-        created_by=owner.id,
-        monthly_income=10_000_000,
-        loan_amount=50_000_000,
-        loan_term_months=12,
-        estimated_monthly_payment=2_000_000,
-    )
+    data = {
+        "created_by": owner.id,
+        "monthly_income": 10_000_000,
+        "loan_amount": 50_000_000,
+        "loan_term_months": 12,
+        "estimated_monthly_payment": 2_000_000,
+    }
     data.update(overrides)
     return LoanApplication(**data)
 
@@ -107,7 +107,7 @@ def test_scoring_history_is_ordered_by_time_us06(db_session, owner):
     loan = make_loan(owner)
     db_session.add(loan)
     db_session.commit()
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     db_session.add_all(
         [
             ScoringResult(loan_application_id=loan.id, score=74, created_at=now),
