@@ -2,7 +2,7 @@ from datetime import UTC, datetime, timedelta
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, field_validator
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -17,8 +17,16 @@ LOCK_MINUTES = 15
 
 
 class LoginIn(BaseModel):
-    email: str
-    password: str
+    email: str = Field(max_length=254)
+    password: str = Field(max_length=128)
+
+    @field_validator("email", "password")
+    @classmethod
+    def _not_blank(cls, value: str) -> str:
+        # The 422 handler turns a blank value on a required field into "<label> is required."
+        if not value.strip():
+            raise ValueError("A value is required.")
+        return value
 
 
 def user_dict(user: User) -> dict:
