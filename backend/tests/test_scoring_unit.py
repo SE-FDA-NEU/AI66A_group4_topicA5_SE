@@ -84,3 +84,19 @@ def test_approved_or_cancelled_cannot_be_scored(db_session, user, make_loan):
         with pytest.raises(HTTPException) as err:
             score_application(db_session, make_loan(status=status), user)
         assert err.value.status_code == 409
+
+
+# TC-US04-33
+@pytest.mark.parametrize(
+    "note",
+    ["N/A", "n/a", "Không có", "chưa có", "Chưa có", "KHÔNG", "no", "-", "0", "None.", "", "  ", None,
+     "No credit history", " No  History ", "nil"],
+)
+def test_has_history_false_for_no_history_phrases(note):
+    assert scoring.has_history(note) is False
+
+
+# TC-US04-34
+@pytest.mark.parametrize("note", ["5 years", "3 years, on time", "Đã vay 3 năm", "Normal history", "none of the loans were late"])
+def test_has_history_true_for_real_notes(note):
+    assert scoring.has_history(note) is True
