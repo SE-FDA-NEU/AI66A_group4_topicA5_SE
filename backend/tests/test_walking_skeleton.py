@@ -1,4 +1,14 @@
-from app.models import LoanApplication, LoanStatus, User, UserRole
+from datetime import UTC, datetime, timedelta
+
+from app import scoring
+from app.models import (
+    LoanApplication,
+    LoanStatus,
+    ScoreLabel,
+    ScoringResult,
+    User,
+    UserRole,
+)
 from app.security import create_access_token
 from app.seed import seed_database
 
@@ -100,6 +110,30 @@ def test_seed_is_idempotent(db_session):
     assert seed_database(db_session) == {"users": 3, "loan_applications": 12}
     assert seed_database(db_session) == {}
     assert db_session.query(LoanApplication).count() == 12
+
+
+# TC-US04-40
+def test_every_non_pending_seeded_application_has_a_scoring_result(db_session):
+    seed_database(db_session)
+    for loan in db_session.query(LoanApplication).filter(LoanApplication.status != LoanStatus.PENDING):
+        count = db_session.query(ScoringResult).filter_by(loan_application_id=loan.id).count()
+        assert count >= 1, loan.purpose
+
+
+# TC-US04-41
+def test_seed_shows_every_result_band_and_stays_clear_of_br5(db_session):
+    seed_database(db_session)
+    results = db_session.query(ScoringResult).all()
+    assert {r.label for r in results} >= {ScoreLabel.REJECTED, ScoreLabel.REVIEW, ScoreLabel.ELIGIBLE}
+    assert any(r.score is None and r.label is None for r in results)  # BR1 manual-review record
+    assert all(r.score is not None for r in results if r.model_version == scoring.MODEL_VERSION and r.label)
+    linh_cic4 = db_session.query(LoanApplication).filter_by(cic_debt_group=4).one()
+    bad_debt = db_session.query(ScoringResult).filter_by(loan_application_id=linh_cic4.id).one()
+    assert (bad_debt.score, bad_debt.rejected_reason) == (None, "cic_bad_debt_group")
+    manual = db_session.query(LoanApplication).filter_by(status=LoanStatus.MANUAL_REVIEW).count()
+    assert manual == 1
+    cutoff = (datetime.now(UTC) - timedelta(hours=1)).replace(tzinfo=None)
+    assert all(r.created_at.replace(tzinfo=None) < cutoff for r in results)
 
 
 def test_html_requires_authentication(client, seeded):
