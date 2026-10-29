@@ -31,6 +31,31 @@ def test_two_wrong_passwords_do_not_lock_but_the_third_does(client, seeded):
     assert _login(client, TEST_PASSWORD).status_code == 423
 
 
+# TC-US03-15
+def test_br3_dsr_exactly_50_percent_is_saved_and_not_flagged(client, seeded, login):
+    # income 20,000,000 and payment 10,000,000 gives DSR = 50% exactly
+    resp = _create(client, login("hoang@branch.vn"), estimated_monthly_payment=10_000_000)
+    assert resp.status_code == 201
+    assert resp.json()["dsr_flag_high_risk"] is False
+    assert seeded.get(LoanApplication, resp.json()["id"]).dsr_flag_high_risk is False
+
+
+# TC-US03-16
+def test_br3_dsr_one_dong_above_50_percent_is_flagged_and_saved(client, seeded, login):
+    resp = _create(client, login("hoang@branch.vn"), estimated_monthly_payment=10_000_001)
+    assert resp.status_code == 201
+    assert resp.json()["dsr_flag_high_risk"] is True
+    assert seeded.get(LoanApplication, resp.json()["id"]).dsr_flag_high_risk is True
+
+
+# TC-US03-17
+def test_br2_zero_income_saves_nothing(client, seeded, login):
+    before = seeded.query(LoanApplication).count()
+    resp = _create(client, login("hoang@branch.vn"), monthly_income=0)
+    assert resp.status_code == 422
+    assert seeded.query(LoanApplication).count() == before
+
+
 # TC-US08-03
 def test_dashboard_ignores_applications_created_before_today(client, seeded, login):
     headers = login("hoang@branch.vn")

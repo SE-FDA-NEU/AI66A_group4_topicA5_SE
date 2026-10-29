@@ -48,6 +48,23 @@ Kind: `API` is an integration test through FastAPI `TestClient` with in-memory S
 | `TC-US08-02` | US08 | Dashboard request without a token | 401 | API |
 | `TC-US08-03` | US08 | Boundary: one application created now (counted), then moved 2 days back | Total 1 first; after the move total 0, average score empty, high-risk count 0 | API |
 
+### US03 Create a loan application
+
+| ID | Story | Input | Expected | Kind |
+|----|-------|-------|----------|------|
+| `TC-US03-01` | US03 | Valid application | 201, status `pending`, no high-risk flag, record saved with the officer as owner | API |
+| `TC-US03-02` | US03 | Monthly income 0 (BR2) | 422, "Monthly income must be greater than 0 VND." | API |
+| `TC-US03-17` | US03 | Monthly income 0, record count read before and after | 422 and the record count is unchanged (nothing saved) | API |
+| `TC-US03-15` | US03 | Boundary at 50%: income 20,000,000 and payment 10,000,000 (DSR exactly 50%) | 201, `dsr_flag_high_risk` false, saved as not flagged | API |
+| `TC-US03-16` | US03 | Boundary above 50%: payment 10,000,001 (BR3) | 201, `dsr_flag_high_risk` true, application still saved | API |
+
+### US09 Clear error messages for invalid input
+
+| ID | Story | Input | Expected | Kind |
+|----|-------|-------|----------|------|
+| `TC-US09-01` | US09 | Body without `monthly_income` | 422, "Monthly income is required." and the form message "Please correct the highlighted fields and submit again." | API |
+| `TC-US09-02` | US09 | `monthly_income` is the text "abc" | 422, "Monthly income must be a whole number."; record count unchanged | API |
+
 ## Appendix: complete test case ID list
 
 ### Complete ID mapping
@@ -65,6 +82,13 @@ Every test with an ID, sorted by ID. Backend IDs are a `# TC-USxx-nn` comment di
 | `TC-US01-07` | `backend/tests/test_auth.py` | `test_lock_duration_is_fifteen_minutes` |
 | `TC-US01-08` | `backend/tests/test_auth.py` | `test_login_succeeds_after_lock_expires` |
 | `TC-US01-13` | `backend/tests/test_m4_boundaries.py` | `test_two_wrong_passwords_do_not_lock_but_the_third_does` |
+| `TC-US03-01` | `backend/tests/test_applications.py` | `test_create_saves_a_pending_application` |
+| `TC-US03-02` | `backend/tests/test_applications.py` | `test_br2_zero_income_is_rejected_with_a_clear_message` |
+| `TC-US03-03` | `backend/tests/test_applications.py` | `test_all_field_errors_are_reported_together` |
+| `TC-US03-04` | `backend/tests/test_applications.py` | `test_cic_group_must_be_1_to_5` |
+| `TC-US03-15` | `backend/tests/test_m4_boundaries.py` | `test_br3_dsr_exactly_50_percent_is_saved_and_not_flagged` |
+| `TC-US03-16` | `backend/tests/test_m4_boundaries.py` | `test_br3_dsr_one_dong_above_50_percent_is_flagged_and_saved` |
+| `TC-US03-17` | `backend/tests/test_m4_boundaries.py` | `test_br2_zero_income_saves_nothing` |
 | `TC-US04-01` | `backend/tests/test_scoring.py` | `test_score_is_an_integer_with_explanations` |
 | `TC-US04-02` | `backend/tests/test_scoring.py` | `test_same_input_gives_same_score` |
 | `TC-US04-03` | `backend/tests/test_scoring.py` | `test_low_score_is_rejected_with_at_least_two_reasons` |
@@ -89,3 +113,5 @@ Every test with an ID, sorted by ID. Backend IDs are a `# TC-USxx-nn` comment di
 | `TC-US08-01` | `backend/tests/test_applications.py` | `test_dashboard_counts_todays_applications` |
 | `TC-US08-02` | `backend/tests/test_applications.py` | `test_dashboard_requires_login` |
 | `TC-US08-03` | `backend/tests/test_m4_boundaries.py` | `test_dashboard_ignores_applications_created_before_today` |
+| `TC-US09-01` | `backend/tests/test_applications.py` | `test_us09_missing_income_names_the_field` |
+| `TC-US09-02` | `backend/tests/test_applications.py` | `test_us09_text_income_is_rejected_and_nothing_is_saved` |
