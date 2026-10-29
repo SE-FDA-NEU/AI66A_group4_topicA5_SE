@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { api } from "../api";
+import { api, isRetryable } from "../api";
 import { Empty, ErrorBox, Loading } from "../components/States";
 
 const INITIAL = { email: "", full_name: "", password: "" };
@@ -41,7 +41,7 @@ export default function Users() {
   const [notice, setNotice] = useState("");
   const load = useCallback(() => {
     setState({ status: "loading" });
-    api.listUsers().then((users) => setState({ status: "ok", users }), (err) => setState({ status: "error", message: err.message }));
+    api.listUsers().then((users) => setState({ status: "ok", users }), (err) => setState({ status: "error", message: err.message, retryable: isRetryable(err) }));
   }, []);
   useEffect(load, [load]);
   const create = async (event) => {
@@ -62,6 +62,6 @@ export default function Users() {
       <label>Initial password (12–128 characters)<input type="password" autoComplete="new-password" value={form.password} minLength={12} maxLength={128} required onChange={(event) => setForm({ ...form, password: event.target.value })} /></label>
       <button className="primary" disabled={busy}>{busy ? "Creating..." : "Create Officer"}</button>
     </form>
-    {state.status === "loading" ? <Loading text="Loading employees..." /> : state.status === "error" ? <ErrorBox message={state.message} onRetry={load} /> : state.users.length === 0 ? <Empty text="No employee accounts." /> : state.users.map((employee) => <Employee key={employee.id} employee={employee} onChanged={load} />)}
+    {state.status === "loading" ? <Loading text="Loading employees..." /> : state.status === "error" ? <ErrorBox message={state.message} onRetry={state.retryable ? load : undefined} /> : state.users.length === 0 ? <Empty text="No employee accounts." /> : state.users.map((employee) => <Employee key={employee.id} employee={employee} onChanged={load} />)}
   </>;
 }
