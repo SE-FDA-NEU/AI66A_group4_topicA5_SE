@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { api, vnd } from "../api";
+import { api, isRetryable, vnd } from "../api";
 import { useAuth } from "../auth";
 import { filterApplications, reviewQueue } from "../review";
 import { RiskBadge, StatusBadge } from "../components/Badges";
@@ -20,7 +20,7 @@ export default function ApplicationList() {
     setState({ status: "loading" });
     api.listApplications().then(
       (rows) => { if (active) setState({ status: "ok", rows }); },
-      (err) => { if (active) setState({ status: "error", message: err.message }); }
+      (err) => { if (active) setState({ status: "error", message: err.message, retryable: isRetryable(err) }); }
     );
     return () => { active = false; };
   }, []);
@@ -32,7 +32,7 @@ export default function ApplicationList() {
     <p className="muted">{manager ? "Review all branch applications or narrow the queue by risk and employee. All dates are included." : "These are the applications you created. Open a record to score it or check the manager's decision."}</p>
   </div>{!manager && <Link className="button primary" to="/loan-applications/new">New application</Link>}</div>;
   if (state.status === "loading") return <>{heading}<Loading text="Loading applications..." /></>;
-  if (state.status === "error") return <>{heading}<ErrorBox message={state.message} onRetry={load} /></>;
+  if (state.status === "error") return <>{heading}<ErrorBox message={state.message} onRetry={state.retryable ? load : undefined} /></>;
 
   const filtered = filterApplications(state.rows, view, owner);
   const rows = view === "all" ? filtered : reviewQueue(filtered);

@@ -1,39 +1,22 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
-import { api, vnd } from "../api";
+import { api, isRetryable, vnd } from "../api";
 import { useAuth } from "../auth";
 import { RiskBadge, StatusBadge } from "../components/Badges";
+import ScoreCard from "../components/ScoreCard";
+import ScoreHistory from "../components/ScoreHistory";
 import { ErrorBox, Loading } from "../components/States";
+import { formatDateTime } from "../format";
 import SensitiveData from "../components/SensitiveData";
 import { canApprove as eligibleForApproval } from "../review";
-
-function ScoreCard({ result, status }) {
-  if (!result) return <p className="muted">This application has not been scored yet.</p>;
-  if (result.score == null && result.rejected_reason === "score_out_of_range")
-    return (
-      <div className="alert">
-        The model returned an invalid score, so no score is shown. A manager will review this application.
-      </div>
-    );
-  const rejected = result.label === "rejected";
-  return (
-    <div className={`score ${result.label ?? ""}`}>
-      <div className="big">{result.score ?? "-"}<small>{result.score != null && " / 100"}</small></div>
-      <div>
-        <strong>{rejected ? "Recommendation Rejected" : result.label_text}</strong>
-        {status === "manual_review" && <p>Requires manager review.</p>}
-        <h3>{rejected ? "Why it was rejected" : "Main factors"}</h3>
-        <ul>{result.explanation.map((line) => <li key={line}>{line}</li>)}</ul>
-      </div>
-    </div>
-  );
-}
 
 export default function ApplicationDetail() {
   const { id } = useParams();
   const { user } = useAuth();
   const location = useLocation();
   const [state, setState] = useState({ status: "loading" });
+  const [history, setHistory] = useState([]);
+  const [historyError, setHistoryError] = useState("");
   const [scoring, setScoring] = useState(false);
   const [scoreError, setScoreError] = useState("");
   const [confirmApproval, setConfirmApproval] = useState(false);
@@ -45,10 +28,20 @@ export default function ApplicationDetail() {
     setState({ status: "loading" });
     api.getApplication(id).then(
       (app) => setState({ status: "ok", app }),
-      (err) => setState({ status: "error", message: err.message })
+      (err) => setState({ status: "error", message: err.message, retryable: isRetryable(err) })
     );
   }, [id]);
   useEffect(load, [load]);
+
+  const loadHistory = useCallback(
+    // On failure keep the last list and say so, rather than claiming there is no history.
+    () => api.scoreHistory(id).then(
+      (list) => { setHistory(list); setHistoryError(""); },
+      (err) => setHistoryError(err.message)
+    ),
+    [id]
+  );
+  useEffect(() => { loadHistory(); }, [loadHistory]);
 
   const rescore = async () => {
     setScoring(true);
@@ -60,6 +53,7 @@ export default function ApplicationDetail() {
       setScoreError(err.message);
       load(); // BR5 changes the status to manual_review, so show the fresh state
     } finally {
+      await loadHistory();
       setScoring(false);
     }
   };
@@ -84,7 +78,7 @@ export default function ApplicationDetail() {
   if (state.status === "error")
     return (
       <>
-        <ErrorBox message={state.message} onRetry={load} />
+        <ErrorBox message={state.message} onRetry={state.retryable ? load : undefined} />
         <p><Link to="/loan-applications">Back to the list</Link></p>
       </>
     );
@@ -115,6 +109,9 @@ export default function ApplicationDetail() {
         {!["cancelled", "approved"].includes(a.status) && (
           <button onClick={rescore} disabled={scoring || approving || confirmApproval}>{scoring ? "Scoring..." : a.latest_score ? "Score again" : "Get credit score"}</button>
         )}
+        <h3>Score history</h3>
+        {historyError && <p className="muted" role="status">Score history could not be loaded. {historyError}</p>}
+        <ScoreHistory history={history} />
       </section>
 
       <section className={`card ${manager ? "manager-decision" : ""}`}>
@@ -123,7 +120,7 @@ export default function ApplicationDetail() {
         {a.status === "approved" ? (
           <div role="status">
             <strong>Approved</strong>
-            {a.approval && <p>Approved by {a.approval.actor_name} on {new Date(a.approval.approved_at).toLocaleString()}.</p>}
+            {a.approval && <p>Approved by {a.approval.actor_name} on {formatDateTime(a.approval.approved_at)}.</p>}
             <p>This records the manager's approval of the application. Disbursement is handled outside this app.</p>
           </div>
         ) : ["cancelled", "rejected"].includes(a.status) ? (

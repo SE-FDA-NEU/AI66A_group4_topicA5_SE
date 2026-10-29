@@ -34,8 +34,16 @@ const FALLBACK = {
   401: "Please sign in to continue.",
   403: "You don't have permission to do that. Ask your manager if you need access.",
   404: "We couldn't find what you were looking for. Go back and try again.",
+  409: "This conflicts with the current state of the application. Refresh the page and try again.",
+  422: "Some of the information isn't valid. Check the highlighted fields and try again.",
+  423: "This account is temporarily locked. Wait a few minutes and try again, or ask your manager for help.",
+  429: "Too many requests. Wait a moment and try again.",
   500: "The server had a problem. Check the applications list before retrying to avoid a duplicate; if it continues, ask your manager for help.",
+  503: "The service is temporarily unavailable. Wait a moment and try again.",
 };
+
+// Only network failures (status 0) and server errors are worth retrying as-is.
+export const isRetryable = (err) => err?.status === 0 || err?.status >= 500;
 
 async function request(path, { method = "GET", body } = {}) {
   const token = session.get()?.access_token;
@@ -79,6 +87,7 @@ export const api = {
   createUser: (body) => request("/admin/users", { method: "POST", body }),
   updateUser: (id, body) => request(`/admin/users/${id}`, { method: "PATCH", body }),
   approve: (id) => request(`/loan-applications/${id}/approve`, { method: "PATCH" }),
+  scoreHistory: (id) => request(`/loan-applications/${id}/scores`),
   score: (id) => request(`/loan-applications/${id}/score`, { method: "POST" }),
 };
 

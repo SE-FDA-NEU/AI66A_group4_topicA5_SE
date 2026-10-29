@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { api, vnd } from "../api";
+import { api, isRetryable, vnd } from "../api";
 import { useAuth } from "../auth";
 import { canApprove, reviewQueue, reviewReason } from "../review";
 import { RiskBadge, StatusBadge } from "../components/Badges";
+import { formatDateTime } from "../format";
 import { Empty, ErrorBox, Loading } from "../components/States";
 
 export default function Dashboard() {
@@ -15,7 +16,7 @@ export default function Dashboard() {
     setState({ status: "loading" });
     Promise.all([api.summary(), manager ? api.listApplications() : Promise.resolve([])]).then(
       ([data, applications]) => { if (active) setState({ status: "ok", data, applications }); },
-      (err) => { if (active) setState({ status: "error", message: err.message }); }
+      (err) => { if (active) setState({ status: "error", message: err.message, retryable: isRetryable(err) }); }
     );
     return () => { active = false; };
   }, [manager]);
@@ -34,7 +35,7 @@ export default function Dashboard() {
     </Link>
   </div>;
   if (state.status === "loading") return <>{heading}<Loading text={manager ? "Loading branch overview and review queue..." : "Loading your overview..."} /></>;
-  if (state.status === "error") return <>{heading}<ErrorBox message={state.message} onRetry={load} /></>;
+  if (state.status === "error") return <>{heading}<ErrorBox message={state.message} onRetry={state.retryable ? load : undefined} /></>;
 
   const { data } = state;
   const queue = reviewQueue(state.applications);
@@ -62,7 +63,7 @@ export default function Dashboard() {
           <div className="scroll"><table>
             <thead><tr><th>Application / Officer</th><th>Loan / score</th><th>Review reason</th><th /></tr></thead>
             <tbody>{queue.slice(0, 8).map((a) => <tr key={a.id}>
-              <td><strong>#{a.id.slice(0, 8)}</strong><br />{a.owner_name}<br /><small>{new Date(a.created_at).toLocaleString()}</small></td>
+              <td><strong>#{a.id.slice(0, 8)}</strong><br />{a.owner_name}<br /><small>{formatDateTime(a.created_at)}</small></td>
               <td>{vnd(a.loan_amount)}<br />Score: {a.latest_score?.score ?? "Not available"}</td>
               <td className="wrap-cell"><StatusBadge status={a.status} /> <RiskBadge high={a.dsr_flag_high_risk} /><p>{reviewReason(a)}</p></td>
               <td><Link to={`/loan-applications/${a.id}`}>Review application</Link></td>
