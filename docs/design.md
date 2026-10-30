@@ -92,7 +92,7 @@ Business rules enforced by the service/API, rather than by a single column const
 
 Conventions: JSON under `/api`, money in whole VND, and `Authorization: Bearer <JWT>` on all business operations except login. `/health` and the API documentation are public utility routes, outside this table. Errors carry a string `detail`; request-schema validation adds an `errors` object keyed by field. Role names in code are `user` (Officer) and `admin` (Manager).
 
-There are **13 implemented API operations** in the first table. The two US10 edit/cancel operations are a product design only, listed separately; they are not registered routes. Ordinary application responses include masked identifiers and a latest-result summary; only the explicit authorized reveal response returns full numbers.
+There are **15 implemented API operations** in the first table, including the US10 edit/cancel operations. Ordinary application responses include masked identifiers and a latest-result summary; only the explicit authorized reveal response returns full numbers.
 
 The create flow validates BR2/BR9/input, computes BR3 and saves a pending application. Scoring is a separate request: it acquires a database write lock, rejects cancelled/approved states, builds features, checks BR5 before BR4, then calls `rules-v0`, validates BR1 and assigns the BR6 label. A high-risk flag is independent of the numeric score. See [scoring_service.py](../backend/app/scoring_service.py) and [transactions.py](../backend/app/transactions.py).
 
@@ -105,7 +105,9 @@ The create flow validates BR2/BR9/input, computes BR3 and saves a pending applic
 | GET | `/api/loan-applications/{id}` | - | 200 + application, latest_score, approval metadata | 401; 403 not owner/Admin; 404 missing application | US05; BR8 |
 | POST | `/api/loan-applications/{id}/score` | - | 201 + `result` and `application`; BR1/BR4 outcomes are persisted results | 401; 403; 404; 409 cancelled/approved; 429 BR5 limit, changes status to `manual_review` | US04 (P0); BR1, BR3-BR6 |
 | GET | `/api/loan-applications/{id}/scores` | - | 200 + results ordered by created_at/id ascending; empty list when none | 401; 403; 404 | US06 API only; history UI pending |
-| PATCH | `/api/loan-applications/{id}/approve` | no body | 200 + application, status `approved`, approval metadata; atomic `loan.approved` audit | 401; 403 not Admin; 404; 409 invalid/stale state or result | Manager approval; US10, BR6 |
+| PATCH | `/api/loan-applications/{id}` | Partial editable `ApplicationIn` fields; identifiers may be supplied explicitly | 200 + saved application; merged validation and BR3 recalculation; `loan.edited` audit | 401; 403 not owner/Admin; 404; 409 processed; 422 merged validation; 503 identifier key unavailable | US10 edit; BR3, BR7, BR9 |
+| PATCH | `/api/loan-applications/{id}/cancel` | No body | 200 + retained application with `cancelled` status; one `loan.cancelled` audit; repeated cancel is idempotent | 401; 403 not owner/Admin; 404; 409 processed | US10 cancel; BR8 |
+| PATCH | `/api/loan-applications/{id}/approve` | no body | 200 + application, status `approved`, approval metadata; atomic `loan.approved` audit | 401; 403 not Admin; 404; 409 invalid/stale state or result | Manager approval; BR6 |
 | POST | `/api/loan-applications/{id}/sensitive-data/reveal` | no body; explicit lookup | 200 + citizen_id and bank_account, null if absent; access audit committed before returning each present value; Cache-Control no-store, Pragma no-cache | 401; 403 not owner/Admin; 404 missing application; 503 key/audit unavailable | BR7, BR8 |
 | GET | `/api/admin/users` | - | 200 + accounts without passwords/hashes | 401; 403 not Admin | BR8 |
 | POST | `/api/admin/users` | email, full_name, password (12-128 chars) | 201 + Officer account | 401; 403; 422 invalid/unsupported input; 409 duplicate email | BR8 |
@@ -116,12 +118,15 @@ The dashboard selects applications **created during today's Vietnam calendar day
 
 For 422 schema errors the common `detail` is `Please correct the highlighted fields and submit again.` The exact field messages are listed in [ui.md section 3](ui.md#3-error-messages). S4-05 makes missing, empty, whitespace-only and null `monthly_income` return exactly `Income is required`; nonnumeric or malformed numeric input returns `Monthly income must be a whole number.` The API wording gap is fixed; independent browser acceptance still needs a recorded result. BR9 errors identify `estimated_monthly_payment` and invalid requests save no new application.
 
-**Planned operations (not implemented in M3):**
-
-| Method | Path | Planned input/result | Covers |
-| --- | --- | --- | --- |
-| PATCH | `/api/loan-applications/{id}` | Update editable fields of an unprocessed application; planned 401/403/404/409/422 checks | US10 edit |
-| PATCH | `/api/loan-applications/{id}/cancel` | Cancel an unprocessed application; planned 401/403/404/409 checks | US10 cancel |
+US10 edit/cancel is implemented by `backend/app/routers/application_changes.py`.
+Partial edits are merged with the persisted row while it is locked, then the
+complete `ApplicationIn` is validated. Omitted identifiers remain unchanged;
+only submitted field names are written to the `loan.edited` audit detail.
+Only an owner or Admin can change an application, and only a `pending` row with
+no scoring result is editable/cancellable. Cancellation retains the row and
+audit, is idempotent, and removes the row from active review/notification
+queries. No model or database migration is required: `ensure_schema` creates
+registered tables and the US10 router reuses the existing application schema.
 
 
 ### Manager approval contract
@@ -134,8 +139,8 @@ The details response includes `approval: null` before approval, or
 `approval.actor_id`, `approval.actor_name` and `approval.approved_at` afterwards.
 The High risk flag remains visible after the decision; approved applications
 cannot be rescored. The confirmation flow and API error text are documented in
-[ui.md](ui.md#4-what-changed-since-m2). Approval is not disbursement; US10 edit/cancel
-remains pending.
+[ui.md](ui.md#4-what-changed-since-m2). Approval is not disbursement; processed
+applications remain protected from US10 edit/cancel operations.
 
 
 ### Application input validation and BR9 (S4-05)
@@ -292,7 +297,7 @@ The M2 design clarified input and state decisions from M1. Sprint 3 subsequently
 
 M2 delivered one real route (`GET /loan-applications`, HTML, no login) and a design for the rest. Sprint 3 turned the API design into working code, put a React interface on it, and added deterministic scoring rules. The implementation change history (PR links where recorded) is in: [`docs/changelog.md`](changelog.md).
 
-1. **The API went from one HTML route to thirteen JSON operations.** Section 3 separates implemented operations from the two planned US10 routes. Login with lockout, loan creation, list and detail, scoring, score history, dashboard summary, manager approval and employee management are built. Edit and cancel (US10) are not built.
+1. **The API went from one HTML route to fifteen JSON operations.** Section 3 lists the implemented login, application, scoring, dashboard, approval, employee-management and US10 edit/cancel operations.
 
 2. **Business operations other than login now need a token.** M2 said "no authentication yet, so BR8 filtering is not applied". Now the HTML skeleton page is protected as well, and BR8 is enforced on every read: an Officer gets `403` for another Officer's application and sees only their own in lists and in the dashboard. Tokens are HS256 JWTs (8 h by default) that carry a per-user `token_version`.
 
@@ -323,13 +328,13 @@ Implementation change history is recorded separately in [changelog.md](changelog
 - `pending` is the stored status for US03 "Scoring in progress". The UI saves the application, requests scoring, then opens its details. A scoring error preserves the application and offers retry.
 - BR5 is checked before BR4, including CIC groups 3-5. Invalid/noninteger model output is hidden under BR1.
 - The retained HTML route requires a token and filters owners. The public entry on port 8000 redirects to that protected route; use port 5173 for normal browser navigation.
-- BR7 and employee management (BR8) are implemented and tested. US07 notifications, US06 history UI and US10 edit/cancel remain pending. Manager approval is implemented with an audit event and frontend confirmation.
+- BR7, employee management (BR8), US06 history UI and US10 edit/cancel are implemented and tested. US07 notifications remains pending. Manager approval is implemented with an audit event and frontend confirmation.
 
 ## 10. Manager decision after scoring
 
 Scoring is a recommendation, not approval. An officer creates/scores a loan application and opens its details. Manager Thanh signs in, uses Branch applications -> Review, reviews the data/reasons and (when the latest score is eligible, 70-100) selects Approve application -> Confirm approval. Only Admin can call `PATCH /api/loan-applications/{id}/approve`; no request body is required. The state changes from scored/manual_review to approved and `loan.approved` records actor, time, score and high-risk flag in the same transaction. GET details and PATCH approve return an `approval` object (actor_id, actor_name, approved_at), or null if none exists. No database migration is needed; the existing event_logs table supplies the approval history.
 
-Cancelled/rejected/approved applications, unscored or noneligible latest results and CIC groups 3-5 are refused. High-risk flags are retained; an explicit Manager decision reviews the BR3 warning. BR5 manual_review may be resolved by a Manager only if the latest result is eligible. A stale status/result fails the conditional update with 409. Once approved, scoring remains blocked. Approval does not perform a payment or disbursement; the product tracks application assessment and the Manager decision. US10 edit/cancel remains a separate pending feature, so this addition does not mark all US10 acceptance criteria Done.
+Cancelled/rejected/approved applications, unscored or noneligible latest results and CIC groups 3-5 are refused. High-risk flags are retained; an explicit Manager decision reviews the BR3 warning. BR5 manual_review may be resolved by a Manager only if the latest result is eligible. A stale status/result fails the conditional update with 409. Once approved, scoring remains blocked. Approval does not perform a payment or disbursement; the product tracks application assessment and the Manager decision. US10 edit/cancel is implemented by the separate application changes router and remains blocked for processed applications.
 
 ## 11. Identifier protection and employee accounts (BR7/BR8)
 

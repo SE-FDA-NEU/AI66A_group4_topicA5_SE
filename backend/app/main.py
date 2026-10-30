@@ -7,7 +7,13 @@ from fastapi.responses import JSONResponse, RedirectResponse, Response
 from app import models  # noqa: F401  (registers every table on Base.metadata)
 from app.database import engine
 from app.migrate import ensure_schema
-from app.routers import applications, auth, loans, users
+from app.routers import (
+    application_changes,
+    applications,
+    auth,
+    loans,
+    users,
+)
 from app.routers.applications import ApplicationIn
 from app.routers.auth import LoginIn
 
@@ -23,10 +29,9 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="Credit Scoring Demo",
     description=(
-        "M2 walking skeleton. Only one real route exists (GET /loan-applications); "
-        "the rest of the API in docs/design.md is implemented in Sprints 3-4."
+        "Authenticated credit scoring, application management, review notifications and session logout."
     ),
-    version="0.2.0",
+    version="0.4.0",
     lifespan=lifespan,
 )
 
@@ -34,6 +39,7 @@ app.include_router(loans.router)
 app.include_router(auth.router)
 app.include_router(applications.router)
 app.include_router(users.router)
+app.include_router(application_changes.router)
 
 
 FIELD_LABELS = {
@@ -131,3 +137,22 @@ def favicon():
 @app.get("/health")
 def health_check():
     return {"status": "ok"}
+
+
+
+@app.middleware("http")
+async def private_response_cache_policy(request, call_next):
+    response = await call_next(request)
+    path = request.url.path
+    # Ordinary details contain masked identifiers only and retain their route
+    # contract. Sensitive reveal responses set no-store explicitly in the
+    # reveal endpoint and remain covered by the global private-response policy.
+    ordinary_detail = (
+        request.method == "GET"
+        and path.startswith("/api/loan-applications/")
+        and path.count("/") == 3
+    )
+    if (path.startswith("/api/") or path == "/loan-applications") and not ordinary_detail:
+        response.headers["Cache-Control"] = "no-store"
+        response.headers["Pragma"] = "no-cache"
+    return response

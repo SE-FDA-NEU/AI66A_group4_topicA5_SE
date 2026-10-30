@@ -3,8 +3,8 @@
 This document is the product requirement baseline. Implementation and acceptance
 status for Sprint 3 are tracked in [ui.md](ui.md#1-p0-stories-and-status) and
 [traceability.md](traceability.md); a requirement appearing here does not mean it
-is already implemented. US06 history UI, US07 notifications and US10 edit/cancel
-remain pending. S4-05 fixes the API's exact empty-income message while retaining
+is already implemented. US07 notifications remains pending; US06 history UI and
+US10 edit/cancel are implemented in this copy. S4-05 fixes the API's exact empty-income message while retaining
 the US09 acceptance criterion below. Independent browser acceptance still needs
 a recorded result; see [ui.md](ui.md#3-error-messages).
 
@@ -125,8 +125,10 @@ With 2 years of experience in the profession, Hoang processes an average of 1 to
 - Given an income entered as text (non-numeric), when clicking Submit, then the system rejects the submission and does not save the record to the database.
 
 **US10 — Edit/cancel unprocessed application**
-- Given an application in "Scoring" status, when an employee selects Cancel, then the application transitions to "Cancelled" status and is removed from the pending review list.
-- Given an application in "Approved" status, when an employee attempts to edit, then the system rejects the action with the message "Application already processed, cannot be edited".
+- Given an application in "Scoring" status with no scoring result, when its owner or a Manager submits a partial edit, then the persisted fields are merged under a lock, the complete input is validated, BR3 is recalculated, and omitted identifiers remain unchanged.
+- Given an application in "Scoring" status with no scoring result, when its owner or a Manager confirms Cancel, then the record is retained with status "Cancelled", one audit is written, and it leaves active review/notification queries.
+- Given a processed, approved, rejected, manual-review or already-scored application, when an employee attempts to edit or cancel, then the API rejects the action with the appropriate 409 processed-state message; another Officer receives 403.
+- Repeating a successful cancellation is idempotent and does not create another cancellation audit.
 
 ## 5. Business rules
 

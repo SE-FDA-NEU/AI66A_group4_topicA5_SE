@@ -112,7 +112,11 @@ On a fresh seed, all demo records are from previous days, so today's dashboard s
 pytest
 ```
 
-Expected: all tests pass (the count changes as regressions are added). Tests use isolated in-memory databases and temporary SQLite files (migration/concurrency checks); they never touch `credit_scoring.db`. Test encryption keys are generated independently of `.env`.
+Expected: all tests pass (the count changes as regressions are added). This includes
+the six US10 API cases in `backend/tests/test_remaining_stories.py`. Tests use
+isolated in-memory databases and temporary SQLite files (migration/concurrency
+checks); they never touch `credit_scoring.db`. Test encryption keys are generated
+independently of `.env`.
 
 ## 9. Troubleshooting
 
@@ -141,6 +145,18 @@ Sprint 2:
 
 > Tested by: **Nguyễn Hoàng Tuấn**, on a Windows machine, on 4/10/2026, took about 5 minutes.
 
+
+## S4-22 edit/cancel demo
+
+Sign in as `hoang@branch.vn`, create an application and open it from **My
+applications** while it still shows **Scoring in progress** and has no score.
+Choose **Edit application**, change income or another editable field, and save;
+the app returns to Details and recalculates the High risk flag when applicable.
+Identifiers are not sent by the ordinary edit form. From the same Details page,
+choose **Cancel application**, confirm, and verify that the record remains
+Cancelled but no longer appears in the active review queue. Repeating Cancel is
+safe and does not add another cancellation audit. Approved, scored, rejected,
+manual-review or another Officer's application must not be editable/cancellable.
 
 ## 11. Manager approval demo
 
