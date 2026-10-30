@@ -172,6 +172,22 @@ login and clears the counter and lock. The fixed-clock regression test checks
 lock creation and expiry at -1, 0 and +1 microsecond.
 
 
+### Login form validation (S4-25)
+
+`frontend/src/login-validation.js` mirrors the existing API's nonblank and
+254/128-character limits before Sign in sends a request. Length counts Unicode
+code points (`Array.from`), matching Python string-length validation. Email
+format is also checked in the interface. The helper returns field-keyed messages
+without modifying email/password values; authentication still uses the existing
+API and account-lock rules described above.
+
+`Login.jsx` focuses the first invalid input and maps `ApiError.fields` from the
+shared client into inline errors. Client-side failures never call login. Server
+401/403/423 and network errors retain their existing message display. The four
+`frontend/tests/login-validation.test.js` cases cover blanks, length boundaries,
+preserved credential text and malformed email. No API, schema or lockout change
+is part of S4-25.
+
 ## 4. Walking skeleton retained from M2
 
 ### 4.1 Current route and normal entry point
