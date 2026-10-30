@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "../auth";
 
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const required = (label) => `Please enter your ${label}.`;
+import { validateLogin } from "../login-validation";
 
 const LENS_R = 34;    // magnifier radius (px), must match .magnifier width / 2
 const TEXT_LEFT = 43; // input border (1px) + left padding (42px)
@@ -124,20 +123,13 @@ export default function Login() {
     setShowPw((v) => !v);
   };
 
-  const validate = () => {
-    const errs = {};
-    if (!email.trim()) errs.email = required("email");
-    else if (!EMAIL_RE.test(email.trim())) errs.email = "Invalid email address.";
-    if (!password) errs.password = required("password");
-    return errs;
-  };
-
   const submit = async (e) => {
     e.preventDefault();
-    const errs = validate();
+    const errs = validateLogin({ email, password });
     setFieldErrors(errs);
     if (Object.keys(errs).length > 0) {
       setError("");
+      document.getElementById(Object.keys(errs)[0])?.focus();
       return;
     }
     setBusy(true);
@@ -145,6 +137,8 @@ export default function Login() {
     try {
       await login(email, password); // App redirects to /dashboard once the user is set
     } catch (err) {
+      setFieldErrors(err.fields || {});
+      document.getElementById(Object.keys(err.fields || {})[0])?.focus();
       setError(err.message);
       setBusy(false);
     }

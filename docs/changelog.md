@@ -1,5 +1,16 @@
 # Project changelog — API and AI input/output
 
+- **S4-25 — Login interface validation:** added a shared `validateLogin` helper
+  and four Node tests for blank credentials, email/password length boundaries,
+  preserved credential text and malformed email. Sign in blocks invalid requests,
+  focuses the first invalid input and maps API field errors inline. Existing
+  Login visuals/magnifier and backend authentication/lockout rules are preserved.
+  This is a new Task; it does not reopen completed S4-06.
+  Local validation (2026-10-30): 52 frontend tests, production build and
+  8 Edge headless interaction checks passed (login API mocked). A scratch
+  mutation from password length >128 to >=128 made the new boundary test
+  fail; production code remained unchanged. GitHub CI/review is not implied.
+
 - **S4-06 — login validation and exact lock expiry:** email is limited to 254
   characters and password to 128; blank login values receive clear 422 field errors.
   Validation failures leave the failure counter and lock unchanged. Password text
