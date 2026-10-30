@@ -91,6 +91,15 @@ Manager flow: after an officer scores an eligible application, sign in as `thanh
 
 BR7/BR8: New application accepts optional Citizen ID and bank account numbers, encrypted before storage. Details shows masked values; **View full numbers (logged)** performs an authorized, audited lookup. Manager navigation includes **Employees** to create Officers, rename, deactivate and reactivate accounts. See [business-rule coverage](docs/traceability.md#business-rules). Keep the locally generated `.env` encryption key with the database backup.
 
+US10 is implemented in this copy: an owner or Manager can edit a pending
+application with no scoring result at `/loan-applications/:id/edit`, or cancel it
+from Details after confirmation. Edits revalidate the merged application and BR9,
+preserve omitted identifiers and recalculate BR3. Cancellation keeps the audit
+record, is idempotent and removes the application from active review. Processed
+applications and applications owned by another Officer remain protected. See
+[the US10 setup demo](docs/SETUP.md#s4-22-editcancel-demo) and
+[US10 traceability](docs/traceability.md).
+
 ## Current P0 checks in this copy
 
 US01, US03, US04, US08 and US09 are implemented and passed local browser checks

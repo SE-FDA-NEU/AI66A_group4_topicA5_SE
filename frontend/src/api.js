@@ -77,6 +77,12 @@ async function request(path, { method = "GET", body } = {}) {
 }
 
 export const api = {
+  logout: () => request("/auth/logout", { method: "POST" }),
+  me: () => request("/auth/me"),
+  editApplication: (id, body) => request(`/loan-applications/${id}`, { method: "PATCH", body }),
+  cancelApplication: (id) => request(`/loan-applications/${id}/cancel`, { method: "PATCH" }),
+  notifications: () => request("/notifications"),
+  readNotification: (id) => request(`/notifications/${id}/read`, { method: "PATCH" }),
   login: (email, password) => request("/auth/login", { method: "POST", body: { email, password } }),
   summary: () => request("/dashboard/summary"),
   listApplications: () => request("/loan-applications"),

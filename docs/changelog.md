@@ -1,5 +1,16 @@
 # Project changelog — API and AI input/output
 
+- **S4-22 — edit and cancel unprocessed applications (2026-10-30):** added
+  `PATCH /api/loan-applications/{id}` and
+  `PATCH /api/loan-applications/{id}/cancel`. Partial edits merge with locked
+  persisted data before complete `ApplicationIn`/BR9 validation, recalculate
+  BR3, preserve omitted encrypted identifiers and audit field names only.
+  Cancellation retains the application and audit, is idempotent, blocks later
+  scoring and removes cancelled records from active review scope. Owner/Admin
+  access and processed-state guards are enforced. Added the edit page, Details
+  confirmation controls, six API regressions and two browser cases. No new
+  database migration is required.
+
 - **P0 completion in the local copy (2026-10-29):** Login now mirrors the API's
   required/254/128 limits and displays field errors. New application opens persisted
   Details before scoring; pending/High risk are visible while a score is delayed.

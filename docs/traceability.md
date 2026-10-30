@@ -10,8 +10,9 @@ they do not establish a new CI run or browser acceptance result.
 | `/` | Sign in; logout is a top-bar action that returns here | G | P0 | F1 - Login/Logout | US01 (#9), US02 (#19, P2) | [#120](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/pull/120), [#122](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/pull/122), [#133](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/pull/133), [#134](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/pull/134) | In progress: implemented; independent browser/timing/logout-cache checks pending |
 | `/dashboard` | Officer daily overview; Manager branch daily metrics and review queue across all dates | U | P0 | F2 - Overview Dashboard | US08 (#13) | [#150](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/pull/150), [#181](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/pull/181), [#190](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/pull/190) | In progress: implementation/automated coverage present; browser result pending |
 | `/loan-applications/new` | Save a loan application, validate fields and request scoring | U | P0 | F3 - Loan Application Entry & Validation | US03 (#10), US09 (#14) | [#127](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/pull/127), [#128](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/pull/128), [#173](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/pull/173), [#183](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/pull/183) | In progress: API required-income wording and BR9 implemented in S4-05; browser/timing checks pending |
-| `/loan-applications/:id` | View saved input, latest score/explanation, protected identifiers and Manager decision; no history tab | U | P0 | F4 - Scoring & Result Explanation; US05 is P1 | US04 (#11), US05 (#20); approval is an additional Manager workflow | [#170](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/pull/170), [#174](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/pull/174), [#180](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/pull/180), [#186](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/pull/186) | In progress: implementation/API tests present; browser result pending |
-| `/loan-applications` | List accessible saved applications and open their details; Manager review/risk/eligibility/employee filters | U | P1 | F5 - Application Navigation & Management | US05 (#20); US06 (#12) history UI and US10 (#22) edit/cancel remain pending | [#169](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/pull/169), [#190](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/pull/190) | In progress: list/filter/navigation present; history/edit/cancel not implemented |
+| `/loan-applications/:id` | View saved input, latest score/explanation, protected identifiers, edit/cancel controls and Manager decision | U | P0 | F4 - Scoring & Result Explanation; US05 is P1 | US04 (#11), US05 (#20), US10 (#22); approval is an additional Manager workflow | [#170](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/pull/170), [#174](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/pull/174), [#180](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/pull/180), [#186](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/pull/186) | In progress: implementation/API tests present; US10 browser result pending |
+| `/loan-applications/:id/edit` | Edit an owned/Admin-accessible pending application with no scoring result | U | P1 | F5 - Application Navigation & Management | US10 (#22) | — | In progress: implementation and API/browser tests present; independent browser result pending |
+| `/loan-applications` | List accessible saved applications and open their details; Manager review/risk/eligibility/employee filters | U | P1 | F5 - Application Navigation & Management | US05 (#20); US06 (#12) history UI and US10 (#22) edit/cancel | [#169](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/pull/169), [#190](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/pull/190) | In progress: list/filter/navigation and US10 entry point present; independent browser result pending |
 | `/admin/users` | Create/rename/deactivate/reactivate Officer accounts; display Manager accounts without editing them | A | P2 | BR8 account management | BR8; follow-up tasks S3-40/S3-41 | [#175](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/pull/175), [#177](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/pull/177), [#184](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/pull/184) | In progress: implementation/automated coverage present; independent browser result pending |
 
 **Access codes:** G = guest (not logged in); U = authenticated user; A = Admin
@@ -37,13 +38,14 @@ Numbered so that issues and tests can reference them.
 | BR6 | <40 rejected; 40-69 review; >=70 eligible | `scoring_service.py:label_for`; approval API | `test_scoring.py` persisted 0/39/40/69/70/100; `test_scoring_unit.py`, `test_approval.py` |
 | BR7 | Encrypt Citizen ID/account fields; masked normal responses; authorized decrypt + one access event per present identifier | `privacy.py`, create/reveal API, `SensitiveData.jsx`; local key initialization; failed audit returns 503 without releasing numbers | `test_privacy.py`: ciphertext, no leaks, authorization, wrong/missing key, failed audit, repeat accesses, null identifiers and forged extra fields; `test_br_integrity.py`: key preservation/migration |
 | BR8 | Officer own loans; Manager all + employee management; inactive users denied and old tokens revoked on status changes | current-user dependency; applications/legacy HTML; `routers/users.py`, Employees UI | `test_applications.py`, `test_walking_skeleton.py`, `test_privacy.py`, `test_users.py`: account CRUD/status/session revocation/role guards |
-| BR9 | Payment <= loan; payment x term covers loan; invalid requests save nothing | `ApplicationIn._br9_payment_must_cover_loan` and the 422 handler | `test_application_validation.py`: TC-US03-05..09, exact boundary and no-save cases |
+| BR9 | Payment <= loan; payment x term covers loan; invalid requests save nothing, including merged edits | `ApplicationIn._br9_payment_must_cover_loan`, `ApplicationPatch`, and the 422 handler | `test_application_validation.py`; `test_remaining_stories.py`: TC-US10-01/02 |
 
 All nine BRs have implementation and local automated coverage. The rules-based
 `rules-v0` scorer is the current implementation; a trained model is planned for
 Sprint 4. Scoring history has a stored-data/API implementation, but its US06
-history tab is absent. US07 notifications and US10 edit/cancel remain absent.
-Manager approval is an added workflow and does not complete US10 edit/cancel.
+history tab and US10 edit/cancel are implemented. US07 notifications remains
+absent. Manager approval is an added workflow; processed applications remain
+protected from US10 edit/cancel.
 
 **US09 API correction (S4-05):** empty, whitespace-only, null and omitted income
 now return exactly "Income is required"; malformed numeric input keeps the
@@ -63,7 +65,9 @@ The Officer creates/scores an application and the Manager reaches the same recor
 through the application list or review queue. Eligible is a recommendation, not
 approval. Confirmation calls `PATCH /api/loan-applications/{id}/approve`; approval
 persists the decision and access-controlled actor/time metadata. It does not
-implement disbursement. US10 remains In progress because edit/cancel is pending.
+implement disbursement. US10 is implemented separately through the application
+changes router; approval does not unlock editing or cancellation of processed
+applications.
 
 | Responsibility | Implementation | Automated coverage |
 | --- | --- | --- |
@@ -94,7 +98,7 @@ contains `frontend/tests/review.test.js` (queue and filters) and
 [PR #192](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/pull/192)
 contains comparison documentation and [PR #193](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/pull/193)
 contains UI screenshots. The browser checklist still needs tester/date/results.
-US07 notifications, US06 history UI and US10 edit/cancel remain pending.
+US07 notifications remains pending; US06 history UI and US10 edit/cancel are implemented.
 
 ## P0 browser regression mapping (2026-10-29)
 

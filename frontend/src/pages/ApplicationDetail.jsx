@@ -4,6 +4,7 @@ import { api, isRetryable, vnd } from "../api";
 import { useAuth } from "../auth";
 import { RiskBadge, StatusBadge } from "../components/Badges";
 import ScoreCard from "../components/ScoreCard";
+import ScoreHistory from "../components/ScoreHistory";
 import { ErrorBox, Loading } from "../components/States";
 import { formatDateTime } from "../format";
 import SensitiveData from "../components/SensitiveData";
@@ -25,11 +26,20 @@ export default function ApplicationDetail() {
   const [confirmApproval, setConfirmApproval] = useState(false);
   const [approving, setApproving] = useState(false);
   const [approvalError, setApprovalError] = useState("");
+  const [tab, setTab] = useState("details");
   const [historyLoading, setHistoryLoading] = useState(true);
   const [historyRetryable, setHistoryRetryable] = useState(false);
   const historyVersion = useRef(0);
+  const [confirmCancel, setConfirmCancel] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
+  const [cancelError, setCancelError] = useState("");
+  const notice = location.state?.notice;
   useEffect(() => {
     activeId.current = id;
+    setTab("details");
+    setConfirmCancel(false);
+    setCancelling(false);
+    setCancelError("");
     setHistory([]);
     setHistoryError("");
     setScoring(false);
@@ -107,6 +117,28 @@ export default function ApplicationDetail() {
     }
   };
 
+  const cancel = async () => {
+    setCancelling(true);
+    setCancelError("");
+    try {
+      const application = await api.cancelApplication(id);
+      if (activeId.current !== id) return;
+      setState({ status: "ok", app: application });
+      setConfirmCancel(false);
+      window.dispatchEvent(new Event("notifications-changed"));
+    } catch (err) {
+      if (activeId.current === id) { setCancelError(err.message); setConfirmCancel(false); load(); }
+    } finally { if (activeId.current === id) setCancelling(false); }
+  };
+
+  const tabKey = event => {
+    if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+    event.preventDefault();
+    const next = event.key === "Home" ? "details" : event.key === "End" ? "history" : tab === "details" ? "history" : "details";
+    setTab(next);
+    document.getElementById(`${next}-tab`)?.focus();
+  };
+
   if (state.status === "loading") return <Loading text="Loading the application..." />;
   if (state.status === "error")
     return (
@@ -127,6 +159,7 @@ export default function ApplicationDetail() {
         ? `Created by ${a.owner_name}. Review the data, score and risk warnings before making an approval decision below.`
         : "You can check the data and scoring reasons here. Your branch manager makes the approval decision."}</p>
       {manager && <p><Link to="/loan-applications?view=review">Back to manager review queue</Link></p>}
+      {notice && <div className="alert" role="alert">{notice}</div>}
       {a.dsr_flag_high_risk && (
         <div className="alert warn" role="alert">
           <strong>High risk.</strong> The installment is {a.dsr_percent}% of monthly income, above the 50% limit.
@@ -134,6 +167,26 @@ export default function ApplicationDetail() {
         </div>
       )}
 
+      <div role="tablist" aria-label="Application views" className="application-tabs" onKeyDown={tabKey}>
+        <button id="details-tab" role="tab" aria-selected={tab === "details"} aria-controls="details-panel" tabIndex={tab === "details" ? 0 : -1} onClick={() => setTab("details")}>Application details</button>
+        <button id="history-tab" role="tab" aria-selected={tab === "history"} aria-controls="history-panel" tabIndex={tab === "history" ? 0 : -1} onClick={() => setTab("history")}>Scoring history</button>
+      </div>
+      <div role="tabpanel" id="details-panel" aria-labelledby="details-tab" hidden={tab !== "details"}>
+      <section className="card">
+        <h2>Manage application</h2>
+        {cancelError && <div className="alert" role="alert">{cancelError}</div>}
+        {a.status === "pending" && !a.latest_score ? <>
+          <p>You can edit or cancel this unprocessed application. Processed applications are protected from changes.</p>
+          {!confirmCancel ? <>
+            <button onClick={() => navigate(`/loan-applications/${id}/edit`)} disabled={scoring || cancelling}>Edit application</button>{" "}
+            <button onClick={() => setConfirmCancel(true)} disabled={cancelling}>Cancel application</button>
+          </> : <div className="alert warn" role="group" aria-label="Confirm application cancellation">
+            <p>Cancel this application? Its record is retained, and it will leave the pending review queue.</p>
+            <button onClick={cancel} disabled={cancelling}>{cancelling ? "Cancelling..." : "Confirm cancellation"}</button>{" "}
+            <button onClick={() => setConfirmCancel(false)} disabled={cancelling}>Keep application</button>
+          </div>}
+        </> : <p>{a.status === "cancelled" ? "This application is cancelled." : "Application already processed, cannot be edited"}</p>}
+      </section>
       <section className="card">
         <h2>Credit score</h2>
         <ScoreCard result={a.latest_score} status={a.status} />
@@ -189,6 +242,13 @@ export default function ApplicationDetail() {
         </dl>
       </section>
       <SensitiveData key={a.id} application={a} />
+      </div>
+      <section role="tabpanel" id="history-panel" aria-labelledby="history-tab" hidden={tab !== "history"} className="card">
+        <h2>Scoring history</h2>
+        {historyLoading ? <Loading text="Loading score history..." /> : historyError
+          ? <ErrorBox message={`Score history could not be loaded. ${historyError}`} onRetry={historyRetryable ? loadHistory : undefined} />
+          : <ScoreHistory history={history} />}
+      </section>
       <p><Link to="/loan-applications">Back to the list</Link></p>
     </>
   );

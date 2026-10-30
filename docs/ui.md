@@ -9,8 +9,9 @@
 | US04 View the credit score with explanations | Application details | `/loan-applications/:id` | partly works (implemented; independent browser acceptance pending; score 0-100, label, factors, CIC group; rule-based model `rules-v0`, the trained model comes in Sprint 4) | #11 |
 | US08 Overview dashboard | Dashboard | `/dashboard` | partly works (implemented; independent browser acceptance pending; today's total, average score, high-risk count; shows "0 applications today" when empty) | #13 |
 | US09 Alert on missing or malformed data | New application | `/loan-applications/new` | partly works (field errors and no-save behavior implemented; API required-income wording fixed in S4-05; independent browser acceptance pending) | #14 |
+| US10 Edit/cancel unprocessed application | Edit application and Application details | `/loan-applications/:id/edit`, `/loan-applications/:id` | works (owner/Admin edit and confirmed cancel; processed-state and access guards tested) | #22 |
 
-Also built, not P0: `/loan-applications` (list, P1, US05 partly) so a person can reach any application without typing a URL.
+Also built, not P0: `/loan-applications` (list, P1, US05 partly) so a person can reach any application without typing a URL. US10 management controls are available from Details only while the application is pending and has no scoring result.
 
 **Screen flow (updated from M1):** people reach application records from the navigation, list or Manager review queue without typing a details URL.
 
@@ -35,6 +36,8 @@ flowchart TD
     Details -->|"Back to the list"| List
     Details -->|"Manager: back to review queue"| Queue
     Details -->|"Score again unless approved or cancelled"| Details
+    Details -->|"Pending with no score: Edit"| Edit["Edit application<br/>/loan-applications/:id/edit"]
+    Details -->|"Pending with no score: confirm Cancel"| Cancelled["Cancelled state retained; removed from active review"]
     Details -->|"Authorized View full numbers / Hide numbers"| Details
     Details -->|"Manager: eligible result, review and confirm"| Approved["Approved state on the same Details screen<br/>Saved Manager name and approval time"]
     Approved -->|"Back to the list"| List
@@ -104,12 +107,26 @@ validation failure. Independent browser acceptance and a new error capture remai
 ### 2.4 Application details `/loan-applications/:id`
 
 "The user comes here to read the score, the reasons behind it, and the data the officer entered."
-Calls: `GET /api/loan-applications/{id}`, `POST /api/loan-applications/{id}/score`, `PATCH /api/loan-applications/{id}/approve` (Manager), `POST /api/loan-applications/{id}/sensitive-data/reveal` (explicit lookup)
+Calls: `GET /api/loan-applications/{id}`, `POST /api/loan-applications/{id}/score`, `PATCH /api/loan-applications/{id}/approve` (Manager), `PATCH /api/loan-applications/{id}/cancel` (owner/Admin confirmation), `POST /api/loan-applications/{id}/sensitive-data/reveal` (explicit lookup)
 
 ![Wireframe 4](images/ui/wireframe-4.svg)
 
 
 Manager decision wireframe (Application details, same screen purpose and APIs)
+
+When the application is `pending` and has no `latest_score`, Details shows
+**Edit application** and **Cancel application**. Edit opens
+`/loan-applications/:id/edit`; the form omits protected identifiers. Cancel first
+shows a confirmation and retains the record after success. Processed applications
+show a read-only state and cannot be edited or cancelled.
+
+### 2.4.1 Edit an unprocessed application `/loan-applications/:id/edit`
+
+Calls: `GET /api/loan-applications/{id}`, `PATCH /api/loan-applications/{id}`.
+The page loads the saved values, validates the same numeric/text/BR9 rules as
+the create form, focuses the first invalid field, and returns to Details after a
+successful save. `citizen_id` and `bank_account` are intentionally not sent by
+the ordinary edit form, so omitted encrypted identifiers remain unchanged.
 
 ### 2.5 Protected identifiers (on application details)
 
@@ -152,6 +169,10 @@ fields and submit again." and the message beside the field.
 | `409` | Approval state is cancelled, rejected or approved | "This application is cancelled, rejected or already approved. Select an application awaiting approval." |
 | `409` | Latest result is not eligible for approval | "This application needs a valid eligible score before approval. Review its data and scoring results first." |
 | `409` | Application changes during approval | "This application changed while you were reviewing it. Reload the details before deciding." |
+| `403` | US10 edit/cancel by another Officer | "You can only open applications you created. Ask your manager if you need access to this one." |
+| `409` | US10 edit after processing | "Application already processed, cannot be edited" |
+| `409` | US10 cancel after processing | "Application already processed, cannot be cancelled." |
+| `422` | US10 invalid/empty edit | "Some of the information isn't valid. Check the highlighted fields and try again." |
 | `401` (missing token) | US01 | "Please sign in to continue." |
 | `401` (expired/invalid/revoked token) | US01 | "Your session has expired. Please sign in again." (shown on the login screen) |
 | `503` | BR7 encryption key unavailable or invalid | "Identifier protection is not configured. Ask the administrator to run python -m app.init_secrets and restart the server." |
@@ -194,7 +215,7 @@ The shared Dashboard did not make clear what an Officer or a Manager should do n
 | Details | Can score; sees who makes the approval decision | Can approve an eligible score after confirmation |
 | Not available | Approval, branch filters, Employees | Changing Manager accounts |
 
-US07 notifications, US06 history UI and US10 edit/cancel remain pending; the review queue is not a notification feature.
+US07 notifications remains pending; US06 history UI and US10 edit/cancel are implemented. The review queue is not a notification feature.
 
 **Evidence status:** five running-app screenshots are included below.
 
