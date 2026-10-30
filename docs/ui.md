@@ -273,3 +273,21 @@ the separately required address-bar screenshots for the LMS submission.
 ![Ten database-backed applications and average score](images/ui/p0-dashboard-ten-records.png)
 
 ![Income validation on a 375 px viewport](images/ui/p0-mobile-validation.png)
+
+
+### S4-24 — logout session and cache protection
+
+Log out in the top bar calls `POST /api/auth/logout`, clears local session data
+and returns to Login immediately. Back must not restore private pages; another
+independent session stays signed in. When the server is unavailable, Login shows:
+"Signed out of this browser. The server could not confirm session revocation;
+check your connection before signing in again." A rejected/expired token uses
+the existing sign-in message without recursively calling logout. All API and
+legacy private HTML responses use no-store/no-cache, including masked details.
+Local verification on 2026-10-30: both US02 Edge browser cases passed using
+the real API and disposable database/keys. They cover logout/token denial,
+Back hiding private UI, another session remaining valid and an unavailable
+logout API clearing the browser with an honest warning. OneDrive exposed the
+test files as symlinks, so the tests ran from a temporary physical copy
+outside OneDrive while targeting this checkout's app/configuration.
+Independent human acceptance and GitHub CI/review remain separate.

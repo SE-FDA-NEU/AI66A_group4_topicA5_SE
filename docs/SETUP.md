@@ -219,3 +219,34 @@ The optional browser command is additional local verification, not a claim that
 the existing GitHub workflow runs Playwright or that an independent review occurred.
 
 Official browser installation/reference: [Playwright browsers](https://playwright.dev/docs/browsers).
+
+
+## S4-24 logout verification
+
+Run the existing migration command (`python -m app.migrate` from backend/ with
+the documented environment) before restarting the API; it additively creates
+`revoked_tokens`. Do not replace .env or the database, and do not reseed accounts
+to enable logout. Normal startup also runs the existing schema setup.
+
+For isolated automated checks, from the repository root run:
+
+```bash
+python -m pytest backend/tests/test_remaining_stories.py backend/tests/test_sensitive_data.py -v
+```
+
+From frontend/, with the browser-test dependencies above installed:
+
+```bash
+npm run test:e2e -- --grep "US02"
+```
+
+If Playwright reports `No tests found` under OneDrive, check whether the
+browser test files are cloud reparse points/symlinks: Playwright skips those
+entries during discovery. A physical checkout outside OneDrive avoids this
+local discovery issue. The S4-24 local checks used a temporary physical test
+copy outside OneDrive, with the original app/web-server configuration.
+
+For a manual check, sign in in two separate browser contexts. Log out of one,
+press Back and verify Login remains visible; the other remains signed in.
+Offline sign-out clears the browser but displays that server revocation could
+not be confirmed. API-only checks do not replace this browser interaction check.

@@ -88,11 +88,19 @@ Business rules enforced by the service/API, rather than by a single column const
 | `detail` | TEXT NULL | | action-specific audit text; identifiers appear only as masked suffixes, never full numbers - **BR7** |
 | `created_at` | DateTime(timezone=True) NOT NULL | | |
 
+### Session revocation table (S4-24)
+
+`revoked_tokens` stores `token_hash` (SHA-256, 64-character primary key),
+`user_id` (required FK to users, indexed, ON DELETE CASCADE) and `created_at`.
+Only a fingerprint is retained, never the raw bearer token. The existing
+`ensure_schema`/`Base.metadata.create_all` path creates this supporting table
+additively; existing rows, keys and account passwords are preserved.
+
 ## 3. API design
 
 Conventions: JSON under `/api`, money in whole VND, and `Authorization: Bearer <JWT>` on all business operations except login. `/health` and the API documentation are public utility routes, outside this table. Errors carry a string `detail`; request-schema validation adds an `errors` object keyed by field. Role names in code are `user` (Officer) and `admin` (Manager).
 
-There are **15 implemented API operations** in the first table, including the US10 edit/cancel operations. Ordinary application responses include masked identifiers and a latest-result summary; only the explicit authorized reveal response returns full numbers.
+There are **16 implemented API operations** in the first table, including the US10 edit/cancel operations. Ordinary application responses include masked identifiers and a latest-result summary; only the explicit authorized reveal response returns full numbers.
 
 The create flow validates BR2/BR9/input, computes BR3 and saves a pending application. Scoring is a separate request: it acquires a database write lock, rejects cancelled/approved states, builds features, checks BR5 before BR4, then calls `rules-v0`, validates BR1 and assigns the BR6 label. A high-risk flag is independent of the numeric score. See [scoring_service.py](../backend/app/scoring_service.py) and [transactions.py](../backend/app/transactions.py).
 
@@ -100,6 +108,7 @@ The create flow validates BR2/BR9/input, computes BR3 and saves a pending applic
 | --- | --- | --- | --- | --- | --- |
 | POST | `/api/auth/login` | nonblank email (max 254 chars), password (max 128 chars) | 200 + access_token, token_type and user | 401 wrong credentials; 403 inactive; 422 invalid body; 423 account locked for 15 min | US01 (P0) |
 | GET | `/api/auth/me` | - | 200 + id, email, full_name, role, is_active | 401 | US01 |
+| POST | `/api/auth/logout` | Bearer token, no body | 204; current token fingerprint persisted | 401 missing, expired or revoked session | US02 |
 | POST | `/api/loan-applications` | monthly_income, loan_amount, loan_term_months, estimated_monthly_payment; optional credit_history_note, purpose, cic_debt_group, citizen_id, bank_account | 201 + application (`pending`, high-risk flag when DSR > 50%) | 401; 422 field errors/extra fields; 503 identifier key unavailable | US03, US09 (P0); BR2, BR3, BR7, BR9 |
 | GET | `/api/loan-applications` | - | 200 + list (Officer: own; Admin: all), newest first | 401 | US05; BR8 |
 | GET | `/api/loan-applications/{id}` | - | 200 + application, latest_score, approval metadata | 401; 403 not owner/Admin; 404 missing application | US05; BR8 |
@@ -176,6 +185,22 @@ return 423. At `now == locked_until` and afterwards, a correct password permits
 login and clears the counter and lock. The fixed-clock regression test checks
 lock creation and expiry at -1, 0 and +1 microsecond.
 
+
+### Logout and private-response caching (S4-24)
+
+Each login adds a random JWT `jti`, distinguishing simultaneous sessions.
+`get_current_user` rejects fingerprints in `revoked_tokens` before loading the
+user; existing inactive-account/token-version checks still apply. Logout revokes
+only the current session; another independent login remains valid. Once revoked,
+that credential receives 401, including a later logout attempt.
+
+The interface sends logout with the current credential before clearing local
+storage/user state and returning to Login immediately. An unavailable server
+still permits local sign-out but shows that server revocation is unconfirmed.
+The 401 handler clears the browser directly, avoiding recursive logout calls.
+All `/api/` responses and retained `/loan-applications` HTML now carry
+`Cache-Control: no-store` and `Pragma: no-cache`, including masked details.
+The `pageshow` guard and protected routes prevent Back restoring signed-out UI.
 
 ### Login form validation (S4-25)
 

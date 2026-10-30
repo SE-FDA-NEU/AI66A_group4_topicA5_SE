@@ -114,3 +114,10 @@ login 953 ms; save-to-details 93 ms with scoring deliberately held. See
 and [testing.md](docs/testing.md) for reproducible commands. From `frontend/`,
 `npm run test:e2e` starts isolated test servers and a temporary demo DB.
 These local results do not certify another machine's timing or a GitHub/LMS delivery.
+
+
+### US02 logout (S4-24)
+
+Use **Log out** in the top bar. The browser immediately returns to Login and
+the API revokes only that session; another independent login remains valid.
+See [logout setup and checks](docs/SETUP.md#s4-24-logout-verification).

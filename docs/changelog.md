@@ -1,5 +1,18 @@
 # Project changelog — API and AI input/output
 
+- **S4-24 — current-session logout:** added random JWT jti, a fingerprint-only
+  revoked_tokens table, POST /api/auth/logout and revoked-token authorization
+  checks. Frontend sends revocation before immediate local sign-out, handles
+  offline uncertainty and separates 401 cleanup from logout. All API/private
+  HTML responses now use no-store/no-cache, including masked details; updated
+  the previous masked-detail cache test and added TC-US02-01..03. Existing
+  US10 implementation/tests and the S4-25 Login validation are retained.
+  Local verification on 2026-10-30: 547 backend tests passed (91.79% coverage),
+  Ruff, 52 frontend tests, build and 2 US02 Edge cases passed. Credential
+  scan passed; the existing .env/database hashes were unchanged. OneDrive
+  symlink discovery required a temporary test copy outside OneDrive.
+  These checks do not establish GitHub CI/review or a merged PR.
+
 - **S4-22 — edit and cancel unprocessed applications (2026-10-30):** added
   `PATCH /api/loan-applications/{id}` and
   `PATCH /api/loan-applications/{id}/cancel`. Partial edits merge with locked

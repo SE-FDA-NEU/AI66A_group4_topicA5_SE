@@ -209,3 +209,12 @@ class EventLog(Base):
     action = Column(String, nullable=False)
     detail = Column(Text, nullable=True)
     created_at = tz_datetime(nullable=False, default=now_utc, index=True)
+
+
+class RevokedToken(Base):
+    __tablename__ = "revoked_tokens"
+
+    # Only a SHA-256 fingerprint, never the bearer credential itself.
+    token_hash = Column(String(64), primary_key=True)
+    user_id = Column(String, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    created_at = tz_datetime(nullable=False, default=now_utc)

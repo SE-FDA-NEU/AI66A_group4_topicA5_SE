@@ -63,6 +63,23 @@ test("US02 logout hides cached pages and revokes only that browser session", asy
   } finally { await otherContext.close(); }
 });
 
+test("US02 unavailable logout API clears the browser and reports unconfirmed revocation", async ({ page }) => {
+  await signIn(page);
+  const token = await page.evaluate(() => JSON.parse(sessionStorage.getItem("cs_session")).access_token);
+  await page.route("**/api/auth/logout", route => route.abort("failed"));
+  await page.getByRole("button", { name: "Log out", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Sign in", exact: true })).toBeVisible();
+  await expect(page.getByRole("alert")).toHaveText(
+    "Signed out of this browser. The server could not confirm session revocation; check your connection before signing in again.",
+  );
+  expect(await page.evaluate(() => sessionStorage.getItem("cs_session"))).toBeNull();
+  await expect(page.locator(".topbar, .tiles")).toHaveCount(0);
+  // The blocked request never reached the API: local sign-out must not promise
+  // server revocation. This retained token is only a disposable test credential.
+  const response = await page.request.get("/api/auth/me", { headers: { Authorization: `Bearer ${token}` } });
+  expect(response.status()).toBe(200);
+});
+
 test("US05 details are reachable from the list and a missing application gives a useful error", async ({ page }) => {
   await signIn(page);
   const loan = await pendingFixture(page);

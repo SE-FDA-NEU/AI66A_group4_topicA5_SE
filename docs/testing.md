@@ -4,7 +4,7 @@ This document says what the team tests and lists the test cases for the main sto
 
 ## 1. What we test and why
 
-All tests live in `backend/tests` (pytest), `frontend/tests` (node:test) and `frontend/browser` (one real-browser regression for the P0 create-and-score flow). The interface is checked by render tests, by that browser regression and by the browser acceptance checklist in `docs/ui.md`; unrecorded checks remain pending.
+Tests live in `backend/tests` (pytest), `frontend/tests` (node:test) and `frontend/browser`. Browser regressions include the P0 create-and-score flow, US10 edit/cancel and US02 logout; executed results are recorded separately below. The interface is checked by render tests, by that browser regression and by the browser acceptance checklist in `docs/ui.md`; unrecorded checks remain pending.
 
 | Layer | Code | Test kind | Where |
 |-------|------|-----------|-------|
@@ -78,6 +78,32 @@ Kind: `API` is an integration test through FastAPI `TestClient` with in-memory S
 
 The two US10 browser cases in `frontend/browser/remaining-stories.spec.js`
 cover the real edit/cancel UI and the refusal to edit an approved application.
+
+### US02 Logout and private-response caching (S4-24)
+
+| ID | Story | Input | Expected | Kind |
+|---|---|---|---|---|
+| TC-US02-01 | US02 | Two independent logins; logout the first | 204; first token rejected with 401, second remains 200; only SHA-256 fingerprint stored | API |
+| TC-US02-02 | US02 | Authenticated GET summary, list and legacy HTML (3 variants) | 200 with Cache-Control no-store and Pragma no-cache | API |
+| TC-US02-03 | US02 | Logout without credentials | 401, no revoked-token row | API |
+
+These IDs are comments immediately above their pytest functions in
+`backend/tests/test_remaining_stories.py`. The regression
+`test_ordinary_detail_is_not_cached_after_logout` in `test_sensitive_data.py`
+also requires no-store on masked details. Existing US10 tests remain intact.
+`frontend/browser/remaining-stories.spec.js` checks two real browser sessions,
+logout 204, cleared storage, Back hiding private UI and rejected old credentials.
+A second US02 browser case aborts the logout request, verifies local sign-out
+and its unconfirmed-revocation notice, and proves the API never revoked that
+test token. Run both from frontend with `npm run test:e2e -- --grep "US02"`;
+they use disposable database/keys and the actual local API.
+
+Local validation on 2026-10-30: **547 backend cases passed, 91.79% coverage**,
+Ruff passed, **52 frontend tests** and production build passed, and **2 US02
+Edge browser cases** passed. Test files were copied temporarily outside
+OneDrive for discovery (see SETUP); the application remained this checkout.
+Only these browser cases were executed for S4-24; this is not a claim that
+all other story/browser cases or GitHub CI/review were completed.
 
 ## 3. Automated tests
 
