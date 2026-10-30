@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse, RedirectResponse, Response
 from app import models  # noqa: F401  (registers every table on Base.metadata)
 from app.database import engine
 from app.migrate import ensure_schema
-from app.routers import applications, auth, loans, users
+from app.routers import application_changes, applications, auth, loans, users
 from app.routers.applications import ApplicationIn
 from app.routers.auth import LoginIn
 
@@ -34,6 +34,7 @@ app.include_router(loans.router)
 app.include_router(auth.router)
 app.include_router(applications.router)
 app.include_router(users.router)
+app.include_router(application_changes.router)
 
 
 FIELD_LABELS = {
