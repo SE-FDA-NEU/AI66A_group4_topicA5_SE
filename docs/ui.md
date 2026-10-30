@@ -191,3 +191,44 @@ This existing Sprint 3 capture is historical evidence; it is not a new capture p
 ![Manager filters by eligibility and employee](images/ui/manager-application-filters.png)
 
 ![Approved application with Manager name and time](images/ui/manager-approved-application.png)
+
+### P0 completion in this copy (2026-10-29)
+
+All five P0 stories have their implementation and local browser verification.
+`NewApplication.jsx` opens the saved record before requesting the score from
+`ApplicationDetail.jsx`. This exposes the stored `pending` status (Scoring in
+progress) and BR3 warning while scoring is slow. The request is consumed once,
+including under React StrictMode and after reload. A scoring error leaves the
+record accessible with Get credit score; retry does not create a second loan.
+Login mirrors the API's nonblank/254/128 limits, names invalid fields and preserves
+the entered password. The current scoring engine is the deterministic `rules-v1`.
+
+The seven tests in `frontend/browser/p0.spec.js` ran in real headless Microsoft Edge
+against this copy's FastAPI and a newly seeded temporary SQLite database. Form
+submissions, reads, scoring and Dashboard totals use persisted data. One scoring
+request is deliberately held to inspect pre-score state, and one is deliberately
+answered with 503 to exercise recovery; those controlled errors are not claims
+about a live service outage. No existing database, key or account was changed.
+
+| Check | Observed local result |
+| --- | --- |
+| US01 correct credentials to Dashboard | 953 ms (requirement < 2000 ms); three wrong passwords and locked response also checked |
+| US03 Submit to persisted details | 93 ms (requirement < 3000 ms), with scoring deliberately held |
+| US04 low score and normal result | Rejected result has at least two reasons; normal result 95 with CIC group 1; list navigation and reload retain it |
+| US08 daily data | Empty state, then 10 real GUI-created applications and average score 95; Manager workspace also opens |
+| US09 invalid input | Exact required/text/zero-income messages, no create request and unchanged stored row count; keyboard focus and 375 px viewport checked |
+
+These are local automated checks on one machine, not independent human sign-off,
+fresh-clone evidence, GitHub CI status or a performance guarantee for other machines.
+The viewport captures below do not contain browser chrome/address bars; prepare
+the separately required address-bar screenshots for the LMS submission.
+
+![Saved High risk record while scoring is in progress](images/ui/p0-saved-before-scoring.png)
+
+![Persisted normal score and CIC explanations](images/ui/p0-saved-score-and-reasons.png)
+
+![Rejected recommendation and its reasons](images/ui/p0-rejected-score.png)
+
+![Ten database-backed applications and average score](images/ui/p0-dashboard-ten-records.png)
+
+![Income validation on a 375 px viewport](images/ui/p0-mobile-validation.png)

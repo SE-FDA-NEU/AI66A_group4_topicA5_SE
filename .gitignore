@@ -22,3 +22,7 @@ junit.xml
 #Frontend
 node_modules/
 frontend/dist/
+
+# Browser-test output (synthetic local test run)
+frontend/test-results/
+frontend/playwright-report/

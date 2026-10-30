@@ -1,5 +1,17 @@
 # Project changelog — API and AI input/output
 
+- **P0 completion in the local copy (2026-10-29):** Login now mirrors the API's
+  required/254/128 limits and displays field errors. New application opens persisted
+  Details before scoring; pending/High risk are visible while a score is delayed.
+  Details consumes the automatic-score flag once, guards stale responses and
+  retains the saved record plus retry on scoring failure. No new create occurs on retry.
+  Added four login-validator unit tests and seven Playwright browser tests with
+  isolated seeded SQLite. All passed; 523 existing backend tests passed with 96.02%
+  coverage, 52 frontend unit/render tests and the Vite production build passed.
+  Updated ui/design/requirements/traceability/testing/setup to match rules-v1 and
+  the implemented Score history section. Added viewport captures using synthetic data.
+  No existing DB/key, scoring formula, GitHub branch or remote was changed.
+
 - **S4-06 — login validation and exact lock expiry:** email is limited to 254
   characters and password to 128; blank login values receive clear 422 field errors.
   Validation failures leave the failure counter and lock unchanged. Password text

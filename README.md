@@ -90,3 +90,18 @@ M3 verification: follow the demos in [docs/SETUP.md](docs/SETUP.md) and compare 
 Manager flow: after an officer scores an eligible application, sign in as `thanh@branch.vn`, use **Branch applications -> Review -> Approve application -> Confirm approval**. The details record approver/time. Scoring alone does not approve; disbursement is outside this demo.
 
 BR7/BR8: New application accepts optional Citizen ID and bank account numbers, encrypted before storage. Details shows masked values; **View full numbers (logged)** performs an authorized, audited lookup. Manager navigation includes **Employees** to create Officers, rename, deactivate and reactivate accounts. See [business-rule coverage](docs/traceability.md#business-rules). Keep the locally generated `.env` encryption key with the database backup.
+
+## Current P0 checks in this copy
+
+US01, US03, US04, US08 and US09 are implemented and passed local browser checks
+on 2026-10-29. The saved application and High risk flag appear before scoring
+finishes. Failed scoring can be retried on the same record. Login field validation
+matches the API. The current scorer is `rules-v1`; history is shown on Details.
+
+Checks: **523 backend tests (96.02% coverage), 52 frontend unit/render tests,
+7 browser tests and production build passed**. Browser timings on this machine:
+login 953 ms; save-to-details 93 ms with scoring deliberately held. See
+[ui.md section 4](docs/ui.md#4-what-changed-since-m2) for actual viewport captures
+and [testing.md](docs/testing.md) for reproducible commands. From `frontend/`,
+`npm run test:e2e` starts isolated test servers and a temporary demo DB.
+These local results do not certify another machine's timing or a GitHub/LMS delivery.
