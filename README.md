@@ -121,3 +121,7 @@ These local results do not certify another machine's timing or a GitHub/LMS deli
 Use **Log out** in the top bar. The browser immediately returns to Login and
 the API revokes only that session; another independent login remains valid.
 See [logout setup and checks](docs/SETUP.md#s4-24-logout-verification).
+
+## P1/P2 completed in this copy (2026-10-30)
+
+US07 adds Manager-only Notifications, a 30-second counter and persisted read state.

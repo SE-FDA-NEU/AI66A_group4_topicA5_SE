@@ -122,6 +122,8 @@ The create flow validates BR2/BR9/input, computes BR3 and saves a pending applic
 | POST | `/api/admin/users` | email, full_name, password (12-128 chars) | 201 + Officer account | 401; 403; 422 invalid/unsupported input; 409 duplicate email | BR8 |
 | PATCH | `/api/admin/users/{id}` | full_name?, is_active? | 200 + Officer; audit and token-version increment when active status changes | 401; 403 not Admin or Manager target; 404; 422 | BR8 |
 | GET | `/api/dashboard/summary` | - | 200 + date, total_applications, average_score (null when none), high_risk_count | 401 | US08 (P0); BR8 |
+| GET | `/api/notifications` | Manager bearer token | 200 + unread_count and items for active review | 401; 403 | US07 (P2) |
+| PATCH | `/api/notifications/{id}/read` | Manager bearer token; no body | 200 + id, is_read, read_at; idempotent per Manager | 401; 403; 404 | US07 (P2) |
 
 The dashboard selects applications **created during today's Vietnam calendar day (UTC+7)**, using UTC start/end boundaries. It averages the latest result of each selected application only when that result has a numeric score; it does not fall back to an earlier result. It does not average all scoring attempts or select attempts by the scoring date. Officer scope is their own applications; Manager scope is the whole branch. Seed loans have earlier creation dates, so a fresh seed can correctly show zero applications today.
 
@@ -353,7 +355,7 @@ Implementation change history is recorded separately in [changelog.md](changelog
 - `pending` is the stored status for US03 "Scoring in progress". The UI saves the application, requests scoring, then opens its details. A scoring error preserves the application and offers retry.
 - BR5 is checked before BR4, including CIC groups 3-5. Invalid/noninteger model output is hidden under BR1.
 - The retained HTML route requires a token and filters owners. The public entry on port 8000 redirects to that protected route; use port 5173 for normal browser navigation.
-- BR7, employee management (BR8), US06 history UI and US10 edit/cancel are implemented and tested. US07 notifications remains pending. Manager approval is implemented with an audit event and frontend confirmation.
+- BR7, employee management (BR8), US06 history UI and US10 edit/cancel are implemented and tested. US07 adds Manager-only Notifications, a 30-second counter and persisted read state. Manager approval is implemented with an audit event and frontend confirmation.
 
 ## 10. Manager decision after scoring
 
@@ -400,3 +402,13 @@ No API path, data model, score formula or normal dev-server port changed. The
 optional browser suite sets `P0_TEST_API_TARGET` for its separate API on port 8016;
 the ordinary Vite proxy continues to use port 8000. The suite uses a fresh temporary
 SQLite database and generated test-only keys, never the checkout's `.env` or DB.
+
+## P1/P2 contracts and supporting schema (2026-10-30)
+
+`notification_reads`: composite primary key (`recipient_id`, `event_log_id`), both
+foreign keys to users/event_logs with ON DELETE CASCADE, and a UTC `read_at`.
+Notifications are derived from existing `loan.created` audit events joined to
+active loan states, not from a browser-only list or an email service. They expose
+application ID, Officer name, time, current status and the current Manager's read
+receipt. Existing seed loans without creation events do not acquire fake new
+notifications. Opening a notification marks it read before navigating to Details.

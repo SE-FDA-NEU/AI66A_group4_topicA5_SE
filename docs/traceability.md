@@ -43,8 +43,7 @@ Numbered so that issues and tests can reference them.
 All nine BRs have implementation and local automated coverage. The rules-based
 `rules-v0` scorer is the current implementation; a trained model is planned for
 Sprint 4. Scoring history has a stored-data/API implementation, but its US06
-history tab and US10 edit/cancel are implemented. US07 notifications remains
-absent. Manager approval is an added workflow; processed applications remain
+history tab and US10 edit/cancel are implemented. US07 adds Manager-only Notifications, a 30-second counter and persisted read state. Manager approval is an added workflow; processed applications remain
 protected from US10 edit/cancel.
 
 **US09 API correction (S4-05):** empty, whitespace-only, null and omitted income
@@ -98,7 +97,7 @@ contains `frontend/tests/review.test.js` (queue and filters) and
 [PR #192](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/pull/192)
 contains comparison documentation and [PR #193](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/pull/193)
 contains UI screenshots. The browser checklist still needs tester/date/results.
-US07 notifications remains pending; US06 history UI and US10 edit/cancel are implemented.
+US07 adds Manager-only Notifications, a 30-second counter and persisted read state. US06 history UI and US10 edit/cancel are implemented.
 
 ## P0 browser regression mapping (2026-10-29)
 
@@ -121,3 +120,9 @@ Coverage: TC-US02-01..03 in `backend/tests/test_remaining_stories.py`, masked
 detail cache regression in `test_sensitive_data.py` and the US02 browser case in
 `frontend/browser/remaining-stories.spec.js`. Existing API helpers/browser case
 are reused; S4-24 supplies their server-side revocation and UI behavior.
+
+## P1/P2 completion mapping (2026-10-30)
+
+| Story | Implementation | Regression evidence |
+| --- | --- | --- |
+| US07 | loan.created events + NotificationRead, notifications router/page and Manager counter | TC-US07-01..03; immediate count, per-Manager/idempotent read, completed records excluded; browser read persistence |

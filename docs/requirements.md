@@ -3,7 +3,7 @@
 This document is the product requirement baseline. Implementation and acceptance
 status for Sprint 3 are tracked in [ui.md](ui.md#1-p0-stories-and-status) and
 [traceability.md](traceability.md); a requirement appearing here does not mean it
-is already implemented. US07 notifications remains pending; US06 history UI and
+is already implemented. US07 adds Manager-only Notifications, a 30-second counter and persisted read state. US06 history UI and
 US10 edit/cancel are implemented in this copy. S4-05 fixes the API's exact empty-income message while retaining
 the US09 acceptance criterion below. Independent browser acceptance still needs
 a recorded result; see [ui.md](ui.md#3-error-messages).
@@ -171,3 +171,8 @@ US09 empty/missing/null income returns exactly `Income is required`. Numeric fie
 reject booleans and malformed numeric text; optional blank CIC/text are normalized to
 NULL, and text limits apply after trimming. The API returns clear field/form errors and
 saves nothing on a validation failure. BR9 is implemented in the request schema.
+
+- US07 counts new `loan.created` events whose application is pending/scored/manual_review.
+  The Manager counter fetches on entry/focus and every 30 seconds while visible.
+  A read receipt is stored per Manager, survives reload and does not mark another
+  Manager's copy as read. Cancelled/rejected/approved records leave active notifications.

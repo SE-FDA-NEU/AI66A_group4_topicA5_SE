@@ -1,5 +1,8 @@
 # Project changelog — API and AI input/output
 
+- Added Manager-only GET notifications/PATCH read, derived from creation audits,
+  per-Manager read receipts and a 30-second/focus-refresh counter.
+
 - **S4-24 — current-session logout:** added random JWT jti, a fingerprint-only
   revoked_tokens table, POST /api/auth/logout and revoked-token authorization
   checks. Frontend sends revocation before immediate local sign-out, handles
