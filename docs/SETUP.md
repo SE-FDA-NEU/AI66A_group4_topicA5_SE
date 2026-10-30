@@ -171,3 +171,35 @@ Run Vite from the updated `AI66A_group4_topicA5_SE/frontend` checkout. Stop olde
 An empty daily summary does not mean the Manager has no backlog. Seeded applications from earlier days appear in the review queue if still open. Creating applications is still available to both authenticated roles, consistent with the API. UI role cues do not grant permissions; the server enforces BR8.
 
 Frontend checks (from frontend/): `npm test`, `npm run build`. Tests render React routes and exercise queue filters without accessing the user's database; they do not replace the browser acceptance checklist. The latest local documentation audit on 2026-10-18 passed 170 backend tests, 6 frontend tests and the production build. Link actual screenshots and recorded browser outcomes in [ui.md](ui.md#4-what-changed-since-m2); confirmed sprint commitment/completion belongs in [the Sprint 3 log](sprint-log/sprint-log3.md).
+
+## P0 browser regression checks
+
+Normal operation still uses the servers/ports documented above. For optional
+automated browser checks, install backend dev dependencies and frontend dependencies
+first. From `frontend/` run:
+
+```bash
+npm ci
+npm run test:e2e
+```
+
+On Windows the suite uses an installed Microsoft Edge and the backend's
+`.venv/Scripts/python.exe`. If the virtual environment is elsewhere, set `P0_PYTHON`
+to its Python executable. On other systems, activate the backend environment,
+run `npx playwright install chromium` once, then run `npm run test:e2e`.
+`PLAYWRIGHT_CHANNEL=chrome` selects an installed Chrome instead of Edge; PowerShell
+syntax is `$env:PLAYWRIGHT_CHANNEL = "chrome"`.
+
+The command starts its own API (8016) and frontend (5186), refuses an existing
+server on those ports, seeds a fresh temporary database and generates test-only
+keys. It does not use or overwrite this checkout's `.env` or `credit_scoring.db`.
+It creates `p0.dashboard@branch.vn` only in that disposable DB to verify 0 and 10
+applications. All fixture passwords are `Demo@2026` and contain synthetic data.
+Results and screenshots are in ignored `frontend/test-results/`; the selected
+current captures and measured results are recorded in ui.md section 4.
+
+The default CI pytest and `npm test` commands remain usable without a browser.
+The optional browser command is additional local verification, not a claim that
+the existing GitHub workflow runs Playwright or that an independent review occurred.
+
+Official browser installation/reference: [Playwright browsers](https://playwright.dev/docs/browsers).

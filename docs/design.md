@@ -354,3 +354,19 @@ Frontend validation: Node tests exercise queue membership/order, old backlog wit
 ## 13. Sprint 4 model plan
 
 Candidate dataset: German Credit. Validate licensing, feature meanings and target mapping before use. Split train/validation/test before preprocessing; compare a logistic-regression baseline with a tree model using ROC-AUC, precision/recall and calibration. Keep synthetic runtime demo records separate from training data. Dataset features must map explicitly to the application's available inputs; unresolved mappings block replacing `rules-v0`. Export a versioned preprocessing/model artifact, preserve `predict(features) -> (integer score, reasons)`, and test BR1/BR4/BR6 before enabling it. Document how probability maps to 0-100 and how explanations are computed.
+
+### P0 save-before-score flow (2026-10-29)
+
+1. New application validates the form and POSTs the existing create API.
+2. On 201 it immediately opens `/loan-applications/:id` with a one-use `scoreOnOpen` navigation flag.
+3. Details loads the saved input, pending status and BR3 flag, consumes the flag
+   using history replacement, and starts one score request. A ref guards duplicate
+   effect execution under React StrictMode. Reload does not automatically score again.
+4. Successful scoring replaces the result from the server. On failure, Details
+   retains access to the saved record and its score action; no second create occurs.
+   Requests belonging to a previous record cannot replace the current record's state.
+
+No API path, data model, score formula or normal dev-server port changed. The
+optional browser suite sets `P0_TEST_API_TARGET` for its separate API on port 8016;
+the ordinary Vite proxy continues to use port 8000. The suite uses a fresh temporary
+SQLite database and generated test-only keys, never the checkout's `.env` or DB.

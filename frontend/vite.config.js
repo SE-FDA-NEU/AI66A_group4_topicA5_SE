@@ -4,5 +4,5 @@ import react from "@vitejs/plugin-react";
 // In development the browser talks to Vite (5173); /api calls are forwarded to FastAPI (8000).
 export default defineConfig({
   plugins: [react()],
-  server: { port: 5173, proxy: { "/api": "http://127.0.0.1:8000" } },
+  server: { port: 5173, proxy: { "/api": process.env.P0_TEST_API_TARGET || "http://127.0.0.1:8000" } },
 });

@@ -86,15 +86,9 @@ export default function NewApplication() {
       return;
     }
     setForm((current) => ({ ...current, citizen_id: "", bank_account: "" }));
-    // US03: submit for automated scoring right away. If scoring fails the application is still saved.
-    setBusy("Scoring the application...");
-    let notice = "";
-    try {
-      await api.score(created.id);
-    } catch (err) {
-      notice = `The application was saved, but it could not be scored yet: ${err.message}`;
-    }
-    navigate(`/loan-applications/${created.id}`, { state: { notice } });
+    // Open the persisted record immediately, then score from Details. A slow or
+    // failed score must not hide the saved state or the pre-scoring High risk flag.
+    navigate(`/loan-applications/${created.id}`, { state: { scoreOnOpen: true } });
   };
 
   const f = { form, setForm, errors };

@@ -95,3 +95,14 @@ contains `frontend/tests/review.test.js` (queue and filters) and
 contains comparison documentation and [PR #193](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/pull/193)
 contains UI screenshots. The browser checklist still needs tester/date/results.
 US07 notifications, US06 history UI and US10 edit/cancel remain pending.
+
+## P0 browser regression mapping (2026-10-29)
+
+`frontend/browser/p0.spec.js` runs seven real-browser checks against a disposable
+seeded database: US01 login/length/lock; US09 error messages/focus/no-save; US03
+saved High risk before slow scoring and single automatic request; US04 persisted
+score/CIC/reasons/list navigation; US03 score-failure recovery without duplicates;
+US08 0/10 daily records/average and Manager workspace; US09 keyboard/375 px layout.
+All seven passed locally. The 523 pytest cases and 52 frontend unit/render tests
+also passed; local backend coverage is 96.02%. These results do not assert a new
+GitHub PR, teammate review, CI result or LMS submission.
