@@ -142,6 +142,15 @@ Calls: GET/POST `/api/admin/users`, PATCH `/api/admin/users/{id}`.
 
 ![Employee accounts wireframe](images/ui/wireframe-6.svg)
 
+### 2.8 Manager notifications `/notifications`
+
+"The user comes here to find new applications requiring review and remember which notifications were read."
+Calls: GET `/api/notifications`, PATCH `/api/notifications/{id}/read`.
+Loading: loading message. Empty: No applications awaiting review. Error: readable
+message with retry for network/server failures. Data: application/Officer/time/status,
+Unread or Read badge, Open application and Mark as read. Counter refresh: 30 seconds
+while visible plus entry/focus. Cancelled/approved/rejected records leave this list.
+
 ## 3. Error messages
 
 These are the exact strings currently used by the backend or the frontend.
@@ -215,7 +224,7 @@ The shared Dashboard did not make clear what an Officer or a Manager should do n
 | Details | Can score; sees who makes the approval decision | Can approve an eligible score after confirmation |
 | Not available | Approval, branch filters, Employees | Changing Manager accounts |
 
-US07 notifications remains pending; US06 history UI and US10 edit/cancel are implemented. The review queue is not a notification feature.
+US07 adds Manager-only Notifications, a 30-second counter and persisted read state. US06 history UI and US10 edit/cancel are implemented. The review queue is not a notification feature.
 
 **Evidence status:** five running-app screenshots are included below.
 
@@ -291,3 +300,5 @@ logout API clearing the browser with an honest warning. OneDrive exposed the
 test files as symlinks, so the tests ran from a temporary physical copy
 outside OneDrive while targeting this checkout's app/configuration.
 Independent human acceptance and GitHub CI/review remain separate.
+
+![Manager notification stays read after reopening](images/ui/p2-notifications-read-persisted.png)

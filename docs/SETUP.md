@@ -69,7 +69,7 @@ Expected output:
 Seeded: users=3, loan_applications=12
 ```
 
-This creates the file `credit_scoring.db` (all 4 tables from `docs/design.md`) and fills it with 3 users and 12 loan applications. Migration also works on an existing M2/M3 database: it adds any missing identifier ciphertext/last-four and account-status/token-version columns without deleting rows. API startup runs the same additive migration. The seed command only creates missing tables and inserts demo rows; it does not add columns to existing tables. Always run `python -m app.migrate` before `python -m app.seed` when upgrading an old database. Seed preserves existing accounts and applications.
+This creates the file `credit_scoring.db` (all 6 tables from `docs/design.md`) and fills it with 3 users and 12 loan applications. Migration also works on an existing M2/M3 database: it adds any missing identifier ciphertext/last-four and account-status/token-version columns without deleting rows. API startup runs the same additive migration. The seed command only creates missing tables and inserts demo rows; it does not add columns to existing tables. Always run `python -m app.migrate` before `python -m app.seed` when upgrading an old database. Seed preserves existing accounts and applications.
 
 **Test accounts** (demo data only, password for all three: `Demo@2026`):
 
@@ -250,3 +250,11 @@ For a manual check, sign in in two separate browser contexts. Log out of one,
 press Back and verify Login remains visible; the other remains signed in.
 Offline sign-out clears the browser but displays that server revocation could
 not be confirmed. API-only checks do not replace this browser interaction check.
+
+## P1/P2 workflows in this copy
+
+- **Notifications (US07):** Manager top bar > Notifications. Creating a new loan
+  creates its audit event immediately; active review states enter the unread list.
+  Counter refresh is 30 seconds while visible and on entry/focus. Mark as read or
+  Open application saves a receipt for the current Manager. Old seed loans have no
+  fabricated new-creation events; their review queue and notifications differ.

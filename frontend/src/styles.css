@@ -407,3 +407,5 @@ dd, .alert, .field-error, .card li, .wrap-cell, .page-heading, .role-task { over
 @media (prefers-reduced-motion: reduce) {
   .login-wrap *, .login-wrap .login { transition-duration: 0.01ms !important; animation: none !important; }
 }
+
+.notification-list { list-style:none; padding:0; display:grid; gap:12px; }

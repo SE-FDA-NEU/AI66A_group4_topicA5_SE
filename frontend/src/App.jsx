@@ -1,4 +1,5 @@
 import EditApplication from "./pages/EditApplication";
+import Notifications from "./pages/Notifications";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { useAuth } from "./auth";
 import Layout from "./components/Layout";
@@ -24,6 +25,7 @@ export default function App() {
       <Route path="/loan-applications" element={<Protected><ApplicationList /></Protected>} />
       <Route path="/loan-applications/new" element={<Protected><NewApplication /></Protected>} />
       <Route path="/loan-applications/:id/edit" element={<Protected><EditApplication /></Protected>} />
+      <Route path="/notifications" element={<Protected>{user?.role === "admin" ? <Notifications /> : <p>Only a manager can open review notifications.</p>}</Protected>} />
       <Route path="/loan-applications/:id" element={<Protected><ApplicationDetail /></Protected>} />
       <Route path="/admin/users" element={<Protected>{user?.role === "admin" ? <Users /> : <p>You need Manager access to manage employees. Ask your branch manager for help.</p>}</Protected>} />
       <Route path="*" element={user ? <Layout><NotFound /></Layout> : <NotFound />} />

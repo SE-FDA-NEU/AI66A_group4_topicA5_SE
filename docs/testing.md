@@ -191,3 +191,6 @@ Every test with an ID, sorted by ID. Backend IDs are a `# TC-USxx-nn` comment di
 | `TC-US08-03` | `backend/tests/test_m4_boundaries.py` | `test_dashboard_ignores_applications_created_before_today` |
 | `TC-US09-01` | `backend/tests/test_applications.py` | `test_us09_missing_income_names_the_field` |
 | `TC-US09-02` | `backend/tests/test_applications.py` | `test_us09_text_income_is_rejected_and_nothing_is_saved` |
+
+US07 checks immediate notifications,
+per-Manager/read idempotence, permissions and exclusion of completed records.

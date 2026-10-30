@@ -12,6 +12,7 @@ from app.routers import (
     applications,
     auth,
     loans,
+    notifications,
     users,
 )
 from app.routers.applications import ApplicationIn
@@ -40,6 +41,7 @@ app.include_router(auth.router)
 app.include_router(applications.router)
 app.include_router(users.router)
 app.include_router(application_changes.router)
+app.include_router(notifications.router)
 
 
 FIELD_LABELS = {

@@ -1,10 +1,20 @@
-"""US02 and US10 acceptance tests on isolated SQLite, without a running server."""
+"""P1/P2 acceptance regressions on isolated SQLite, without a running server."""
 
 import hashlib
 
 import pytest
+from sqlalchemy import inspect
 
-from app.models import EventLog, LoanApplication, LoanStatus, RevokedToken
+from app.migrate import ensure_schema
+from app.models import (
+    EventLog,
+    LoanApplication,
+    LoanStatus,
+    NotificationRead,
+    RevokedToken,
+    User,
+    UserRole,
+)
 from tests.conftest import VALID_APPLICATION
 
 URL = "/api/loan-applications"
@@ -121,3 +131,63 @@ def test_protected_data_is_not_http_cached_after_logout(client, seeded, login, p
 def test_logout_without_a_session_is_401(client, seeded):
     assert client.post("/api/auth/logout").status_code == 401
     assert seeded.query(RevokedToken).count() == 0
+
+
+# TC-US07-01
+def test_notification_is_immediate_persistent_and_per_manager(client, seeded, login):
+    officer, manager = login("hoang@branch.vn"), login("thanh@branch.vn")
+    assert client.get("/api/notifications", headers=manager).json() == {"unread_count": 0, "items": []}
+    loan = create(client, officer)
+    listing = client.get("/api/notifications", headers=manager).json()
+    assert listing["unread_count"] == 1
+    event = listing["items"][0]
+    assert event["loan_application_id"] == loan["id"] and event["is_read"] is False
+    path = f"/api/notifications/{event['id']}/read"
+    read = client.patch(path, headers=manager)
+    assert read.status_code == 200 and read.json()["read_at"]
+    assert client.patch(path, headers=manager).json() == read.json()
+    assert seeded.query(NotificationRead).count() == 1
+    assert client.get("/api/notifications", headers=manager).json()["unread_count"] == 0
+    assert client.get("/api/notifications", headers=manager).json()["items"][0]["is_read"] is True
+    extra = User(email="second.manager@branch.vn", full_name="Second Manager", role=UserRole.ADMIN,
+                 hashed_password=seeded.query(User).filter_by(email="thanh@branch.vn").one().hashed_password)
+    seeded.add(extra)
+    seeded.commit()
+    other = login(extra.email)
+    assert client.get("/api/notifications", headers=other).json()["unread_count"] == 1
+
+
+# TC-US07-02
+def test_notifications_are_manager_only_and_missing_event_is_clear(client, seeded, login):
+    officer, manager = login("hoang@branch.vn"), login("thanh@branch.vn")
+    assert client.get("/api/notifications").status_code == 401
+    assert client.get("/api/notifications", headers=officer).status_code == 403
+    assert client.patch("/api/notifications/missing/read", headers=officer).status_code == 403
+    assert client.patch("/api/notifications/missing/read", headers=manager).status_code == 404
+
+
+# TC-US07-03
+def test_cancelled_or_approved_applications_leave_active_notifications(client, seeded, login):
+    officer, manager = login("hoang@branch.vn"), login("thanh@branch.vn")
+    cancelled, approved = create(client, officer), create(client, officer)
+    assert client.patch(f"{URL}/{cancelled['id']}/cancel", headers=officer).status_code == 200
+    assert client.post(f"{URL}/{approved['id']}/score", headers=officer).status_code == 201
+    assert client.patch(f"{URL}/{approved['id']}/approve", headers=manager).status_code == 200
+    assert client.get("/api/notifications", headers=manager).json() == {"unread_count": 0, "items": []}
+
+
+def test_schema_adds_notification_and_revocation_tables_without_touching_legacy_rows(tmp_path):
+    from sqlalchemy import create_engine, text
+
+    from tests.test_migration import OLD_SCHEMA
+
+    engine = create_engine(f"sqlite:///{tmp_path / 'legacy.db'}")
+    with engine.begin() as connection:
+        for statement in filter(str.strip, OLD_SCHEMA.split(";")):
+            connection.execute(text(statement))
+    ensure_schema(engine)
+    ensure_schema(engine)
+    assert {"notification_reads", "revoked_tokens"} <= set(inspect(engine).get_table_names())
+    with engine.connect() as connection:
+        assert connection.execute(text("SELECT monthly_income FROM loan_applications WHERE id='l1'")).scalar() == 15_000_000
+    engine.dispose()

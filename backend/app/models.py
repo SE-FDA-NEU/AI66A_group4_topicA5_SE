@@ -211,6 +211,14 @@ class EventLog(Base):
     created_at = tz_datetime(nullable=False, default=now_utc, index=True)
 
 
+class NotificationRead(Base):
+    __tablename__ = "notification_reads"
+
+    recipient_id = Column(String, ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    event_log_id = Column(String, ForeignKey("event_logs.id", ondelete="CASCADE"), primary_key=True)
+    read_at = tz_datetime(nullable=False, default=now_utc)
+
+
 class RevokedToken(Base):
     __tablename__ = "revoked_tokens"
 
