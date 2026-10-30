@@ -191,3 +191,15 @@ def test_schema_adds_notification_and_revocation_tables_without_touching_legacy_
     with engine.connect() as connection:
         assert connection.execute(text("SELECT monthly_income FROM loan_applications WHERE id='l1'")).scalar() == 15_000_000
     engine.dispose()
+
+# TC-US06-10
+def test_history_contains_exactly_two_persisted_attempts_and_empty_before_scoring(client, seeded, login):
+    headers = login("hoang@branch.vn")
+    loan = create(client, headers)
+    path = f"{URL}/{loan['id']}/scores"
+    assert client.get(path, headers=headers).json() == []
+    results = [client.post(f"{URL}/{loan['id']}/score", headers=headers).json()["result"] for _ in range(2)]
+    history = client.get(path, headers=headers).json()
+    assert len(history) == 2
+    assert {row["id"] for row in history} == {row["id"] for row in results}
+    assert all(row["score"] == 95 and row["created_at"] for row in history)

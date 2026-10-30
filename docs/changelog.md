@@ -1,5 +1,8 @@
 # Project changelog — API and AI input/output
 
+- Added an accessible
+  Scoring history tab and clear loading/error states.
+
 - Added Manager-only GET notifications/PATCH read, derived from creation audits,
   per-Manager read receipts and a 30-second/focus-refresh counter.
 

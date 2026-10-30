@@ -408,4 +408,7 @@ dd, .alert, .field-error, .card li, .wrap-cell, .page-heading, .role-task { over
   .login-wrap *, .login-wrap .login { transition-duration: 0.01ms !important; animation: none !important; }
 }
 
+.application-tabs { display:flex; flex-wrap:wrap; gap:8px; margin:16px 0; }
+.application-tabs [aria-selected="true"] { background:var(--navy, #203d68); color:white; }
 .notification-list { list-style:none; padding:0; display:grid; gap:12px; }
+[role="tabpanel"][hidden] { display:none; }

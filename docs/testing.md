@@ -194,3 +194,6 @@ Every test with an ID, sorted by ID. Backend IDs are a `# TC-USxx-nn` comment di
 
 US07 checks immediate notifications,
 per-Manager/read idempotence, permissions and exclusion of completed records.
+
+US06
+checks zero then exactly two persisted results.
