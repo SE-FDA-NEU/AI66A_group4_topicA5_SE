@@ -143,16 +143,7 @@ def health_check():
 @app.middleware("http")
 async def private_response_cache_policy(request, call_next):
     response = await call_next(request)
-    path = request.url.path
-    # Ordinary details contain masked identifiers only and retain their route
-    # contract. Sensitive reveal responses set no-store explicitly in the
-    # reveal endpoint and remain covered by the global private-response policy.
-    ordinary_detail = (
-        request.method == "GET"
-        and path.startswith("/api/loan-applications/")
-        and path.count("/") == 3
-    )
-    if (path.startswith("/api/") or path == "/loan-applications") and not ordinary_detail:
+    if request.url.path.startswith("/api/") or request.url.path == "/loan-applications":
         response.headers["Cache-Control"] = "no-store"
         response.headers["Pragma"] = "no-cache"
     return response

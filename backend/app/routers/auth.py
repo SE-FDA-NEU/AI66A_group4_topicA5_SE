@@ -1,14 +1,16 @@
 from datetime import UTC, datetime, timedelta
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi.security import HTTPAuthorizationCredentials
 from pydantic import BaseModel, Field, field_validator
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.deps import get_current_user
-from app.models import User
-from app.security import create_access_token, verify_password
+from app.deps import _bearer, get_current_user
+from app.models import RevokedToken, User
+from app.security import create_access_token, token_fingerprint, verify_password
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
@@ -71,3 +73,17 @@ def login(body: LoginIn, db: Annotated[Session, Depends(get_db)]):
 @router.get("/me")
 def me(user: Annotated[User, Depends(get_current_user)]):
     return user_dict(user)
+
+
+@router.post("/logout", status_code=204)
+def logout(db: Annotated[Session, Depends(get_db)], user: Annotated[User, Depends(get_current_user)],
+           credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(_bearer)]):
+    fingerprint = token_fingerprint(credentials.credentials)
+    db.add(RevokedToken(token_hash=fingerprint, user_id=user.id))
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        if db.get(RevokedToken, fingerprint) is None:
+            raise
+    return Response(status_code=204)

@@ -30,9 +30,13 @@ def verify_password(plain: str, stored: str) -> bool:
 def create_access_token(user_id: str, role: str, token_version: int = 0) -> str:
     settings = get_settings()
     expires = datetime.now(UTC) + timedelta(minutes=settings.JWT_EXPIRE_MINUTES)
-    return jwt.encode({"sub": user_id, "role": role, "exp": expires, "ver": token_version}, settings.JWT_SECRET, algorithm="HS256")
+    return jwt.encode({"sub": user_id, "role": role, "exp": expires, "ver": token_version, "jti": secrets.token_hex(16)}, settings.JWT_SECRET, algorithm="HS256")
 
 
 def decode_access_token(token: str) -> dict:
     """Raises jwt.PyJWTError when the token is invalid or expired."""
     return jwt.decode(token, get_settings().JWT_SECRET, algorithms=["HS256"])
+
+
+def token_fingerprint(token: str) -> str:
+    return hashlib.sha256(token.encode("utf-8")).hexdigest()

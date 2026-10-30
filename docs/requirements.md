@@ -94,6 +94,12 @@ With 2 years of experience in the profession, Hoang processes an average of 1 to
 **US02 — Logout**
 - Given an active session, when selecting logout, then the session terminates and the user is redirected to `/`.
 - Given a logged-out state, when clicking the browser's Back button, then the system must not display cached Dashboard data.
+- S4-24: logout revokes the current bearer token on the server (204); subsequent
+  protected requests using it return 401, while an independent session remains
+  valid. Only the token's SHA-256 fingerprint is stored.
+- Private API/legacy HTML responses use no-store/no-cache. If revocation cannot
+  be confirmed because the server is unavailable, the browser still signs out
+  immediately and explains that server revocation is unconfirmed.
 
 **US03 - Input loan application**
 - Given an empty application input form, when fully filling in income, **loan amount, loan term**, credit history, loan purpose and clicking Submit, then the application is saved with the status "Scoring in progress" in under **3 seconds**.

@@ -110,3 +110,14 @@ US08 0/10 daily records/average and Manager workspace; US09 keyboard/375 px layo
 All seven passed locally. The 523 pytest cases and 52 frontend unit/render tests
 also passed; local backend coverage is 96.02%. These results do not assert a new
 GitHub PR, teammate review, CI result or LMS submission.
+
+
+## US02 — current-session logout (S4-24)
+
+Top bar Log out -> `api.logout` -> `POST /api/auth/logout` -> `RevokedToken`
+fingerprint; `get_current_user` rejects it on later access. Frontend `auth.jsx`
+clears the session immediately, handles offline uncertainty and guards pageshow.
+Coverage: TC-US02-01..03 in `backend/tests/test_remaining_stories.py`, masked
+detail cache regression in `test_sensitive_data.py` and the US02 browser case in
+`frontend/browser/remaining-stories.spec.js`. Existing API helpers/browser case
+are reused; S4-24 supplies their server-side revocation and UI behavior.

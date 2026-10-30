@@ -1,8 +1,10 @@
-"""S4-22 acceptance tests on isolated SQLite, without a running server."""
+"""US02 and US10 acceptance tests on isolated SQLite, without a running server."""
+
+import hashlib
 
 import pytest
 
-from app.models import EventLog, LoanApplication, LoanStatus
+from app.models import EventLog, LoanApplication, LoanStatus, RevokedToken
 from tests.conftest import VALID_APPLICATION
 
 URL = "/api/loan-applications"
@@ -90,3 +92,32 @@ def test_scored_loan_cannot_be_cancelled(client, seeded, login):
     loan = create(client, headers)
     assert client.post(f"{URL}/{loan['id']}/score", headers=headers).status_code == 201
     assert client.patch(f"{URL}/{loan['id']}/cancel", headers=headers).status_code == 409
+
+
+# TC-US02-01
+def test_logout_revokes_only_the_current_session_and_discards_raw_token(client, seeded, login):
+    first = login("hoang@branch.vn")
+    second = login("hoang@branch.vn")
+    assert first != second
+    assert client.post("/api/auth/logout", headers=first).status_code == 204
+    assert client.get("/api/auth/me", headers=first).status_code == 401
+    assert client.get("/api/auth/me", headers=second).status_code == 200
+    raw = first["Authorization"].split()[1]
+    revoked = seeded.query(RevokedToken).one()
+    assert revoked.token_hash == hashlib.sha256(raw.encode()).hexdigest()
+    assert revoked.token_hash != raw
+
+
+# TC-US02-02
+@pytest.mark.parametrize("path", ["/api/dashboard/summary", "/api/loan-applications", "/loan-applications"])
+def test_protected_data_is_not_http_cached_after_logout(client, seeded, login, path):
+    response = client.get(path, headers=login("hoang@branch.vn"))
+    assert response.status_code == 200
+    assert response.headers["cache-control"] == "no-store"
+    assert response.headers["pragma"] == "no-cache"
+
+
+# TC-US02-03
+def test_logout_without_a_session_is_401(client, seeded):
+    assert client.post("/api/auth/logout").status_code == 401
+    assert seeded.query(RevokedToken).count() == 0

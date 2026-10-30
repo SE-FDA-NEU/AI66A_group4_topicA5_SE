@@ -341,9 +341,9 @@ def test_reveal_response_is_not_cacheable(client, seeded, login):
     assert resp.headers["pragma"] == "no-cache"
 
 
-def test_ordinary_detail_is_not_marked_no_store(client, seeded, login):
-    """Only the reveal route needs it; masked data stays normally cacheable."""
+def test_ordinary_detail_is_not_cached_after_logout(client, seeded, login):
+    """US02: protected data must not be cached, including masked responses."""
     headers = login("hoang@branch.vn")
     created = _create(client, headers, citizen_id=CITIZEN_ID)
     resp = client.get(f"/api/loan-applications/{created['id']}", headers=headers)
-    assert resp.headers.get("cache-control") != "no-store"
+    assert resp.headers.get("cache-control") == "no-store"
