@@ -120,6 +120,9 @@ When the application is `pending` and has no `latest_score`, Details shows
 shows a confirmation and retains the record after success. Processed applications
 show a read-only state and cannot be edited or cancelled.
 
+The Scoring history tab has loading, empty, data and failure states; failure is
+not rendered as an empty history.
+
 ### 2.4.1 Edit an unprocessed application `/loan-applications/:id/edit`
 
 Calls: `GET /api/loan-applications/{id}`, `PATCH /api/loan-applications/{id}`.
@@ -302,3 +305,5 @@ outside OneDrive while targeting this checkout's app/configuration.
 Independent human acceptance and GitHub CI/review remain separate.
 
 ![Manager notification stays read after reopening](images/ui/p2-notifications-read-persisted.png)
+
+![Exactly two persisted attempts in the Scoring history tab](images/ui/p1-history-two-attempts.png)

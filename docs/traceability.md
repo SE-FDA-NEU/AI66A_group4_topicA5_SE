@@ -125,4 +125,5 @@ are reused; S4-24 supplies their server-side revocation and UI behavior.
 
 | Story | Implementation | Regression evidence |
 | --- | --- | --- |
+| US06 | existing history API, Scoring history tab and loading/empty/error/data states | TC-US06-10; real-browser empty then exactly two persisted attempts after reload |
 | US07 | loan.created events + NotificationRead, notifications router/page and Manager counter | TC-US07-01..03; immediate count, per-Manager/idempotent read, completed records excluded; browser read persistence |

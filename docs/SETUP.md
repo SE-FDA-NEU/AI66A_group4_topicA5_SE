@@ -253,6 +253,8 @@ not be confirmed. API-only checks do not replace this browser interaction check.
 
 ## P1/P2 workflows in this copy
 
+- **History (US06):** Details > Scoring history. Empty loans show No history
+  available; each persisted scoring attempt has its own timestamp, score and version.
 - **Notifications (US07):** Manager top bar > Notifications. Creating a new loan
   creates its audit event immediately; active review states enter the unread list.
   Counter refresh is 30 seconds while visible and on entry/focus. Mark as read or

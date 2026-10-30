@@ -125,3 +125,6 @@ See [logout setup and checks](docs/SETUP.md#s4-24-logout-verification).
 ## P1/P2 completed in this copy (2026-10-30)
 
 US07 adds Manager-only Notifications, a 30-second counter and persisted read state.
+
+US05 details/not-found
+is verified; US06 has an actual Scoring history tab.

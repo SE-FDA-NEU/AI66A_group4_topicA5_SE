@@ -61,7 +61,7 @@ Multiplicity: `1 : 0..*` for a required foreign key, `0..1 : 0..*` for a nullabl
 | `created_at` | DateTime(timezone=True) NOT NULL | | indexed |
 | `updated_at` | DateTime(timezone=True) NOT NULL | | |
 
-**`scoring_results`** - one row per persisted scoring result, including BR4 rejection and BR1 invalid-output results. The BR5-blocked fourth request creates an audit event and changes status without adding a result. The history API is built; the dedicated **US06** history screen remains pending.
+**`scoring_results`** - one row per persisted scoring result, including BR4 rejection and BR1 invalid-output results. The BR5-blocked fourth request creates an audit event and changes status without adding a result. The history API and the Score history section on Application details are implemented.
 
 | Column | Type | Key | Constraint / which rule |
 | --- | --- | --- | --- |
@@ -113,7 +113,7 @@ The create flow validates BR2/BR9/input, computes BR3 and saves a pending applic
 | GET | `/api/loan-applications` | - | 200 + list (Officer: own; Admin: all), newest first | 401 | US05; BR8 |
 | GET | `/api/loan-applications/{id}` | - | 200 + application, latest_score, approval metadata | 401; 403 not owner/Admin; 404 missing application | US05; BR8 |
 | POST | `/api/loan-applications/{id}/score` | - | 201 + `result` and `application`; BR1/BR4 outcomes are persisted results | 401; 403; 404; 409 cancelled/approved; 429 BR5 limit, changes status to `manual_review` | US04 (P0); BR1, BR3-BR6 |
-| GET | `/api/loan-applications/{id}/scores` | - | 200 + results ordered by created_at/id ascending; empty list when none | 401; 403; 404 | US06 API only; history UI pending |
+| GET | `/api/loan-applications/{id}/scores` | - | 200 + results ordered by created_at/id ascending; empty list when none | 401; 403; 404 | US06 API and Scoring history tab |
 | PATCH | `/api/loan-applications/{id}` | Partial editable `ApplicationIn` fields; identifiers may be supplied explicitly | 200 + saved application; merged validation and BR3 recalculation; `loan.edited` audit | 401; 403 not owner/Admin; 404; 409 processed; 422 merged validation; 503 identifier key unavailable | US10 edit; BR3, BR7, BR9 |
 | PATCH | `/api/loan-applications/{id}/cancel` | No body | 200 + retained application with `cancelled` status; one `loan.cancelled` audit; repeated cancel is idempotent | 401; 403 not owner/Admin; 404; 409 processed | US10 cancel; BR8 |
 | PATCH | `/api/loan-applications/{id}/approve` | no body | 200 + application, status `approved`, approval metadata; atomic `loan.approved` audit | 401; 403 not Admin; 404; 409 invalid/stale state or result | Manager approval; BR6 |
@@ -412,3 +412,6 @@ active loan states, not from a browser-only list or an email service. They expos
 application ID, Officer name, time, current status and the current Manager's read
 receipt. Existing seed loans without creation events do not acquire fake new
 notifications. Opening a notification marks it read before navigating to Details.
+
+The Scoring history tab has loading, empty, data and failure states; failure is
+not rendered as an empty history.
