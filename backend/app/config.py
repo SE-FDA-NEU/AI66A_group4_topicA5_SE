@@ -6,6 +6,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 class Settings:
+    APP_ENV: str = os.getenv("APP_ENV", "development").strip().lower()
+    SEED_DEMO: bool = os.getenv("SEED_DEMO", "false").strip().lower() == "true"
     DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite:///./credit_scoring.db")
     JWT_SECRET: str = os.getenv("JWT_SECRET", "dev-only-change-me")
     JWT_EXPIRE_MINUTES: int = int(os.getenv("JWT_EXPIRE_MINUTES", "480"))

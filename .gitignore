@@ -26,3 +26,14 @@ frontend/dist/
 # Browser-test output (synthetic local test run)
 frontend/test-results/
 frontend/playwright-report/
+
+# S5-01: raw datasets, offline model artifacts and database backups
+dataset/
+*.joblib
+*.sql
+*.dump
+*.sqlite
+*.sqlite3
+backups/
+*.dump.fernet
+tmp/
