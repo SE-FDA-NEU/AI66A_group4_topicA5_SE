@@ -1,7 +1,11 @@
+import argparse
 from datetime import UTC, datetime, timedelta
 
+from sqlalchemy import text
+
 from app import scoring
-from app.database import Base, SessionLocal, engine
+from app.database import SessionLocal, engine
+from app.migrate import ensure_schema
 from app.models import (
     LoanApplication,
     LoanStatus,
@@ -70,7 +74,11 @@ def _scoring_result(loan, index, created) -> ScoringResult:
         rejected_reason="score_below_40" if label == ScoreLabel.REJECTED else None, **common)
 
 
-def seed_database(db) -> dict:
+def seed_database(db, current_demo: bool = False) -> dict:
+    # Serialize opt-in seeding across PostgreSQL workers/processes. The lock is
+    # released on commit/rollback; existing accounts and loans are never reset.
+    if db.get_bind().dialect.name == "postgresql":
+        db.execute(text("SELECT pg_advisory_xact_lock(5012026)"))
     if db.query(LoanApplication).count() > 0:
         return {}
 
@@ -86,7 +94,7 @@ def seed_database(db) -> dict:
     now = datetime.now(UTC)
     loans = []
     for i, (owner, income, amount, term, payment, purpose, history, cic, status) in enumerate(LOANS):
-        created = now - timedelta(days=len(LOANS) - i)
+        created = now if current_demo and i in {0, 2, 7, 8} else now - timedelta(days=len(LOANS) - i)
         loan = LoanApplication(
             created_by=users[owner].id,
             monthly_income=income,
@@ -114,10 +122,13 @@ def seed_database(db) -> dict:
 
 
 def main():
-    Base.metadata.create_all(bind=engine)
+    parser = argparse.ArgumentParser(description="Seed synthetic demo data only when no loans exist.")
+    parser.add_argument("--current-demo", action="store_true", help="Date four sample loans today for the dashboard.")
+    args = parser.parse_args()
+    ensure_schema(engine)
     db = SessionLocal()
     try:
-        counts = seed_database(db)
+        counts = seed_database(db, current_demo=args.current_demo)
     finally:
         db.close()
     if counts:

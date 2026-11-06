@@ -5,7 +5,9 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse, RedirectResponse, Response
 
 from app import models  # noqa: F401  (registers every table on Base.metadata)
-from app.database import engine
+from app.config import get_settings
+from app.database import SessionLocal, engine
+from app.deployment import validate_production
 from app.migrate import ensure_schema
 from app.routers import (
     application_changes,
@@ -23,7 +25,14 @@ from app.routers.auth import LoginIn
 async def lifespan(app: FastAPI):
     # Create the tables if they do not exist yet. Doing it at startup (not at import
     # time) keeps `import app.main` free of side effects, which matters for tests.
+    settings = get_settings()
+    validate_production(settings)
     ensure_schema(engine)
+    if settings.SEED_DEMO:
+        from app.seed import seed_database
+
+        with SessionLocal() as db:
+            seed_database(db, current_demo=True)
     yield
 
 

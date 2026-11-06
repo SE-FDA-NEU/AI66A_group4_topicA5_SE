@@ -69,7 +69,7 @@ Expected output:
 Seeded: users=3, loan_applications=12
 ```
 
-This creates the file `credit_scoring.db` (all 6 tables from `docs/design.md`) and fills it with 3 users and 12 loan applications. Migration also works on an existing M2/M3 database: it adds any missing identifier ciphertext/last-four and account-status/token-version columns without deleting rows. API startup runs the same additive migration. The seed command only creates missing tables and inserts demo rows; it does not add columns to existing tables. Always run `python -m app.migrate` before `python -m app.seed` when upgrading an old database. Seed preserves existing accounts and applications.
+With the default SQLite configuration, this creates `credit_scoring.db` (all 6 tables from `docs/design.md`) and fills it with 3 users and 12 loan applications. With a PostgreSQL DATABASE_URL, it uses that database instead. Migration adds any missing identifier ciphertext/last-four and account-status/token-version columns without deleting rows. API startup and the seed command run the same additive migration. Seed preserves existing accounts and skips all inserts when applications already exist.
 
 **Test accounts** (demo data only, password for all three: `Demo@2026`):
 
@@ -79,6 +79,14 @@ This creates the file `credit_scoring.db` (all 6 tables from `docs/design.md`) a
 | `linh@branch.vn` | Officer (User) | only her own 5 applications |
 | `thanh@branch.vn` | Manager (Admin) | all 12 applications |
 Running it again prints `Data already present, skipping seed.` and changes nothing.
+
+S5-01 adds optional current-day demo data: `python -m app.seed --current-demo`
+dates four sample loans today when seeding an empty database. Alternatively,
+`SEED_DEMO=true` enables that same empty-only seed during API startup; its default
+is `false`. It never refreshes dates or resets accounts in an existing database.
+The ordinary seed command retains the historical dates described below.
+For hosted PostgreSQL, production guards, the isolated smoke command and encrypted
+backup/restore rehearsal, follow [deployment.md](deployment.md).
 
 ## 6. Run the server
 
