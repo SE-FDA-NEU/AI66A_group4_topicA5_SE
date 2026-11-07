@@ -1,15 +1,20 @@
 from contextlib import asynccontextmanager
+from typing import Annotated
 
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse, RedirectResponse, Response
+from sqlalchemy import text
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import Session
 
 from app import models  # noqa: F401  (registers every table on Base.metadata)
 from app.config import get_settings
-from app.database import SessionLocal, engine
+from app.database import SessionLocal, engine, get_db
 from app.deployment import validate_production
 from app.frontend import mount_frontend
 from app.migrate import ensure_schema
+from app.observability import install_request_logging
 from app.routers import (
     application_changes,
     applications,
@@ -148,8 +153,13 @@ def favicon():
 
 
 @app.get("/health")
-def health_check():
-    return {"status": "ok"}
+def health_check(db: Annotated[Session, Depends(get_db)]):
+    try:
+        db.execute(text("SELECT 1 FROM users LIMIT 1"))
+    except SQLAlchemyError:
+        return JSONResponse(status_code=503, content={"status": "unavailable"},
+                            headers={"Cache-Control": "no-store"})
+    return JSONResponse(content={"status": "ok"}, headers={"Cache-Control": "no-store"})
 
 
 
@@ -162,5 +172,6 @@ async def private_response_cache_policy(request, call_next):
     return response
 
 
+install_request_logging(app)
 if get_settings().STATIC_DIR:
     mount_frontend(app, get_settings().STATIC_DIR)
