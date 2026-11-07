@@ -19,3 +19,5 @@ class Settings:
 @lru_cache
 def get_settings() -> Settings:
     return Settings()
+
+STATIC_DIR: str = os.getenv("STATIC_DIR", "")
