@@ -354,3 +354,8 @@ Every test with an ID, sorted by ID. Backend IDs are a `# TC-USxx-nn` comment di
 | `TC-US10-04` | `backend/tests/test_remaining_stories.py` | `test_cancel_is_persistent_audited_idempotent_and_cannot_be_scored` |
 | `TC-US10-05` | `backend/tests/test_remaining_stories.py` | `test_another_officer_cannot_edit_cancel_or_read_history` |
 | `TC-US10-06` | `backend/tests/test_remaining_stories.py` | `test_scored_loan_cannot_be_cancelled` |
+
+`scripts/postgres_smoke.py` uses an isolated
+schema in a disposable PostgreSQL database for actual migration, seed, health,
+create/edit, BR5, approval persistence, rejected-input no-save and logout checks.
+The existing M4 P0 and role browser suite remains part of CI.

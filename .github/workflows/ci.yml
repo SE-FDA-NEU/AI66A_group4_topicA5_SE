@@ -1,14 +1,15 @@
 name: CI
-
 on:
   push:
     branches: ["**"]
   pull_request:
     branches: [main, develop]
+  workflow_dispatch:
 
-# Cancel an in-progress run when new commits are pushed to the same branch
+permissions:
+  contents: read
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ci-${{ github.event_name }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -17,42 +18,23 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
           cache: pip
-          cache-dependency-path: |
-            backend/requirements.txt
-            backend/requirements-dev.txt
-
-      - name: Install dependencies
-        working-directory: backend
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install -r requirements-dev.txt
-
-      - name: Lint
-        working-directory: backend
-        run: ruff check . --output-format=github
-
-      - name: Test
-        # Run from the repository root (root pytest.ini sets testpaths/pythonpath).
-        # Tests use an in-memory SQLite database, so no service container is needed.
-        run: python -m pytest -v --cov=backend/app --cov-report=term-missing --cov-fail-under=90
-
-      - name: Seed smoke test (same step as docs/SETUP.md)
-        # Exercise the documented secret/schema/seed setup on the CI checkout.
+          cache-dependency-path: backend/requirements*.txt
+      - run: python -m pip install -r backend/requirements-dev.txt
+      - run: python -m ruff check backend scripts
+      - run: python -m pytest -v --cov=backend/app --cov-report=term-missing --cov-fail-under=90
+      - name: Seed smoke test
         working-directory: backend
         run: |
           cp .env.example .env
           python -m app.init_secrets
           python -m app.migrate
           python -m app.seed
+          python -m app.seed
 
-  # The `detect` job only looks for package.json at the repository root, where
-  # this project has none, so the generic Node job never ran. Same fix as
-  # `backend-tests` above: name the folder explicitly and drop the gate.
   frontend-tests:
     name: Frontend build and tests (frontend/)
     runs-on: ubuntu-latest
@@ -61,51 +43,76 @@ jobs:
         working-directory: frontend
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
           cache: npm
-          # Without this, setup-node looks for a lockfile at the root and fails.
           cache-dependency-path: frontend/package-lock.json
-
-      # `npm ci`, not `npm install`: it fails loudly when package-lock.json and
-      # package.json have drifted apart, which is what we want CI to catch.
       - run: npm ci
+      - run: npm test
+      - run: npm run build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend/dist
+          retention-days: 7
 
-      - name: Lint
-        run: npm run lint --if-present
-        continue-on-error: true
+  postgres-tests:
+    name: PostgreSQL integration
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: ci_user
+          POSTGRES_PASSWORD: ci_disposable_only
+          POSTGRES_DB: credit_ci
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready --health-interval 10s
+          --health-timeout 5s --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -r backend/requirements-dev.txt
+      - name: Test on disposable Postgres
+        env:
+          M5_TEST_POSTGRES_URL: postgresql+psycopg://ci_user:ci_disposable_only@localhost:5432/credit_ci
+        run: python scripts/postgres_smoke.py
 
-      - name: Test
-        run: npm test --if-present
-
-      - name: Build
-        run: npm run build
+  browser-tests:
+    name: Browser P0 and role workflows
+    needs: [backend-tests, frontend-tests]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: python -m pip install -r backend/requirements-dev.txt
+      - run: npm --prefix frontend ci
+      - run: npx --prefix frontend playwright install --with-deps chromium
+      - run: npm --prefix frontend run test:e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: browser-failure-evidence
+          path: frontend/test-results
+          retention-days: 7
 
   secrets:
     name: No secrets committed
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
-          fetch-depth: 0
-
-      - name: Scan for obvious credentials
-        run: |
-          # Deliberately simple and readable - students should be able to read this
-          # and understand why their commit was blocked.
-          PATTERN='(AKIA[0-9A-Z]{16}|ghp_[A-Za-z0-9]{36}|-----BEGIN [A-Z ]*PRIVATE KEY-----|password\s*=\s*["'"'"'][^"'"'"']{6,})'
-          if git grep -nIE "$PATTERN" -- . ':!*.md' ':!.github/workflows/*' ; then
-            echo "::error::A credential-looking string was found. Move it to an environment variable and rotate the key."
-            exit 1
-          fi
-          echo "Clean."
-
-      - name: No .env or database dumps
-        run: |
-          if git ls-files | grep -E '^(.*/)?\.env$|\.sql$|\.sqlite3?$|\.dump$' ; then
-            echo "::error::Environment files or database dumps must not be committed. Add them to .gitignore."
-            exit 1
-          fi
-          echo "Clean."
+          python-version: "3.12"
+      - run: python scripts/check_secrets.py
