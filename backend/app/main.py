@@ -8,6 +8,7 @@ from app import models  # noqa: F401  (registers every table on Base.metadata)
 from app.config import get_settings
 from app.database import SessionLocal, engine
 from app.deployment import validate_production
+from app.frontend import mount_frontend
 from app.migrate import ensure_schema
 from app.routers import (
     application_changes,
@@ -45,7 +46,8 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-app.include_router(loans.router)
+if not get_settings().STATIC_DIR:
+    app.include_router(loans.router)
 app.include_router(auth.router)
 app.include_router(applications.router)
 app.include_router(users.router)
@@ -134,10 +136,10 @@ async def validation_error_handler(request, exc):
     )
 
 
-@app.get("/", include_in_schema=False)
-
-def root():
-    return RedirectResponse(url="/loan-applications")
+if not get_settings().STATIC_DIR:
+    @app.get("/", include_in_schema=False)
+    def root():
+        return RedirectResponse(url="/loan-applications")
 
 @app.get("/favicon.ico", include_in_schema=False)
 
@@ -158,3 +160,7 @@ async def private_response_cache_policy(request, call_next):
         response.headers["Cache-Control"] = "no-store"
         response.headers["Pragma"] = "no-cache"
     return response
+
+
+if get_settings().STATIC_DIR:
+    mount_frontend(app, get_settings().STATIC_DIR)
