@@ -15,9 +15,9 @@ class Settings:
     # app.privacy turns that into a 503 instead of crashing. Never defaults to a
     # literal key, which would silently encrypt production data with a shared secret.
     DATA_ENCRYPTION_KEY: str = os.getenv("DATA_ENCRYPTION_KEY", "")
+    STATIC_DIR: str = os.getenv("STATIC_DIR", "")
 
 @lru_cache
 def get_settings() -> Settings:
     return Settings()
 
-STATIC_DIR: str = os.getenv("STATIC_DIR", "")
