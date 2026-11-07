@@ -224,7 +224,7 @@ is part of S4-25.
 
 ### 4.1 Current route and normal entry point
 
-`GET /loan-applications` still returns the database-backed HTML table from M2, but now requires the same Bearer token as the JSON API and applies BR8 ownership filtering. Opening `http://localhost:8000/loan-applications` without a token returns **401**; the backend root redirects there and is not the normal interactive entry point.
+`GET /loan-applications` still returns the database-backed HTML table from M2, but now requires the same Bearer token as the JSON API and applies BR8 ownership filtering. Opening `http://localhost:8000/loan-applications` without a token returns **401**; the backend root redirects there (when `STATIC_DIR` is unset) and is not the normal interactive entry point.
 
 Use the React application at **http://localhost:5173**, sign in and navigate through the menus as described in [SETUP.md](SETUP.md). Its `/loan-applications` route uses `GET /api/loan-applications`; Vite proxies `/api` to port 8000. The legacy HTML route remains for automated compatibility/database checks, not for unauthenticated browser access.
 
@@ -415,3 +415,10 @@ notifications. Opening a notification marks it read before navigating to Details
 
 The Scoring history tab has loading, empty, data and failure states; failure is
 not rendered as an empty history.
+
+## M5 production architecture
+
+With STATIC_DIR set, FastAPI serves the Vite build and the API from one origin.
+The root and client routes return the SPA; the legacy HTML list is registered only
+when STATIC_DIR is unset. Unknown API/asset/hidden paths stay 404. API requests
+remain relative to /api; no localhost production target or wildcard CORS is added.
