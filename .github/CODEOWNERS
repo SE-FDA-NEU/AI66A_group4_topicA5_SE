@@ -1,0 +1,5 @@
+# Proposed review ownership; an administrator still must enable branch rules.
+/backend/ @Thanh-dev-192006 @macaronzz
+/frontend/ @HaiMeoden @criticalmatt-dot
+/.github/ @macaronzz @HaiMeoden
+/docs/ @macaronzz @Thanh-dev-192006

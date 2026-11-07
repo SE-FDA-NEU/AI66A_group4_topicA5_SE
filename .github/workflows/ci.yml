@@ -116,3 +116,20 @@ jobs:
         with:
           python-version: "3.12"
       - run: python scripts/check_secrets.py
+
+  test:
+    name: M5 release gate
+    needs: [backend-tests, frontend-tests, postgres-tests, browser-tests, secrets]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require every check to pass
+        env:
+          RESULTS: ${{ toJSON(needs) }}
+        run: |
+          python - <<'PY'
+          import json, os
+          results = json.loads(os.environ['RESULTS'])
+          assert all(job['result'] == 'success' for job in results.values()), 'Release gate blocked'
+          print('All release checks passed. Render may deploy this main commit.')
+          PY
