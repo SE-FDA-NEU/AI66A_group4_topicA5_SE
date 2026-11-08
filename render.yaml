@@ -4,6 +4,7 @@ services:
     name: credit-score-team04
     runtime: python
     plan: free
+    region: oregon
     branch: main
     autoDeployTrigger: checksPass
     buildCommand: bash scripts/render-build.sh
@@ -21,8 +22,10 @@ services:
       - key: SEED_DEMO
         value: "true"
       - key: DATABASE_URL
-        sync: false
+        fromDatabase:
+          name: credit-score-team04-db
+          property: connectionString
       - key: JWT_SECRET
         generateValue: true
       - key: DATA_ENCRYPTION_KEY
-        sync: false
+        generateValue: true
