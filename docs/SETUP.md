@@ -276,3 +276,20 @@ the existing Render and hosted PostgreSQL accounts, not the laptop's local DB.
 Never copy this checkout's .env into Git or change existing keys during deploy.
 Run [operations.md](operations.md) for release/rollback/monitoring and fill the
 actual metadata in [m5-release.json](m5-release.json).
+
+## M5 production handoff
+
+For local development, keep the two-server Vite/API steps above. For deployment,
+use [deployment.md](deployment.md): build from the repository root, then start
+from backend with STATIC_DIR=../frontend/dist and a hosted PostgreSQL URL.
+Production refuses missing frontend build or invalid DB/secrets. It never
+generates replacement keys automatically. `/health` now verifies database/schema:
+200 `ok`, or 503 `unavailable` without exposing connection details.
+
+With STATIC_DIR configured, the first page and client deep links serve React;
+the legacy HTML list is not registered. Unknown API/asset/hidden paths remain 404.
+The public URL is https://credit-score-team04-03or.onrender.com. Keep README/release metadata synchronized, configure PUBLIC_APP_URL, then verify the intended live commit and remaining public P0 acceptance.
+
+Release evidence and maintenance: [operations](operations.md),
+[demo](m5-demo.md), [metadata](m5-release.json). The S5-17 PDF/log-summary tools are
+not yet in this checkout; do not run absent scripts or claim final submission.

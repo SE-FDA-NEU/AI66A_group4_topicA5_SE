@@ -3,20 +3,61 @@
   "platform": "Render Web Service + Render PostgreSQL (Free)",
   "team": "Team 04 - Credit Scoring Demo",
   "members": [
-    {"name": "Đỗ Quang Trung", "github": "macaronzz", "student_id": null},
-    {"name": "Trịnh Đức Thành", "github": "Thanh-dev-192006", "student_id": null},
-    {"name": "Vũ Ngọc Hải", "github": "HaiMeoden", "student_id": null},
-    {"name": "Nguyễn Quang Huy", "github": "criticalmatt-dot", "student_id": null}
+    {
+      "name": "Đỗ Quang Trung",
+      "github": "macaronzz",
+      "student_id": null
+    },
+    {
+      "name": "Trịnh Đức Thành",
+      "github": "Thanh-dev-192006",
+      "student_id": null
+    },
+    {
+      "name": "Vũ Ngọc Hải",
+      "github": "HaiMeoden",
+      "student_id": null
+    },
+    {
+      "name": "Nguyễn Quang Huy",
+      "github": "criticalmatt-dot",
+      "student_id": null
+    }
   ],
   "scrum_master": "Đỗ Quang Trung (@macaronzz)",
   "repository": "https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE",
   "project_board": "https://github.com/orgs/SE-FDA-NEU/projects/13/views/1",
   "release_v1_0": null,
   "deployed_commit": "fb2c3dc130e392f370298840ffc873b9d067927a",
-  "latest_green_ci_on_main": "https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/actions/runs/42501981538",
+  "latest_green_ci_on_main": "https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/actions/runs/42505446604",
   "branch_protection_screenshot": null,
-  "merged_m5_prs": [],
+  "merged_m5_prs": [
+    257,
+    258,
+    259,
+    260,
+    261,
+    262
+  ],
   "keep_online_at_least_until": "2026-11-30",
   "keep_online_until_grades_published": true,
-  "status": "deployed_pending_final_acceptance"
+  "status": "deployed_pending_final_acceptance",
+  "scoring_engine": "rules-v1",
+  "offline_ai_training_in_scope": false,
+  "ci_commit": "cd273ab156723f72f7124bdbbe618e08e1ce0595",
+  "ci_run_duration_seconds": 175,
+  "evidence_checked_on": "2026-11-09",
+  "release_alignment": {
+    "live_matches_latest_main_ci": false,
+    "observed_live_commit": "fb2c3dc130e392f370298840ffc873b9d067927a",
+    "latest_main_ci_commit": "cd273ab156723f72f7124bdbbe618e08e1ce0595",
+    "action": "Deploy and verify a green main commit, then tag the matching live commit v1.0."
+  },
+  "evidence_pending": [
+    "Rollback rehearsal and private-window/physical-phone acceptance",
+    "Address-bar-visible live captures and genuine M3 before/after feedback evidence",
+    "Align actual live commit, v1.0 tag and latest green-main CI commit",
+    "Member student IDs and actual protection screenshot/exact required rules",
+    "Per-member reviews/closed issues, monitor PUBLIC_APP_URL activation and final submission"
+  ]
 }

@@ -10,10 +10,9 @@ The editable diagram source is [architecture-m3.svg](images/architecture-m3.svg)
 | --- | --- | --- |
 | **Browser** | Used by employees and managers (phone or computer). | in use |
 | **Frontend web app** | React + Vite single-page app for the screens in M1 section 6. | built (Sprint 3): login, dashboard, new application, application details, list, protected-identifier lookup, employee accounts |
-| **Backend API** | FastAPI service. Owns all business logic and enforces BR1-BR9, including identifier encryption/audited lookup and employee account management. | built: auth, applications, scoring, dashboard, manager approval (cancel/edit still to do) |
-| **Database** | SQLite file `credit_scoring.db`, accessed through SQLAlchemy. PostgreSQL is a future deployment option that also needs a driver, configuration and integration/concurrency testing. | SQLite built/tested; PostgreSQL planned |
-| **Scoring module** | `app/scoring_service.py` applies rule guards and calls `build_features` / `predict` in `app/scoring.py` inside the API process. `rules-v1` (v1 = new `has_history` parsing + BR9 input rule) returns an integer score and explanation strings; no model artifact is loaded. | deterministic rules built in Sprint 3; trained model planned for Sprint 4 |
-| **Offline training pipeline** | Planned evaluation of German Credit and a versioned preprocessing/model artifact, subject to feature mapping and licensing checks. No training pipeline or `model.joblib` loading exists in M3. Training records are separate from runtime application records. | planned (Sprint 4) |
+| **Backend API** | FastAPI service. Owns all business logic and enforces BR1-BR9, including identifier encryption/audited lookup and employee account management. | built: auth, applications, scoring, dashboard, approval, unprocessed-application edit/cancel and notifications |
+| **Database** | SQLAlchemy uses SQLite for local development/tests and hosted PostgreSQL for production; psycopg URL normalization and additive migrations are implemented. | SQLite and disposable PostgreSQL tested; hosted acceptance pending |
+| **Scoring module** | `app/scoring_service.py` applies rule guards and calls `build_features` / `predict` in `app/scoring.py` inside the API process. `rules-v1` (v1 = new `has_history` parsing + BR9 input rule) returns an integer score and explanation strings; no model artifact is loaded. | rules-v1 retained for the M5 release; offline training removed from scope |
 
 Every arrow is labelled with what travels along it. The API reaches the database through a library (SQLAlchemy), not through another API.
 
@@ -102,7 +101,7 @@ Conventions: JSON under `/api`, money in whole VND, and `Authorization: Bearer <
 
 There are **16 implemented API operations** in the first table, including the US10 edit/cancel operations. Ordinary application responses include masked identifiers and a latest-result summary; only the explicit authorized reveal response returns full numbers.
 
-The create flow validates BR2/BR9/input, computes BR3 and saves a pending application. Scoring is a separate request: it acquires a database write lock, rejects cancelled/approved states, builds features, checks BR5 before BR4, then calls `rules-v0`, validates BR1 and assigns the BR6 label. A high-risk flag is independent of the numeric score. See [scoring_service.py](../backend/app/scoring_service.py) and [transactions.py](../backend/app/transactions.py).
+The create flow validates BR2/BR9/input, computes BR3 and saves a pending application. Scoring is a separate request: it acquires a database write lock, rejects cancelled/approved states, builds features, checks BR5 before BR4, then calls `rules-v1`, validates BR1 and assigns the BR6 label. A high-risk flag is independent of the numeric score. See [scoring_service.py](../backend/app/scoring_service.py) and [transactions.py](../backend/app/transactions.py).
 
 | Method | Path | Input | Success | Error codes | Covers |
 | --- | --- | --- | --- | --- | --- |
@@ -232,7 +231,7 @@ Use the React application at **http://localhost:5173**, sign in and navigate thr
 
 The demo seed inserts three accounts and twelve synthetic applications into the database when there are no applications. On that untouched seed, Thanh (Admin) can read twelve rows, Hoang seven and Linh five. These are seed expectations, not fixed UI counts: creating a new application changes the appropriate list. Three seed loans have DSR above 50%. Normal demo data is persisted in `credit_scoring.db`; it is not a hardcoded response list.
 
-From `backend/`, follow `python -m app.init_secrets`, `python -m app.migrate`, then `python -m app.seed` as documented in SETUP. Migration is additive and preserves existing rows. Seed creates missing tables but **does not add columns to existing tables**; always migrate an older database before seeding. It skips insertion when any loan applications already exist. Preserve an existing database and encryption key when upgrading.
+From `backend/`, follow `python -m app.init_secrets`, `python -m app.migrate`, then `python -m app.seed` as documented in SETUP. Migration is additive and preserves existing rows. The current seed command runs the same additive schema migration as startup; explicit migration remains part of the documented upgrade sequence. It skips insertion when any loan applications already exist. Preserve an existing database and encryption key when upgrading.
 
 `http://localhost:8000/health` returns `{"status":"ok"}`; `http://localhost:8000/docs` exposes the API documentation. Settings are illustrated in `backend/.env.example`; the local `.env` and secrets are not committed.
 
@@ -272,7 +271,7 @@ The equivalent Officer query includes `WHERE created_by = :user_id`; Admin omits
 
 **Chose:** SQLite.
 
-**Why:** the instructor must run the project in minutes on a machine that has never seen it. PostgreSQL adds Docker or a database service to SETUP.md, and every extra step is a chance to fail for reasons unrelated to our code. SQLite is one file created by `python -m app.seed`, and the tests run on an in-memory SQLite database. All access goes through SQLAlchemy. PostgreSQL remains a planned deployment option: changing `DATABASE_URL` also requires a compatible driver and verification of migrations, timezone behavior and concurrent transactions. It is not covered by the current SQLite test results.
+**Why:** the instructor must run the project in minutes on a machine that has never seen it. PostgreSQL adds Docker or a database service to SETUP.md, and every extra step is a chance to fail for reasons unrelated to our code. SQLite is one file created by `python -m app.seed`, and the tests run on an in-memory SQLite database. All access goes through SQLAlchemy. This records the original walking-skeleton decision. M5 adds psycopg/PostgreSQL support and separate disposable PostgreSQL CI checks; hosted retention/restart still requires live evidence.
 
 **Concurrency behavior in M3:** `lock_application` executes a no-op update before refreshing the loan and counting results. SQLite holds its writer lock until commit/rollback; this serializes score and approval decisions across sessions. [test_br_integrity.py](../backend/tests/test_br_integrity.py) checks simultaneous scoring against a temporary SQLite file. PostgreSQL would still need its own driver and integration/concurrency tests before deployment.
 
@@ -286,9 +285,9 @@ The equivalent Officer query includes `WHERE created_by = :user_id`; Admin omits
 -  A separate scoring service that the API calls over HTTP
 -  A managed cloud prediction endpoint.
 
-**Chose:** The scoring function runs inside the API process. M3 implements this with `app/scoring.py` and `rules-v0`, with no saved-model loading. A trained artifact is planned for Sprint 4 behind the same function interface.
+**Chose:** The scoring function runs inside the API process. M3 introduced deterministic scoring in `app/scoring.py`. M5 retains `rules-v1` behind the same function interface, without a trained artifact.
 
-**Why:** this demo has one backend deployable and low traffic. A separate service adds a network call, another process to start and another failure mode. The current deterministic rules give the same output for the same inputs. If a trained artifact is introduced, load its versioned preprocessing/model once at startup rather than retraining per request.
+**Why:** this demo has one backend deployable and low traffic. A separate service adds a network call, another process to start and another failure mode. The current deterministic rules give the same output for the same inputs.
 
 **What would change our mind:**
 - We need two model versions running side by side,
@@ -344,7 +343,7 @@ Building the screens changed the design in four places. Details and the reasons 
 
 1. **Field-level validation errors.** A `422` on `POST /api/loan-applications` now carries `errors` (one message per field) next to the string `detail`, so the form can mark the wrong input and list every problem at once (US09).
 2. **`GET /api/auth/me` added**, and the dashboard summary returns `date` and `high_risk_count`. "Today" is computed in Vietnam time (UTC+7) from application creation time; the summary uses only the latest score of each application created during that day.
-3. **Scoring in Sprint 3 is a rule-based stand-in (`rules-v0`).** The interface from Decision 2 is unchanged. Its best case is 95 points, so a normal run never trips BR1; BR1 stays as a guard for the Sprint 4 model.
+3. **Scoring in Sprint 3 is a rule-based stand-in (`rules-v0`).** The interface from Decision 2 is unchanged. Its best case is 95 points, so a normal run never trips BR1; BR1 remains an output guard for any invalid scorer result.
 4. **BR7 is implemented in Sprint 3.** Optional Citizen ID/account fields are validated and encrypted before storage. Ordinary responses are masked; a dedicated authorized lookup decrypts and commits access logs before returning numbers. See section 11.
 
 
@@ -371,7 +370,7 @@ The owner or Admin explicitly calls POST sensitive-data/reveal. BR8 is checked b
 
 Manager-only `/admin/users` supports listing accounts, creating Officers (hashed password), updating names and active status. Inactive accounts cannot log in or use existing tokens. Incrementing token_version prevents old tokens working after reactivation. Account events store the target UUID and status, without names, email or passwords. Officer ownership remains enforced on list/detail/history/score/reveal/legacy HTML; Managers see the branch data. Manager accounts cannot be modified through employee management, and client-supplied roles/owners/ciphertext/state are rejected.
 
-`python -m app.migrate` adds missing citizen-ID, bank-account and user active/version columns to existing databases, without deleting rows. New tables use the full current schema. API startup runs the same idempotent `ensure_schema` migration. Seed only creates missing tables and inserts demonstration rows; it does not alter existing tables, so run migration before seeding an older database. `python -m app.init_secrets` initializes local secrets once, preserving a valid existing key. See SETUP.md for upgrade and key-backup instructions.
+`python -m app.migrate` adds missing citizen-ID, bank-account and user active/version columns to existing databases, without deleting rows. New tables use the full current schema. API startup runs the same idempotent `ensure_schema` migration. The current seed command also runs ensure_schema, preserving rows and adding missing columns before empty-only insertion. `python -m app.init_secrets` initializes local secrets once, preserving a valid existing key. See SETUP.md for upgrade and key-backup instructions.
 
 ## 12. Role-specific entry points and Manager backlog
 
@@ -383,9 +382,12 @@ The Manager Dashboard combines the existing GET dashboard summary with GET appli
 
 Frontend validation: Node tests exercise queue membership/order, old backlog with zero-today activity, final-state exclusion, eligibility and combined filters. The actual React routes are rendered for both roles to verify different headings, navigation and Manager-only route guidance. Interactive browser acceptance remains required.
 
-## 13. Sprint 4 model plan
+## 13. Release scoring policy
 
-Candidate dataset: German Credit. Validate licensing, feature meanings and target mapping before use. Split train/validation/test before preprocessing; compare a logistic-regression baseline with a tree model using ROC-AUC, precision/recall and calibration. Keep synthetic runtime demo records separate from training data. Dataset features must map explicitly to the application's available inputs; unresolved mappings block replacing `rules-v0`. Export a versioned preprocessing/model artifact, preserve `predict(features) -> (integer score, reasons)`, and test BR1/BR4/BR6 before enabling it. Document how probability maps to 0-100 and how explanations are computed.
+M5 retains deterministic `rules-v1`, its existing features/reasons, and server-side
+BR1–BR9 guards. Offline training, model loaders, artifacts, additional ML inputs
+and engine selection are outside the remaining release scope. Scores are an
+educational workflow demonstration, not calibrated repayment probabilities.
 
 ### P0 save-before-score flow (2026-10-29)
 
@@ -422,3 +424,16 @@ With STATIC_DIR set, FastAPI serves the Vite build and the API from one origin.
 The root and client routes return the SPA; the legacy HTML list is registered only
 when STATIC_DIR is unset. Unknown API/asset/hidden paths stay 404. API requests
 remain relative to /api; no localhost production target or wildcard CORS is added.
+
+### M5 health, observability and release contract
+
+`/health` executes SELECT 1 FROM users LIMIT 1 through the configured database
+dependency, returns 200/ok or 503/unavailable, and uses no-store. Request metadata
+logs method, route template, status, duration_ms and request_id; no body/query,
+credentials or raw identifiers. A valid RENDER_GIT_COMMIT supplies X-App-Commit.
+
+Production validates PostgreSQL, JWT/encryption keys and frontend build before
+additive migration and optional empty-only current-day seed. Frontend paths are
+served after API routes; production start binds 0.0.0.0:$PORT and disables Uvicorn
+access logging. CI's explicit M5 release gate needs all five check jobs to succeed.
+[Verified baseline](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/actions/runs/42505446604) is separate from the recorded live SHA/redeploy evidence. Remaining exact protection settings, rollback/private/phone acceptance and v1.0 evidence must still be verified.
