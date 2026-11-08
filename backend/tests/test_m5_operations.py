@@ -1,12 +1,16 @@
 """M5 production checks use temporary files and a disposable SQLite session."""
 import json
 import logging
+from types import SimpleNamespace
 
+import pytest
+from cryptography.fernet import Fernet
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from sqlalchemy.exc import OperationalError
 
 from app.database import get_db
+from app.deployment import normalize_database_url, validate_production
 from app.frontend import mount_frontend
 from app.main import app
 from app.observability import install_request_logging
@@ -58,3 +62,25 @@ def test_logs_keep_route_status_latency_but_not_credentials_query_or_body(caplog
     assert record["route"] == "/api/example/{item_id}" and record["status"] == 200
     assert record["duration_ms"] >= 0 and record["request_id"] == response.headers["x-request-id"]
     assert not any(secret in json.dumps(record) for secret in ("private-id","private-query","private-body","private-token"))
+
+
+def valid_settings(tmp_path):
+    (tmp_path / "index.html").write_text("app")
+    return SimpleNamespace(APP_ENV="production", DATABASE_URL="postgresql://host/demo?sslmode=require",
+                           JWT_SECRET="x" * 48, DATA_ENCRYPTION_KEY=Fernet.generate_key().decode(),
+                           STATIC_DIR=str(tmp_path))
+
+
+@pytest.mark.parametrize("name,value", [("DATABASE_URL","sqlite:///ephemeral.db"),
+    ("JWT_SECRET","dev-only-change-me"), ("DATA_ENCRYPTION_KEY","invalid"), ("STATIC_DIR","")])
+def test_production_refuses_ephemeral_data_or_missing_secrets_and_build(tmp_path, name, value):
+    settings = valid_settings(tmp_path)
+    setattr(settings, name, value)
+    with pytest.raises(RuntimeError):
+        validate_production(settings)
+
+
+def test_production_accepts_complete_configuration_and_normalizes_pg_urls(tmp_path):
+    validate_production(valid_settings(tmp_path))
+    for prefix in ("postgres://", "postgresql://"):
+        assert normalize_database_url(prefix + "host/db?sslmode=require") == "postgresql+psycopg://host/db?sslmode=require"
