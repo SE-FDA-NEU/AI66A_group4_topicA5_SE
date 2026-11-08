@@ -1,6 +1,6 @@
 {
-  "running_app": null,
-  "platform": "Render Web Service + existing hosted PostgreSQL",
+  "running_app": "https://credit-score-team04-03or.onrender.com",
+  "platform": "Render Web Service + Render PostgreSQL (Free)",
   "team": "Team 04 - Credit Scoring Demo",
   "members": [
     {"name": "Đỗ Quang Trung", "github": "macaronzz", "student_id": null},
@@ -12,11 +12,11 @@
   "repository": "https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE",
   "project_board": "https://github.com/orgs/SE-FDA-NEU/projects/13/views/1",
   "release_v1_0": null,
-  "deployed_commit": null,
-  "latest_green_ci_on_main": null,
+  "deployed_commit": "fb2c3dc130e392f370298840ffc873b9d067927a",
+  "latest_green_ci_on_main": "https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/actions/runs/42501981538",
   "branch_protection_screenshot": null,
   "merged_m5_prs": [],
   "keep_online_at_least_until": "2026-11-30",
   "keep_online_until_grades_published": true,
-  "status": "prepared_not_deployed"
+  "status": "deployed_pending_final_acceptance"
 }
