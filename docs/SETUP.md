@@ -268,3 +268,11 @@ not be confirmed. API-only checks do not replace this browser interaction check.
   Counter refresh is 30 seconds while visible and on entry/focus. Mark as read or
   Open application saves a receipt for the current Manager. Old seed loans have no
   fabricated new-creation events; their review queue and notifications differ.
+
+## M5 production setup
+
+The M5 production path is documented in [deployment.md](deployment.md). It uses
+the existing Render and hosted PostgreSQL accounts, not the laptop's local DB.
+Never copy this checkout's .env into Git or change existing keys during deploy.
+Run [operations.md](operations.md) for release/rollback/monitoring and fill the
+actual metadata in [m5-release.json](m5-release.json).

@@ -141,3 +141,58 @@ was stopped. These local results do not establish hosted deployment or GitHub CI
 References: [SQLAlchemy psycopg dialect](https://docs.sqlalchemy.org/en/20/dialects/postgresql.html#module-sqlalchemy.dialects.postgresql.psycopg),
 [PostgreSQL pg_dump](https://www.postgresql.org/docs/16/app-pgdump.html),
 [PostgreSQL connection environment variables](https://www.postgresql.org/docs/16/libpq-envars.html).
+
+## Deploy the existing Render and PostgreSQL accounts
+
+1. An administrator protects `main`: require PRs, at least one other approval,
+   dismiss stale approvals, require **M5 release gate**, require up-to-date checks,
+   and disallow direct/force pushes. Preserve the real settings screenshot as
+   `docs/images/operations/branch-protection.png`.
+2. In Render, create a Blueprint from the repository's `render.yaml` on `main`,
+   or a Python Web Service with exactly the commands/environment in that file.
+   Use **After CI Checks Pass** (`autoDeployTrigger: checksPass`). The build runs
+   `bash scripts/render-build.sh`; start runs `cd backend && python -m app.start`;
+   Health Check Path is `/health`. Root Directory stays the repository root.
+3. Enter the **existing hosted PostgreSQL** URL in Render's `DATABASE_URL`, with
+   TLS (`sslmode=require`). A PostgreSQL server installed only on a laptop is
+   not reachable as `localhost` from Render. Do not publish the connection string.
+   Common `postgres://` and `postgresql://` URLs normalize to psycopg 3.
+4. Render generates `JWT_SECRET` once. Generate a Fernet key locally using
+   `python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"`
+   and put it in Render `DATA_ENCRYPTION_KEY`. Keep it stable across deployments
+   and retain a separate secure copy. Never run `init_secrets` to rotate it on
+   every deploy. Preserve existing keys if using a database that already contains
+   encrypted identifiers.
+5. `APP_ENV=production`, `STATIC_DIR=../frontend/dist`, `SEED_DEMO=true` and
+   the Node/Python versions come from the Blueprint. Startup adds schema and
+   seeds a truly empty demo DB once. Do not connect this public demo to a real
+   financial/customer database. Reusing a populated DB does not reset passwords.
+6. Wait for green CI and a successful deploy. Record Render's actual HTTPS URL;
+   the frontend uses relative `/api` requests to that same origin. No localhost
+   URL, CORS wildcard or second frontend hosting service is needed.
+7. In a private browser window on laptop and phone, log in with both roles and
+   complete every P0 by clicking. Create and score, reload, and verify the same
+   record; submit income 0 and verify 422/message/no record created. Restart or
+   redeploy the service and verify the created record still exists in Postgres.
+8. Run `python scripts/check_live.py --url https://ACTUAL-URL` and compare
+    `X-App-Commit` with the green CI head SHA. Then set GitHub repository variable
+    `PUBLIC_APP_URL` for the hourly `monitor.yml`. Review failed-run notifications.
+9. Record URL, deployment SHA, green-main CI run and actual branch screenshot in
+    `docs/m5-release.json`; put the URL as the first line of README. Add member
+    student IDs. Replace only verified pending fields, never a guessed service URL.
+
+## Backup and rollback
+
+Normal rollback is a reviewed `git revert` followed by green CI and deployment.
+For an outage, Render Rollback can restore a previous healthy build; pause auto
+deploy until Git is reconciled, then restore **After CI Checks Pass**. Keep both
+JWT and data keys; code rollback does not reverse database schema/data changes.
+
+- [Render FastAPI start command](https://render.com/docs/deploy-fastapi)
+- [Blueprint fields and checksPass](https://render.com/docs/blueprint-spec)
+- [Free service storage, sleep and database expiry](https://render.com/docs/free)
+- [SQLAlchemy psycopg dialect](https://docs.sqlalchemy.org/en/20/dialects/postgresql.html#module-sqlalchemy.dialects.postgresql.psycopg)
+
+Render free web-service files are ephemeral and free Render Postgres expires
+after 30 days. Confirm the existing database's provider/expiry and choose a plan
+that actually lasts through grading. No paid plan has been purchased by this work.

@@ -1,0 +1,22 @@
+{
+  "running_app": null,
+  "platform": "Render Web Service + existing hosted PostgreSQL",
+  "team": "Team 04 - Credit Scoring Demo",
+  "members": [
+    {"name": "Đỗ Quang Trung", "github": "macaronzz", "student_id": null},
+    {"name": "Trịnh Đức Thành", "github": "Thanh-dev-192006", "student_id": null},
+    {"name": "Vũ Ngọc Hải", "github": "HaiMeoden", "student_id": null},
+    {"name": "Nguyễn Quang Huy", "github": "criticalmatt-dot", "student_id": null}
+  ],
+  "scrum_master": "Đỗ Quang Trung (@macaronzz)",
+  "repository": "https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE",
+  "project_board": "https://github.com/orgs/SE-FDA-NEU/projects/13/views/1",
+  "release_v1_0": null,
+  "deployed_commit": null,
+  "latest_green_ci_on_main": null,
+  "branch_protection_screenshot": null,
+  "merged_m5_prs": [],
+  "keep_online_at_least_until": "2026-11-30",
+  "keep_online_until_grades_published": true,
+  "status": "prepared_not_deployed"
+}

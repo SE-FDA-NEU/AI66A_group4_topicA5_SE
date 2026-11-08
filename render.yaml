@@ -1,0 +1,28 @@
+# One origin serves the React build and FastAPI. Supply an existing hosted DB.
+services:
+  - type: web
+    name: credit-score-team04
+    runtime: python
+    plan: free
+    branch: main
+    autoDeployTrigger: checksPass
+    buildCommand: bash scripts/render-build.sh
+    startCommand: cd backend && python -m app.start
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.10
+      - key: NODE_VERSION
+        value: "22"
+      - key: APP_ENV
+        value: production
+      - key: STATIC_DIR
+        value: ../frontend/dist
+      - key: SEED_DEMO
+        value: "true"
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: DATA_ENCRYPTION_KEY
+        sync: false

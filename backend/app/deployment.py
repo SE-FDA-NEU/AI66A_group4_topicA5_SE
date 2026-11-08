@@ -1,4 +1,6 @@
 """Database/deployment configuration checks without secret values in errors."""
+from pathlib import Path
+
 from cryptography.fernet import Fernet
 from sqlalchemy.engine import make_url
 from sqlalchemy.exc import ArgumentError
@@ -27,3 +29,5 @@ def validate_production(settings):
         Fernet(settings.DATA_ENCRYPTION_KEY.encode("ascii"))
     except (ValueError, UnicodeError):
         raise RuntimeError("Set a valid, persistent DATA_ENCRYPTION_KEY on the hosting platform.") from None
+    if not settings.STATIC_DIR or not (Path(settings.STATIC_DIR) / "index.html").is_file():
+        raise RuntimeError("Production frontend build is missing; run the documented build command.")
