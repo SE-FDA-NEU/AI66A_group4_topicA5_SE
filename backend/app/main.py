@@ -47,7 +47,7 @@ app = FastAPI(
     description=(
         "Authenticated credit scoring, application management, review notifications and session logout."
     ),
-    version="0.4.0",
+    version="1.0.0",
     lifespan=lifespan,
 )
 
