@@ -2,8 +2,9 @@
 
 ## 2. The CI pipeline
 
-Latest green run on `main`: **not yet recorded for M5**. Record its actual link,
-commit and duration after integration; local runs do not establish GitHub CI.
+Latest verified green run on `main`: [42501981538](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/actions/runs/42501981538),
+commit `fb2c3dc130e392f370298840ffc873b9d067927a`. All six checks succeeded;
+run interval 16:51:11–16:54:08 UTC on 8 November 2026 (2m 57s).
 An administrator must protect `main`: PR, another approval, required
 **M5 release gate**, and no direct/force pushes. Save the actual settings screenshot
 in `docs/images/operations/branch-protection.png`; no screenshot is fabricated here.

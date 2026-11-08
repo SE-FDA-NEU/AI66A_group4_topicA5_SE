@@ -153,16 +153,18 @@ References: [SQLAlchemy psycopg dialect](https://docs.sqlalchemy.org/en/20/diale
    Use **After CI Checks Pass** (`autoDeployTrigger: checksPass`). The build runs
    `bash scripts/render-build.sh`; start runs `cd backend && python -m app.start`;
    Health Check Path is `/health`. Root Directory stays the repository root.
-3. Enter the **existing hosted PostgreSQL** URL in Render's `DATABASE_URL`, with
-   TLS (`sslmode=require`). A PostgreSQL server installed only on a laptop is
-   not reachable as `localhost` from Render. Do not publish the connection string.
-   Common `postgres://` and `postgresql://` URLs normalize to psycopg 3.
-4. Render generates `JWT_SECRET` once. Generate a Fernet key locally using
-   `python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"`
-   and put it in Render `DATA_ENCRYPTION_KEY`. Keep it stable across deployments
-   and retain a separate secure copy. Never run `init_secrets` to rotate it on
-   every deploy. Preserve existing keys if using a database that already contains
-   encrypted identifiers.
+3. Create or reuse the hosted Render PostgreSQL database named
+   `credit-score-team04-db` in Oregon. The Blueprint sets `DATABASE_URL` from
+   its `connectionString`; no connection password belongs in Git. The database
+   and web service must share the region. A laptop's `localhost` database is not
+   reachable from Render. Common `postgres://` and `postgresql://` URLs normalize
+   to psycopg 3. For a different hosted provider, configure its connection URL
+   privately in Render with TLS (`sslmode=require`).
+4. For a new service, Render generates `JWT_SECRET` and `DATA_ENCRYPTION_KEY`
+   once. The generated encryption key is a base64-encoded 256-bit value accepted
+   by Fernet. Keep both values stable across deployments and retain a secure
+   backup. When reusing an encrypted database, preserve its matching original
+   encryption key; do not regenerate it or run `init_secrets` on every deploy.
 5. `APP_ENV=production`, `STATIC_DIR=../frontend/dist`, `SEED_DEMO=true` and
    the Node/Python versions come from the Blueprint. Startup adds schema and
    seeds a truly empty demo DB once. Do not connect this public demo to a real
@@ -180,6 +182,40 @@ References: [SQLAlchemy psycopg dialect](https://docs.sqlalchemy.org/en/20/diale
 9. Record URL, deployment SHA, green-main CI run and actual branch screenshot in
     `docs/m5-release.json`; put the URL as the first line of README. Add member
     student IDs. Replace only verified pending fields, never a guessed service URL.
+
+## Public deployment verification — 9 November 2026 (Vietnam)
+
+| Item | Actual result |
+|---|---|
+| Public HTTPS app | [credit-score-team04-03or.onrender.com](https://credit-score-team04-03or.onrender.com) |
+| Application commit | `fb2c3dc130e392f370298840ffc873b9d067927a` on `main`; confirmed by `X-App-Commit` |
+| Required CI | [Run 42501981538](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/actions/runs/42501981538): all six checks succeeded; run interval 16:51:11–16:54:08 UTC (2m 57s) |
+| Render service | [credit-score-team04-03or](https://dashboard.render.com/web/srv-dboaqu3rjlhs73at8pfg), Free, Oregon, `checksPass`, `/health` |
+| Initial deploy | `dep-dboaqubrjlhs73at8qu0`: live |
+| Persistence redeploy | `dep-dboatejrjlhs73atg470`: live, same application commit |
+| Health after redeploy | HTTPS 200, `status: ok`, matching `X-App-Commit` |
+| Saved synthetic record | `79115c20-7fc7-434e-9144-c062923e8341`: score 95, one `rules-v1` history entry remained after reload and redeploy |
+| Stable secrets | Existing browser session remained valid; synthetic encrypted identifiers could still be revealed after redeploy |
+| PostgreSQL | `credit-score-team04-db`, Free PostgreSQL 16 in Oregon; expires **9 December 2026, 00:07 Vietnam time** |
+| Blueprint configuration | [credit-score-team04](https://dashboard.render.com/blueprint/exs-dboao5mc6qcc73d4fdj0), currently reads `250-configure-render`; application code still deploys from `main` |
+
+The browser check signed in as the synthetic Officer, submitted income 0 and
+observed the field error, then saved/scored valid input. Reload and a separately
+approved same-commit Render redeploy preserved the record, score and identifiers.
+No database external-access rule was opened for verification.
+
+Actual page captures: [saved data](images/operations/live-p0-data.jpg),
+[business-rule error](images/operations/live-br-error.jpg),
+[history after redeploy](images/operations/restart-persistence.jpg),
+[masked data after redeploy](images/operations/live-after-redeploy.jpg) and
+[390×844 mobile-width viewport](images/operations/mobile-p0.jpg).
+These are page-only captures; the mobile viewport is not a physical-phone test.
+
+Still pending: rollback rehearsal, physical-phone/private-window acceptance,
+actual branch-protection evidence and setting/verifying GitHub `PUBLIC_APP_URL`.
+The Blueprint configuration follow-up needs review/merge before pointing the
+Blueprint back to `main`. No release tag was created. The Free database expiry
+must be addressed if grading continues beyond 9 December 2026.
 
 ## Backup and rollback
 
