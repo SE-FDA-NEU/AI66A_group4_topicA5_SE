@@ -4,7 +4,7 @@
 The team follows a **Hybrid Agile** model (Scrum with Plan-driven milestone gates). A single cycle (Sprint) lasts two weeks. At the start of the cycle, the team clearly divides the backlog based on specialized roles:
 
 * **Do Quang Trung:** Database Foundation, API Architecture, and Authentication.
-* **Trinh Duc Thanh:** Business Logic, AI model building, and tuning (including SHAP explanations).
+* **Trinh Duc Thanh:** Business Logic, deterministic scoring, backend health and release verification.
 * **Vu Ngoc Hai:** UI Core and state management.
 * **Nguyen Quang Huy:** Ancillary UI and API Integration (connecting Frontend with Backend).
 
@@ -13,7 +13,7 @@ During the cycle, members develop, write tests for their respective modules, and
 ### (b) The position
 The team's process is positioned at **70% Agile** and **30% Plan-driven**.
 
-* **70% Agile:** Flexibly applied to the development and tuning of the credit scoring model, allowing hyperparameters or user interfaces to be reopened and optimized every cycle.
+* **70% Agile:** Applied to workflow/interface feedback, scoring explanations and tested integration increments. Offline model training is outside the remaining release scope.
 * **30% Plan-driven:** Milestone gates provide a reviewed baseline for the database schema, sensitive data handling and API contracts. Changes to that baseline require a reviewed PR, corresponding design/changelog updates and, where necessary, an additive migration that preserves existing data. Sprint 3 identifier/account columns are changes under this process.
 
 ---
@@ -21,7 +21,7 @@ The team's process is positioned at **70% Agile** and **30% Plan-driven**.
 # Section 2 — The five diagnostic questions
 
 1. **Are your requirements stable or volatile?**
-   The core requirements of the project (inputting profiles, calling the API, returning scores) are stable, but the performance and explainability requirements of the AI model are volatile. Training a machine learning model requires continuous experimentation with data to achieve expected metrics (such as F1 and AUC), meaning the exact final version of the model cannot be strictly defined upfront.
+   The application workflows and business rules are stable; interface feedback, response times and hosting conditions require iteration. The remaining release retains deterministic rules-v1, with no offline AI training or artifact integration.
 
 2. **Does the project carry safety or legal impact that would demand formal documentation and change control?**
    **Yes.** Although it is an academic project, the credit scoring problem directly involves sensitive personal data (income, credit history). Therefore, the system must enforce standardized documentation and strict change control right from the design phase to establish security boundaries, ensuring that mock data does not leak into uncontrolled environments.
@@ -39,9 +39,9 @@ The team's process is positioned at **70% Agile** and **30% Plan-driven**.
 
 # Section 3 — Critical thinking: risks of the opposite choice
 
-If the team had chosen a fully **Plan-driven (Waterfall)** approach, the single biggest risk would be a **"Big Bang" integration failure** between the ML API and the user interface.
+If the team had chosen a fully **Plan-driven (Waterfall)** approach, the single biggest risk would be a **"Big Bang" integration failure** between the backend API, persistent database and user interface.
 
-Attempting to document the entire system design on paper before writing any code would create false assumptions about the returned JSON formats, AI processing latency, or loan profile data structures. The mechanism causing damage here is that an AI model is often a "black box" that requires practical tuning; lacking an early feedback loop would cause components to mismatch. 
+Documenting the whole design before trying integration can create false assumptions about response contracts, authentication, persisted data and hosting. Without an early end-to-end feedback loop, components that pass independently may still fail when connected.
 
 > **Concrete Symptom:** In the final weeks, when the frontend pushes a profile, the API would constantly throw timeout errors or fail to parse the "result explanation" string from the AI, leading to a blank interface or system crash with no time left to refactor the Backend.
 

@@ -41,8 +41,8 @@ Numbered so that issues and tests can reference them.
 | BR9 | Payment <= loan; payment x term covers loan; invalid requests save nothing, including merged edits | `ApplicationIn._br9_payment_must_cover_loan`, `ApplicationPatch`, and the 422 handler | `test_application_validation.py`; `test_remaining_stories.py`: TC-US10-01/02 |
 
 All nine BRs have implementation and local automated coverage. The rules-based
-`rules-v0` scorer is the current implementation; a trained model is planned for
-Sprint 4. Scoring history has a stored-data/API implementation, but its US06
+`rules-v1` scorer is retained for release; offline training/integration is outside
+the remaining scope. Scoring history has a stored-data/API implementation, but its US06
 history tab and US10 edit/cancel are implemented. US07 adds Manager-only Notifications, a 30-second counter and persisted read state. Manager approval is an added workflow; processed applications remain
 protected from US10 edit/cancel.
 
@@ -56,7 +56,7 @@ acceptance result is recorded; no new PR/CI/browser outcome is inferred here.
 Browser screenshots are present in [ui.md](ui.md#running-app-screenshots), but the
 tester/date/result table still needs real acceptance results. Merged PRs above
 show delivery; do not infer browser acceptance or a fresh CI status from them.
-Sprint commitment/completion records are maintained in [sprint-log.md](sprint-log.md).
+Sprint commitment/completion records are maintained in [sprint-log.md](sprint-log/).
 
 ## Manager approval (S3-37)
 
@@ -127,3 +127,19 @@ are reused; S4-24 supplies their server-side revocation and UI behavior.
 | --- | --- | --- |
 | US06 | existing history API, Scoring history tab and loading/empty/error/data states | TC-US06-10; real-browser empty then exactly two persisted attempts after reload |
 | US07 | loan.created events + NotificationRead, notifications router/page and Manager counter | TC-US07-01..03; immediate count, per-Manager/idempotent read, completed records excluded; browser read persistence |
+
+## M5 implementation and operations
+
+| Scope | Implementation | Issue / merged PR | Evidence boundary |
+|---|---|---|---|
+| Durable data/seed/backup | database.py, deployment.py, seed.py and backup/PG smoke | #240 / [#257](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/pull/257) | Disposable DB checks; Public reload/redeploy retention recorded; rollback/private/phone acceptance pending |
+| SPA routes | frontend.py, main.py static mount | #241 / [#258](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/pull/258) | Static regression; Public page captures exist; address-bar/private/physical-phone evidence pending |
+| CI release gate/monitor | ci.yml, monitor.yml, check_secrets.py, check_live.py | #242 / [#259](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/pull/259) | [Main CI](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/actions/runs/42505446604) green; monitor activation/protection evidence pending |
+| Health/logging | main.py /health and observability.py | #244 / [#260](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/pull/260) | Automated 200/503 and safe-log checks; Live /health ok; release/main SHA alignment pending |
+| Render foundation | render.yaml, start.py, render-build.sh | #250 / [#261](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/pull/261) | Config merged; Reload/redeploy retention recorded; rollback still pending |
+| Operations/demo metadata | README, operations, deployment, m5-demo, m5-release | [#252](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/issues/252) | This documentation work; no fabricated URL/release/evidence |
+
+Release verification tools (#243) and public P0/before-after evidence (#245)
+remain separate acceptance work. A merged configuration PR does not establish
+that every hosted acceptance criterion has passed. Human review, deployed SHA,
+v1.0 and final submission must be recorded when actually verified.

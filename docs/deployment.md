@@ -1,8 +1,36 @@
-# S5-01 — PostgreSQL, demo seed and encrypted backup
+# M5 deployment, release and PostgreSQL recovery
 
-This is the database foundation for deployment. Hosting, SPA serving, the release
-gate and database-aware `/health` are delivered by their respective M5 tasks.
-The application still defaults to local SQLite for development.
+Public app: [https://credit-score-team04-03or.onrender.com](https://credit-score-team04-03or.onrender.com). SPA/API, hosted PostgreSQL and health/logging are
+implemented. Local development keeps the documented SQLite/Vite option.
+The dated deployment record below documents actual public/redeploy checks.
+
+## Release alignment and safe rollback
+
+The read-only health check on 2026-11-09 returned `ok` and live SHA
+`fb2c3dc130e392f370298840ffc873b9d067927a`. The latest verified green-main CI is
+[run 42505446604](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/actions/runs/42505446604), SHA `cd273ab156723f72f7124bdbbe618e08e1ce0595`,
+six successful jobs, about 175 seconds. These are different commits: preserve
+both facts and verify the intended green main SHA reaches Render before tagging v1.0.
+
+Use the current Blueprint/account setup below. Keep database, region and existing
+keys stable; do not regenerate secrets or replace a database during this docs update.
+In Render select **After CI Checks Pass**. Our explicit M5 release gate requires
+every dependency to be success even though Render may accept skipped checks.
+
+For rollback, select a known successful Render deploy after checking schema and
+key compatibility. Verify health/P0/live SHA, then prepare a reviewed revert PR.
+App rollback does not restore DB writes. Dashboard rollback disables auto-deploy;
+re-enable **After CI Checks Pass** only after the corrected main is green.
+Hosted rollback rehearsal remains pending.
+
+Update the README first line and m5-release.json together whenever the URL/version
+changes; set GitHub PUBLIC_APP_URL and confirm the monitor actually runs. Student
+IDs, protection screenshot, actual review evidence and v1.0 still need completion.
+The S5-17 PDF/log-summary tools are not in this checkout, so final export is pending.
+
+References: [Render deploy-after-checks](https://render.com/docs/deploys#automatic-deploys),
+[rollback behavior](https://render.com/docs/rollbacks), [health checks](https://render.com/docs/health-checks).
+
 
 ## PostgreSQL configuration
 

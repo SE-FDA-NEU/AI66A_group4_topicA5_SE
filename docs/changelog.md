@@ -1,5 +1,13 @@
 # Project changelog — API and AI input/output
 
+- **S5-13 — operations and final demo:** refreshed README first screen,
+  completed all six operations sections, added the 12+5-minute demo and a genuine
+  evidence checklist, and aligned setup/design/test/traceability with current
+  SPA/PostgreSQL/health/CI code and rules-v1-only scoring. Recorded actual green
+  main run [42505446604](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/actions/runs/42505446604), commit `cd273ab`, approximately 175 seconds,
+  and merged M5 PR numbers. Preserved the newly merged public URL, hosted database configuration, genuine captures and reload/redeploy results. The current live SHA remains fb2c3dc while main/CI is cd273ab; release alignment, rollback/private/phone acceptance, protection screenshot, IDs and v1.0 are pending. No runtime/API/schema
+  change or new test/deployment outcome is claimed by this documentation change.
+
 - Added an accessible
   Scoring history tab and clear loading/error states.
 
@@ -70,7 +78,7 @@
 - **BR5:** hourly limit also covers CIC-rejected results; **BR1:** noninteger model scores are hidden.
 - **UI:** maps stored `pending` to "Scoring in progress", uses "Recommendation Rejected" for US04, times out stalled requests, and avoids claiming no data was saved on unknown server failures.
 - **Frontend dependencies:** React Router 7.18.4, Vite 6.4.3, React plugin 4.7.0; Node.js 20.19+ documented. npm audit found zero vulnerabilities at preparation time.
-- **Documentation:** four UI wireframe SVGs and M3 verification guidance in SETUP.md/ui.md. The canonical [sprint log](sprint-log.md) links to the detailed [Sprint 3 record](sprint-log/sprint-log3.md); the retrospective section is included in that log, with results still to be recorded. Five running-app screenshots are linked from ui.md. Independent browser/clean-clone outcomes and final submission evidence still require recorded results.
+- **Documentation:** four UI wireframe SVGs and M3 verification guidance in SETUP.md/ui.md. The canonical [sprint log](sprint-log/) links to the detailed [Sprint 3 record](sprint-log/sprint-log3.md); the retrospective section is included in that log, with results still to be recorded. Five running-app screenshots are linked from ui.md. Independent browser/clean-clone outcomes and final submission evidence still require recorded results.
 
 - **Manager decision:** implemented PATCH `/api/loan-applications/{id}/approve`, Admin authorization, valid latest eligible score, final-state guards and a conditional status/result update. Persists `loan.approved` actor/time/high-risk context atomically and exposes approval metadata on details.
 - **UI:** Manager approval confirmation, role/eligibility guidance, approver/time, preserved high-risk flag; approved applications cannot be scored again.

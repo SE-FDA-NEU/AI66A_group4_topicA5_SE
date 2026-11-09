@@ -4,16 +4,16 @@ This document says what the team tests and lists the test cases for the main sto
 
 ## 1. What we test and why
 
-Tests live in `backend/tests` (pytest), `frontend/tests` (node:test) and `frontend/browser` (Playwright). The interface is checked by render tests, by the browser regressions in `frontend/browser` and by the local browser results recorded in `docs/ui.md` (section "P0 completion in this copy"). Independent human browser acceptance is not recorded and remains pending.
+Tests live in `backend/tests` (pytest), `frontend/tests` (node:test) and `frontend/browser` (Playwright). The interface is checked by render tests, by the browser regressions in `frontend/browser` and by the local browser results recorded in `docs/ui.md` (section "P0 completion in this copy"). Public page/redeploy checks are recorded in deployment.md; independent private-window/physical-phone acceptance remains pending.
 
-| Layer | What is tested | Kind of test | Why |
-|---|---|---|---|
-| Services | `scoring.py` (rules, `has_history`), `scoring_service.py` (BR1, BR4, BR5, BR6 order), `privacy.py` (masking and encryption) | Unit tests that call the functions directly: threshold boundaries, golden cases that pin exact scores and reasons, and boundary tests with a fixed clock (BR5 one-hour cutoff, lock expiry, dashboard day). A few tests use the real clock with a wide margin | The business rules live here, and a wrong score or label is the costliest defect |
-| Repository (database) | SQLAlchemy models, constraints, migration, seed | Integration tests on a fresh in-memory SQLite database per test, plus temporary SQLite files for the migration and concurrency checks. The code has no separate repository class, so this layer is tested through the models, the migration and the seed | Constraints and upgrades must not lose or corrupt existing records |
-| Routes | FastAPI routers for auth, users, loan applications, scoring, dashboard, approval and application changes | Integration tests through `TestClient` with the same in-memory SQLite: status codes, error messages, access control, and that rejected create requests save nothing | The routes enforce the rules for every caller, whatever the interface does |
-| Interface | `validation.js`, `api.js`, `format.js`, React components, the create-and-score flow | `node:test` unit tests (`api.js` with a mocked `fetch`), render tests (esbuild bundles a component and `react-dom/server` renders it to HTML) and Playwright browser regressions (`npm run test:e2e`). The browser tests assert focus, error messages and horizontal overflow at 375 px; the way the page looks is not asserted and is reviewed from the saved screenshots | Users meet the rules through the forms, so validation messages and the create-and-score flow must work end to end |
+| Layer | Test | Why |
+|---|---|---|
+| Services | `scoring.py` (rules, `has_history`), `scoring_service.py` (BR1, BR4, BR5, BR6 order), `privacy.py` (masking and encryption). Unit tests that call the functions directly: threshold boundaries, golden cases that pin exact scores and reasons, and boundary tests with a fixed clock (BR5 one-hour cutoff, lock expiry, dashboard day). A few tests use the real clock with a wide margin | The business rules live here, and a wrong score or label is the costliest defect |
+| Repository (database) | SQLAlchemy models, constraints, migration, seed. Integration tests on a fresh in-memory SQLite database per test, plus temporary SQLite files for the migration and concurrency checks. The code has no separate repository class, so this layer is tested through the models, the migration and the seed | Constraints and upgrades must not lose or corrupt existing records |
+| Routes | FastAPI routers for auth, users, loan applications, scoring, dashboard, approval and application changes. Integration tests through `TestClient` with the same in-memory SQLite: status codes, error messages, access control, and that rejected create requests save nothing | The routes enforce the rules for every caller, whatever the interface does |
+| Interface | `validation.js`, `api.js`, `format.js`, React components, the create-and-score flow. `node:test` unit tests (`api.js` with a mocked `fetch`), render tests (esbuild bundles a component and `react-dom/server` renders it to HTML) and Playwright browser regressions (`npm run test:e2e`). The browser tests assert focus, error messages and horizontal overflow at 375 px; the way the page looks is not asserted and is reviewed from the saved screenshots | Users meet the rules through the forms, so validation messages and the create-and-score flow must work end to end |
 
-**Risk.** The product helps a loan officer decide on a real person's credit, so the costliest failures are a wrong score or label, a wrong high-risk flag (BR3), a rule applied on the wrong side of a threshold, and invalid data being saved. That is why section 2 tests the main thresholds (lock count, DSR 50%, score bands, hourly scoring limit, Vietnam day) on both sides, and why rejected create requests are checked to leave the record count unchanged. The weakest layer is the visual interface, where only focus and overflow are asserted and the appearance is reviewed by people.
+**Risk.** The educational demo models an Officer's assessment workflow, so the costliest failures are a wrong score or label, a wrong high-risk flag (BR3), a rule applied on the wrong side of a threshold, and invalid data being saved. That is why section 2 tests the main thresholds (lock count, DSR 50%, score bands, hourly scoring limit, Vietnam day) on both sides, and why rejected create requests are checked to leave the record count unchanged. The weakest layer is the visual interface, where only focus and overflow are asserted and the appearance is reviewed by people.
 
 ## 2. Test cases
 
@@ -359,3 +359,29 @@ Every test with an ID, sorted by ID. Backend IDs are a `# TC-USxx-nn` comment di
 schema in a disposable PostgreSQL database for actual migration, seed, health,
 create/edit, BR5, approval persistence, rejected-input no-save and logout checks.
 The existing M4 P0 and role browser suite remains part of CI.
+
+## M5 verification and evidence boundary
+
+Verified main CI baseline on 2026-11-09: [run 42505446604](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/actions/runs/42505446604), commit
+`cd273ab`, all six jobs successful, about 2m 55s. This is recorded GitHub
+evidence, not a new local test count or proof of a public URL. Refresh after merge.
+
+The production checks cover database/secret/build guards, opt-in repeatable seed,
+health 200/503, safe logging and SPA boundaries in `test_m5_operations.py`; backup
+encryption/error handling is in `test_database_backup.py`. `scripts/postgres_smoke.py`
+uses an isolated schema on disposable PostgreSQL for migration/seed/concurrency,
+health, create/edit/BR5/approval/persistence and logout. Never pass production DB URLs.
+
+From the repository root, backend environment active:
+
+```bash
+python -m ruff check backend scripts
+python -m pytest -v --cov=backend/app --cov-report=term-missing --cov-fail-under=90
+python scripts/postgres_smoke.py
+```
+
+The last command requires M5_TEST_POSTGRES_URL set to a disposable PG database.
+Frontend npm test/build and Playwright commands remain as documented above.
+Playwright currently starts isolated API/Vite servers; recorded public/redeploy checks do not replace the remaining private/physical-phone/rollback acceptance. Scoring remains rules-v1 without a
+training dependency. See [operations](operations.md), [demo](m5-demo.md) and
+[the evidence checklist](images/operations/README.md).

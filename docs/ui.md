@@ -6,7 +6,7 @@
 | --- | --- | --- | --- | --- |
 | US01 Log in with my account | Login | `/` | partly works (implemented; independent browser acceptance pending; log out is a button in the top bar; the 15-minute lock is shown as a message) | #9 |
 | US03 Input a loan application | New application | `/loan-applications/new` | partly works (implemented; independent browser acceptance pending; saves, flags High risk when DSR > 50%, scores right away) | #10 |
-| US04 View the credit score with explanations | Application details | `/loan-applications/:id` | partly works (implemented; independent browser acceptance pending; score 0-100, label, factors, CIC group; rule-based model `rules-v0`, the trained model comes in Sprint 4) | #11 |
+| US04 View the credit score with explanations | Application details | `/loan-applications/:id` | partly works (implemented; independent browser acceptance pending; score 0-100, label, factors, CIC group; deterministic scorer `rules-v1`; no offline training in M5 scope) | #11 |
 | US08 Overview dashboard | Dashboard | `/dashboard` | partly works (implemented; independent browser acceptance pending; today's total, average score, high-risk count; shows "0 applications today" when empty) | #13 |
 | US09 Alert on missing or malformed data | New application | `/loan-applications/new` | partly works (field errors and no-save behavior implemented; API required-income wording fixed in S4-05; independent browser acceptance pending) | #14 |
 | US10 Edit/cancel unprocessed application | Edit application and Application details | `/loan-applications/:id/edit`, `/loan-applications/:id` | works (owner/Admin edit and confirmed cancel; processed-state and access guards tested) | #22 |
