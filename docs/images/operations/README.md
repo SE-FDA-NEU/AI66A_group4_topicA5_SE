@@ -1,37 +1,78 @@
 # Actual M5 evidence
 
-Save genuine captures here after the actions occur:
+This folder contains genuine screenshots and release/operations evidence.
+Keep the capture date and test scope attached to each item. Never relabel a
+local screenshot as production, or a current screenshot as an M3 "before".
 
-- `branch-protection.png`: main requires PR, another approval and M5 release gate.
-- `before-*.png`: genuine previous M3 interface captures; do not relabel new images.
-- `after-*.png`: deployed improvements with visible browser address bar.
-- `live-p0-data.jpg`, `live-br-error.jpg`: real deployed data and rule refusal.
-- `mobile-p0.jpg`: 390×844 browser viewport on the HTTPS URL; not a physical-phone test.
+## Public browser captures — 11 November 2026 (Vietnam)
 
-No screenshot has been fabricated to claim an external setting or deployment.
+The following 11 images were supplied for this update. The desktop captures
+were taken in Chrome Incognito on the public Render HTTPS host; two captures
+were taken at a Chrome DevTools responsive viewport; two were taken on a
+physical phone.
 
-Captured on 9 November 2026 (Vietnam) against
-https://credit-score-team04-03or.onrender.com:
-
-- `restart-persistence.jpg`: the saved history entry after Render redeploy.
-- `live-after-redeploy.jpg`: the same saved application with identifiers masked.
-
-The JPEGs are genuine page captures without browser address-bar chrome; the
-verified URL, SHA and deploy IDs are recorded in [deployment.md](../../deployment.md).
-Branch-protection, physical-phone and rollback evidence remain pending.
-
-## Remaining M5 evidence
-
-| Evidence | Status / next capture |
+| File | Evidence |
 |---|---|
-| Public data/error/history/redeploy | Existing JPEGs above; preserve their original capture date and scope |
-| Address-bar-visible public P0/error | Pending: page-only JPEGs do not show browser chrome |
-| Private-window and physical phone | Pending: a mobile viewport is not a physical-phone check |
-| Main branch protection | Pending actual PR/approval/M5 gate settings screenshot |
-| Render deploy-after-CI | Record actual service main branch and checksPass setting |
-| Rollback | Pending previous/new SHA, date/tester and retained-data result |
-| Two post-M3 improvements | Genuine before photos, actual feedback and live after captures needed |
+| `live-p0-login-incognito-responsive.jpg` | Public login page in an Incognito browser with DevTools open. |
+| `live-p0-dashboard-incognito.jpg` | Authenticated Officer dashboard, desktop. |
+| `live-p0-applications-list-incognito-8-records.jpg` | Officer application list showing eight records. |
+| `live-p0-new-application-valid-incognito.jpg` | Populated valid application form. Citizen ID and bank-account values are redacted in this documentation copy. |
+| `live-p0-score-details-incognito.jpg` | Scored application details: 95/100 and scoring factors. |
+| `live-p0-validation-multiple-fields-incognito.jpg` | Multiple invalid-field messages, including monthly income 0. Not an isolated income-only BR2 test. |
+| `live-p0-applications-list-incognito-10-records.jpg` | Officer application list showing ten records. |
+| `live-mobile-dashboard-390x884-devtools.jpg` | Responsive dashboard at 390 × 884 CSS pixels. |
+| `live-mobile-validation-390x884-devtools.jpg` | Responsive validation at 390 × 884 CSS pixels. |
+| `physical-phone-dashboard.jpg` | Officer dashboard on a physical phone. |
+| `physical-phone-validation.jpg` | Validation errors on a physical phone. |
 
-Keep credentials and environment panels out of captures. Record URL, app SHA,
-tester/date and observed result; do not relabel local/current images as M3 before.
-Current runbook and demo: [operations](../../operations.md), [m5-demo](../../m5-demo.md).
+The desktop screenshots show the public Render host in the browser address bar.
+The physical-phone screenshots show the phone browser's address area. Capture
+timestamps in the uploaded filenames correspond to 11 November 2026 Vietnam
+time.
+
+## Earlier public deployment and persistence evidence
+
+These pre-existing captures are retained unchanged:
+
+- `live-p0-data.jpg`: public saved-data page capture from 9 November 2026.
+- `live-br-error.jpg`: public business-rule error page capture from 9 November 2026.
+- `restart-persistence.jpg`: saved history entry after Render redeploy, captured
+  on 9 November 2026.
+- `live-after-redeploy.jpg`: the same saved application with identifiers masked,
+  captured on 9 November 2026.
+- `mobile-p0.jpg`: earlier 390 × 844 browser viewport capture, not a physical
+  phone test.
+
+The 11 November captures above do not replace the 9 November redeploy evidence.
+The earlier JPEGs are page captures and do not show desktop browser chrome.
+
+## Existing UI evidence
+
+The broader UI and local-regression screenshots remain in `docs/images/ui/`.
+They are intentionally not copied into this operations folder or this update
+package because they are not new production captures.
+
+## Remaining evidence / acceptance work
+
+| Evidence or check | Current status |
+|---|---|
+| Public login page | Captured; successful login is indirectly represented by the authenticated Officer pages, but the click/result itself is not separately captured. |
+| Dashboard and application list | Captured on public URL. |
+| Valid application and scored details | Captured on public URL. |
+| Clear business-rule/field errors | Captured with several invalid fields, including income 0. Isolated income-only BR2 and HTTP 422 still need explicit verification. |
+| No-save on invalid submission | Not proven by the supplied screenshots; verify list count or persisted rows before marking Pass. |
+| Responsive browser viewport | Captured at 390 × 884 CSS pixels. |
+| Physical phone | Dashboard and validation captured. Other flows on the phone are not evidenced here. |
+| Reload persistence | Earlier deployment record describes a reload/redeploy check on 9 November; the new 11 November screenshots do not show a before/after reload pair. |
+| Persistence after Render redeploy | Earlier evidence retained; do not change its original date or scope. |
+| Scoring history live capture | Not supplied in this image set. Existing `docs/images/ui/p1-history-two-attempts.png` is local UI/regression evidence, not a new live capture. |
+| Two post-M3 UI improvements | M3 Before and feedback images were not supplied and are excluded from this package. Do not claim the comparison complete. |
+| Branch protection / rollback | Still requires actual GitHub settings and rollback evidence. |
+
+For each newly performed manual test, record the actual tester, local date/time,
+URL, deployed commit SHA, observed result and evidence filename in the relevant
+test/release record. Do not fill a Pass result based on a screenshot alone when
+the assertion requires an API response or persistence check.
+
+See [deployment](../../deployment.md), [UI](../../ui.md),
+[M5 demo](../../m5-demo.md) and [operations](../../operations.md).
