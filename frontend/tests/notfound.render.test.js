@@ -10,7 +10,7 @@ test("TC-US05-11 unknown URLs show Page not found with a link home for both sign
     import {MemoryRouter} from "react-router-dom";
     import App from "./src/App.jsx";
     import {AuthProvider} from "./src/auth.jsx";
-    import {ThemeProvider} from "./src/theme.jsx";
+    import {ThemeProvider} from "./src/theme";
     export const render = (role, route) => {
       globalThis.sessionStorage = {getItem: () => role ? JSON.stringify({user: {id:role, role, full_name:"Demo"}}) : null};
       return renderToStaticMarkup(React.createElement(MemoryRouter, {initialEntries:[route]},
