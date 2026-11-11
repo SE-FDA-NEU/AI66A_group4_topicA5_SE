@@ -44,12 +44,12 @@ educational score; no AI training, calibrated probability or disbursement is cla
 
 ## Before/after and live evidence
 
-| Improvement / check | Available reference | Still required |
+| Improvement / check | Available reference | Status / remaining work |
 |---|---|---|
-| Saved record before slow scoring | [Current local saved state](images/ui/p0-saved-before-scoring.png); code/browser regression | Genuine M3 before image, actual feedback reference and live after capture |
-| Scoring history tab | [Current local history](images/ui/p1-history-two-attempts.png); stored-data regression | Genuine M3 before image, actual feedback reference and live after capture |
-| Public P0, data/error/mobile/reload | Scripts and CI exist | URL/public/redeploy record exists; finish private/physical-phone, tester/outcomes and address-bar-visible captures |
-| Deployment/release | Main CI baseline is green | Align live/main-CI SHA; finish protection screenshot, rollback and v1.0 (redeploy persistence already recorded) |
+| Saved record before slow scoring | [Local saved-before-scoring regression capture](images/ui/p0-saved-before-scoring.png) | M3 Before and genuine feedback evidence were not supplied and are intentionally excluded from this update. The local capture is not relabelled as a live After image. |
+| Scoring history tab | [Local two-attempt history regression capture](images/ui/p1-history-two-attempts.png) | M3 Before and genuine feedback evidence were not supplied and are intentionally excluded from this update. The local capture is not relabelled as a live After image. A live production history capture is still absent. |
+| Public P0, data/error/mobile/reload | [New public browser evidence inventory](images/operations/README.md) | 11 November captures now cover login page, authenticated dashboard, application list, valid form, score details, validation errors, responsive 390 × 884 viewport and physical-phone dashboard/validation. Isolated income=0/no-save, explicit reload proof and role-specific full click-through still require recorded manual verification. Earlier 9 November redeploy evidence remains separately dated. |
+| Deployment/release | [Deployment record](deployment.md) | Live/main-CI SHA alignment, branch-protection screenshot, rollback rehearsal and v1.0 still require completion. |
 
 Do not infer instructor feedback or relabel a current screenshot as "before".
 Existing local examples do not prove public acceptance. Save genuine deployment
@@ -68,5 +68,9 @@ captures under [images/operations](images/operations/README.md).
 
 Recorded live SHA on 2026-11-09: `fb2c3dc`; latest main CI: `cd273ab`.
 This mismatch must be resolved and verified before the final release demo.
-Existing public captures are page-only; private-window/physical-phone acceptance
-and real M3 before/after evidence remain pending. See [the dated deployment record](deployment.md#public-deployment-verification--9-november-2026-vietnam).
+Public Incognito captures and physical-phone dashboard/validation captures dated
+11 November are now listed in [the operations evidence index](images/operations/README.md).
+They do not prove every P0 assertion by themselves. Isolated income-zero/no-save,
+explicit reload and complete role-based click-through still need recorded results.
+M3 Before/feedback comparisons are intentionally excluded because those source
+images were not supplied. See [the dated deployment record](deployment.md#public-deployment-verification--9-november-2026-vietnam).
