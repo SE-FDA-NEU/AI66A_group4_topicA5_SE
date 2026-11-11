@@ -5,7 +5,7 @@
   setup/design/test/traceability with current
   SPA/PostgreSQL/health/CI code and rules-v1-only scoring. Recorded actual green
   main run [42505446604](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/actions/runs/42505446604), commit `cd273ab`, approximately 175 seconds,
-  and merged M5 PR numbers. Preserved the newly merged public URL, hosted database configuration, genuine captures and reload/redeploy results. The 9 November evidence snapshot recorded live SHA fb2c3dc and main/CI SHA cd273ab; that mismatch is historical. Main CI passed again on 11 November (run 43028281516), but the live SHA could not be rechecked during the audit, so current alignment is unknown. Rollback, complete P0 acceptance, branch-protection evidence, IDs and v1.0 remain pending. No runtime/API/schema
+  and merged M5 PR numbers. Preserved the newly merged public URL, hosted database configuration, genuine captures and reload/redeploy results. The 9 November evidence snapshot recorded live SHA fb2c3dc and main/CI SHA cd273ab; that mismatch is historical. Main CI passed again on 11 November (run 43028281516, commit `eee6938`, historical); on 2026-11-11 live, `origin/main` and green main CI (run 43048831988) all matched at `12ac633`. Rollback, complete P0 acceptance, branch-protection evidence, IDs and v1.0 remain pending. No runtime/API/schema
   change or new test/deployment outcome is claimed by this documentation change.
 
 - Added an accessible

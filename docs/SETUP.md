@@ -288,7 +288,7 @@ generates replacement keys automatically. `/health` now verifies database/schema
 
 With STATIC_DIR configured, the first page and client deep links serve React;
 the legacy HTML list is not registered. Unknown API/asset/hidden paths remain 404.
-The public URL is https://credit-score-team04-03or.onrender.com. Keep README/release metadata synchronized, configure PUBLIC_APP_URL, then verify the intended live commit and remaining public P0 acceptance.
+The public URL is https://credit-score-team04-03or.onrender.com. Keep README/release metadata synchronized (GitHub PUBLIC_APP_URL is an optional override; otherwise the monitor reads running_app from docs/m5-release.json), then verify the intended live commit and remaining public P0 acceptance.
 
 Release evidence and maintenance: [operations](operations.md),
 [metadata](m5-release.json). Release verification scripts and offline tests are

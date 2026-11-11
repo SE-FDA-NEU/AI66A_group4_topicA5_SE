@@ -362,9 +362,11 @@ The existing M4 P0 and role browser suite remains part of CI.
 
 ## M5 verification and evidence boundary
 
-Verified main CI baseline on 2026-11-09: [run 42505446604](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/actions/runs/42505446604), commit
-`cd273ab`, all six jobs successful, about 2m 55s. This is recorded GitHub
-evidence, not a new local test count or proof of a public URL. Refresh after merge.
+Verified main CI baseline on 2026-11-11: [run 43048831988](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/actions/runs/43048831988), commit
+`12ac633` (push to `main`, success), matching the live `X-App-Commit` at that check.
+This is recorded GitHub evidence, not a new local test count or proof of every P0
+workflow. Historical baselines: 2026-11-09 [run 42505446604](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/actions/runs/42505446604),
+commit `cd273ab` (about 2m 55s), and 2026-11-11 earlier run 43028281516, commit `eee6938`.
 
 The production checks cover database/secret/build guards, opt-in repeatable seed,
 health 200/503, safe logging and SPA boundaries in `test_m5_operations.py`; backup
