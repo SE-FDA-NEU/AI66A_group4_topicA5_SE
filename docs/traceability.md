@@ -9,11 +9,11 @@ they do not establish a new CI run or browser acceptance result.
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | `/` | Sign in; logout is a top-bar action that returns here | G | P0 | F1 - Login/Logout | US01 (#9), US02 (#19, P2) | [#120](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/pull/120), [#122](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/pull/122), [#133](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/pull/133), [#134](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/pull/134) | In progress: implemented; independent browser/timing/logout-cache checks pending |
 | `/dashboard` | Officer daily overview; Manager branch daily metrics and review queue across all dates | U | P0 | F2 - Overview Dashboard | US08 (#13) | [#150](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/pull/150), [#181](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/pull/181), [#190](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/pull/190) | In progress: implementation/automated coverage present; browser result pending |
-| `/loan-applications/new` | Save a loan application, validate fields and request scoring | U | P0 | F3 - Loan Application Entry & Validation | US03 (#10), US09 (#14) | [#127](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/pull/127), [#128](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/pull/128), [#173](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/pull/173), [#183](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/pull/183) | In progress: API required-income wording and BR9 implemented in S4-05; browser/timing checks pending |
+| `/loan-applications/new` | Save a loan application, validate fields and request scoring | U | P0 | F3 - Loan Application Entry & Validation | US03 (#10), US09 (#14) | [#127](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/pull/127), [#128](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/pull/128), [#173](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/pull/173), [#183](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/pull/183) | In progress: API required-income wording and BR9 implemented; browser/timing checks pending |
 | `/loan-applications/:id` | View saved input, latest score/explanation, protected identifiers, edit/cancel controls and Manager decision | U | P0 | F4 - Scoring & Result Explanation; US05 is P1 | US04 (#11), US05 (#20), US10 (#22); approval is an additional Manager workflow | [#170](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/pull/170), [#174](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/pull/174), [#180](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/pull/180), [#186](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/pull/186) | In progress: implementation/API tests present; US10 browser result pending |
 | `/loan-applications/:id/edit` | Edit an owned/Admin-accessible pending application with no scoring result | U | P1 | F5 - Application Navigation & Management | US10 (#22) | — | In progress: implementation and API/browser tests present; independent browser result pending |
 | `/loan-applications` | List accessible saved applications and open their details; Manager review/risk/eligibility/employee filters | U | P1 | F5 - Application Navigation & Management | US05 (#20); US06 (#12) history UI and US10 (#22) edit/cancel | [#169](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/pull/169), [#190](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/pull/190) | In progress: list/filter/navigation and US10 entry point present; independent browser result pending |
-| `/admin/users` | Create/rename/deactivate/reactivate Officer accounts; display Manager accounts without editing them | A | P2 | BR8 account management | BR8; follow-up tasks S3-40/S3-41 | [#175](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/pull/175), [#177](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/pull/177), [#184](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/pull/184) | In progress: implementation/automated coverage present; independent browser result pending |
+| `/admin/users` | Create/rename/deactivate/reactivate Officer accounts; display Manager accounts without editing them | A | P2 | BR8 account management | BR8; Officer account management | [#175](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/pull/175), [#177](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/pull/177), [#184](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/pull/184) | In progress: implementation/automated coverage present; independent browser result pending |
 
 **Access codes:** G = guest (not logged in); U = authenticated user; A = Admin
 (branch Manager). Officer queries are restricted to that Officer's applications;
@@ -46,7 +46,7 @@ the remaining scope. Scoring history has a stored-data/API implementation, but i
 history tab and US10 edit/cancel are implemented. US07 adds Manager-only Notifications, a 30-second counter and persisted read state. Manager approval is an added workflow; processed applications remain
 protected from US10 edit/cancel.
 
-**US09 API correction (S4-05):** empty, whitespace-only, null and omitted income
+**US09 API behavior:** empty, whitespace-only, null and omitted income
 now return exactly "Income is required"; malformed numeric input keeps the
 whole-number message. The API preserves the original requirement and saves nothing
 on rejection. `test_application_validation.py` covers normalization, limits, body
@@ -58,7 +58,7 @@ tester/date/result table still needs real acceptance results. Merged PRs above
 show delivery; do not infer browser acceptance or a fresh CI status from them.
 Sprint commitment/completion records are maintained in [sprint-log.md](sprint-log/).
 
-## Manager approval (S3-37)
+## Manager approval
 
 The Officer creates/scores an application and the Manager reaches the same record
 through the application list or review queue. Eligible is a recommendation, not
@@ -111,7 +111,7 @@ also passed; local backend coverage is 96.02%. These results do not assert a new
 GitHub PR, teammate review, CI result or LMS submission.
 
 
-## US02 — current-session logout (S4-24)
+## US02 — current-session logout
 
 Top bar Log out -> `api.logout` -> `POST /api/auth/logout` -> `RevokedToken`
 fingerprint; `get_current_user` rejects it on later access. Frontend `auth.jsx`
@@ -119,7 +119,7 @@ clears the session immediately, handles offline uncertainty and guards pageshow.
 Coverage: TC-US02-01..03 in `backend/tests/test_remaining_stories.py`, masked
 detail cache regression in `test_sensitive_data.py` and the US02 browser case in
 `frontend/browser/remaining-stories.spec.js`. Existing API helpers/browser case
-are reused; S4-24 supplies their server-side revocation and UI behavior.
+are reused; The app supplies server-side revocation and corresponding UI behavior.
 
 ## P1/P2 completion mapping (2026-10-30)
 
@@ -132,14 +132,16 @@ are reused; S4-24 supplies their server-side revocation and UI behavior.
 
 | Scope | Implementation | Issue / merged PR | Evidence boundary |
 |---|---|---|---|
-| Durable data/seed/backup | database.py, deployment.py, seed.py and backup/PG smoke | #240 / [#257](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/pull/257) | Disposable DB checks; Public reload/redeploy retention recorded; rollback/private/phone acceptance pending |
-| SPA routes | frontend.py, main.py static mount | #241 / [#258](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/pull/258) | Static regression; Public page captures exist; address-bar/private/physical-phone evidence pending |
-| CI release gate/monitor | ci.yml, monitor.yml, check_secrets.py, check_live.py | #242 / [#259](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/pull/259) | [Main CI](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/actions/runs/42505446604) green; monitor activation/protection evidence pending |
-| Health/logging | main.py /health and observability.py | #244 / [#260](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/pull/260) | Automated 200/503 and safe-log checks; Live /health ok; release/main SHA alignment pending |
+| Durable data/seed/backup | database.py, deployment.py, seed.py and backup/PG smoke | #240 / [#257](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/pull/257) | Disposable DB checks; 9 Nov public reload/redeploy retained data; PR #265 added partial Incognito/phone captures; rollback and complete acceptance pending |
+| SPA routes | frontend.py, main.py static mount | #241 / [#258](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/pull/258) | Static regression; PR #265 added address-bar-visible Incognito and physical-phone screen captures; complete P0 flow remains unverified |
+| CI release gate/monitor | ci.yml, monitor.yml, check_secrets.py, check_live.py | #242 / [#259](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/pull/259) | [Main CI](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/actions/runs/43028281516) green on 11 Nov; monitor fallback now reads the release metadata URL; next scheduled run and protection evidence remain to verify |
+| Health/logging | main.py /health and observability.py | #244 / [#260](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/pull/260) | Automated 200/503 and safe-log checks; last live /health ok on 9 Nov; current live SHA/alignment unverified |
 | Render foundation | render.yaml, start.py, render-build.sh | #250 / [#261](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/pull/261) | Config merged; Reload/redeploy retention recorded; rollback still pending |
-| Operations/demo metadata | README, operations, deployment, m5-demo, m5-release | [#252](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/issues/252) | This documentation work; no fabricated URL/release/evidence |
+| Operations/release metadata | README, operations, deployment, m5-release | [#252](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/issues/252) | This documentation work; no fabricated URL/release/evidence |
 
-Release verification tools (#243) and public P0/before-after evidence (#245)
-remain separate acceptance work. A merged configuration PR does not establish
-that every hosted acceptance criterion has passed. Human review, deployed SHA,
-v1.0 and final submission must be recorded when actually verified.
+Release verification tools are implemented. Final PDF export still requires
+real student IDs, a v1.0 tag, verified live/latest-green-main SHA alignment,
+branch-protection evidence and per-member PR/review records. PR #265 added public
+Incognito and physical-phone captures, but isolated HTTP 422/no-save, complete P0
+workflow and before/after feedback evidence remain incomplete. Record each result
+only after verification.

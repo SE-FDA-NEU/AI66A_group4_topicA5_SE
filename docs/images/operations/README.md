@@ -44,7 +44,7 @@ These pre-existing captures are retained unchanged:
   phone test.
 
 The 11 November captures above do not replace the 9 November redeploy evidence.
-The earlier JPEGs are page captures and do not show desktop browser chrome.
+The earlier JPEGs are page captures and do not show desktop browser chrome. Their 9 November URL, commit SHA and Render deploy IDs are recorded in [deployment.md](../../deployment.md). Branch-protection and rollback evidence remain pending.
 
 ## Existing UI evidence
 
@@ -75,4 +75,4 @@ test/release record. Do not fill a Pass result based on a screenshot alone when
 the assertion requires an API response or persistence check.
 
 See [deployment](../../deployment.md), [UI](../../ui.md),
-[M5 demo](../../m5-demo.md) and [operations](../../operations.md).
+[operations](../../operations.md).

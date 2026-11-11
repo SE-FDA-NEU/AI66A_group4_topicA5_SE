@@ -28,21 +28,29 @@ Vũ Ngọc Hải (@HaiMeoden), Nguyễn Quang Huy (@criticalmatt-dot).
 
 ## Release status
 
-The HTTPS app is live; `/health` returned `ok` on 2026-11-09, with
-`X-App-Commit: fb2c3dc130e392f370298840ffc873b9d067927a`. [Recorded public deployment checks](docs/deployment.md#public-deployment-verification--9-november-2026-vietnam)
-include a synthetic record retained after reload and same-commit Render redeploy.
-Existing JPEGs are page-only captures, and the 390×844 viewport is not a physical-phone test.
+The latest recorded live health check returned `ok` on 2026-11-09, with
+`X-App-Commit: fb2c3dc130e392f370298840ffc873b9d067927a`. That dated check recorded
+reload and same-commit Render redeploy persistence ([deployment record](docs/deployment.md#public-deployment-verification--9-november-2026-vietnam)).
+The current live health and deployed SHA could not be re-verified during the
+2026-11-11 documentation audit; the endpoint timed out from the audit environment.
 
-Latest verified main CI: [run 42505446604](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/actions/runs/42505446604), commit `cd273ab`,
-six jobs green in about **2 min 55 s**. The live SHA and latest main SHA currently
-differ. Before tagging `v1.0`, verify a green main commit actually reaches the URL,
-then record matching live/tag/CI evidence. Do not replace the observed live SHA
-with the main SHA without checking deployment.
+On 2026-11-11, [PR #265](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/pull/265)
+merged new public Incognito screenshots and physical-phone captures. They show
+several real screens, but do not by themselves prove every P0 workflow, an
+isolated HTTP 422/no-save case, or persistence after the current deployment.
 
-Rollback rehearsal, private-window/physical-phone acceptance, branch-protection
-screenshot, member IDs and v1.0 remain pending. Keep verified metadata in
-[m5-release.json](docs/m5-release.json) synchronized when the URL/version changes.
+Latest main CI: [run 43028281516](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/actions/runs/43028281516), commit `eee6938`,
+all six jobs green in about **3 minutes**. The latest health-monitor run
+[43028363826](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/actions/runs/43028363826)
+was skipped by the previous workflow's `PUBLIC_APP_URL` gate. The monitor now
+falls back to the URL in `docs/m5-release.json`; verify a successful run after
+this change reaches `main`. The current live SHA still needs rechecking.
 
+Still outstanding: verify current live health/SHA and align it with green main CI
+before tagging `v1.0`; complete the isolated validation/no-save and history/reload
+acceptance checks; rehearse rollback; capture branch-protection settings; add real
+member IDs and review records; and configure/verify the public monitor. Release
+metadata is in [m5-release.json](docs/m5-release.json).
 ## Run locally
 
 Follow [SETUP](docs/SETUP.md), then open `http://localhost:5173`. Local development
@@ -81,9 +89,7 @@ Details also supports scoring history, protected identifier lookup and unprocess
 application edit/cancel. Manager has Notifications and Employees. The server
 enforces ownership, role rules and audit persistence.
 
-- [12-minute demo and evidence checklist](docs/m5-demo.md)
 - [Requirements](docs/requirements.md), [design](docs/design.md), [UI](docs/ui.md), [traceability](docs/traceability.md)
 - [Changelog](docs/changelog.md), [Definition of Done](docs/definition-of-done.md), [sprint records](docs/sprint-log/)
 
-Keep the service and database available at least through **2026-11-30 and until
-grades are published**. See operations for monitoring and maintenance ownership.
+Operational availability targets, monitoring and maintenance ownership are documented in [Operations](docs/operations.md).

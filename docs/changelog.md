@@ -1,11 +1,11 @@
 # Project changelog — API and AI input/output
 
-- **S5-13 — operations and final demo:** refreshed README first screen,
-  completed all six operations sections, added the 12+5-minute demo and a genuine
-  evidence checklist, and aligned setup/design/test/traceability with current
+- **Operations and final demo:** refreshed README first screen,
+  completed all six operations sections and an evidence checklist, and aligned
+  setup/design/test/traceability with current
   SPA/PostgreSQL/health/CI code and rules-v1-only scoring. Recorded actual green
   main run [42505446604](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/actions/runs/42505446604), commit `cd273ab`, approximately 175 seconds,
-  and merged M5 PR numbers. Preserved the newly merged public URL, hosted database configuration, genuine captures and reload/redeploy results. The current live SHA remains fb2c3dc while main/CI is cd273ab; release alignment, rollback/private/phone acceptance, protection screenshot, IDs and v1.0 are pending. No runtime/API/schema
+  and merged M5 PR numbers. Preserved the newly merged public URL, hosted database configuration, genuine captures and reload/redeploy results. The 9 November evidence snapshot recorded live SHA fb2c3dc and main/CI SHA cd273ab; that mismatch is historical. Main CI passed again on 11 November (run 43028281516), but the live SHA could not be rechecked during the audit, so current alignment is unknown. Rollback, complete P0 acceptance, branch-protection evidence, IDs and v1.0 remain pending. No runtime/API/schema
   change or new test/deployment outcome is claimed by this documentation change.
 
 - Added an accessible
@@ -14,20 +14,20 @@
 - Added Manager-only GET notifications/PATCH read, derived from creation audits,
   per-Manager read receipts and a 30-second/focus-refresh counter.
 
-- **S4-24 — current-session logout:** added random JWT jti, a fingerprint-only
+- **Current-session logout:** added random JWT jti, a fingerprint-only
   revoked_tokens table, POST /api/auth/logout and revoked-token authorization
   checks. Frontend sends revocation before immediate local sign-out, handles
   offline uncertainty and separates 401 cleanup from logout. All API/private
   HTML responses now use no-store/no-cache, including masked details; updated
   the previous masked-detail cache test and added TC-US02-01..03. Existing
-  US10 implementation/tests and the S4-25 Login validation are retained.
+  US10 implementation/tests and the Login form validation are retained.
   Local verification on 2026-10-30: 547 backend tests passed (91.79% coverage),
   Ruff, 52 frontend tests, build and 2 US02 Edge cases passed. Credential
   scan passed; the existing .env/database hashes were unchanged. OneDrive
   symlink discovery required a temporary test copy outside OneDrive.
   These checks do not establish GitHub CI/review or a merged PR.
 
-- **S4-22 — edit and cancel unprocessed applications (2026-10-30):** added
+- **Edit and cancel unprocessed applications (2026-10-30):** added
   `PATCH /api/loan-applications/{id}` and
   `PATCH /api/loan-applications/{id}/cancel`. Partial edits merge with locked
   persisted data before complete `ApplicationIn`/BR9 validation, recalculate
@@ -50,14 +50,14 @@
   the implemented Score history section. Added viewport captures using synthetic data.
   No existing DB/key, scoring formula, GitHub branch or remote was changed.
 
-- **S4-06 — login validation and exact lock expiry:** email is limited to 254
+- **Login validation and exact lock expiry:** email is limited to 254
   characters and password to 128; blank login values receive clear 422 field errors.
   Validation failures leave the failure counter and lock unchanged. Password text
   is preserved. Added input/body/counter regressions and fixed-clock tests that
   create the three-failure lock, verify exactly 15 minutes and check expiry at
   -1, 0 and +1 microsecond. The existing runtime expiry comparison remains unchanged.
 
-- **S4-05 — application validation and BR9:** missing, blank or null income now returns
+- **Application validation and BR9:** missing, blank or null income now returns
   exactly `Income is required`; monetary/term/CIC inputs reject booleans and malformed
   whole-number text. Optional CIC/text blanks become NULL and text is trimmed before
   length validation. Unknown fields and malformed/non-object bodies receive clear
@@ -93,8 +93,8 @@
 - **Role-focused UI:** Officer dashboard/list emphasize own work and create/score actions; Manager dashboard adds branch-wide all-date review queue, high-risk/eligible counters, employee filters and management link. Navigation and details guidance differ by role. Uses existing authenticated APIs; no data-model or API-contract change.
 - **Frontend checks:** `npm test` runs queue/filter contracts and rendered React route checks for both roles. esbuild 0.25.12 is now explicitly a test/build dev dependency (already used by Vite); CI runs frontend tests before build.
 
-- **S3-37 documentation:** added the scoring-to-Manager-confirmation flow, exact API error messages, approval response contract and code/test traceability. `ui.md` now has all four M3 sections and explains database-backed data plus the approval design change. The approval suite passed 17 checks locally on 2026-10-18; running-app screenshots are now linked in ui.md, while its independent acceptance checklist remains unfilled. US10 edit/cancel and disbursement are not delivered by approval.
+- **Manager approval documentation:** added the scoring-to-Manager-confirmation flow, exact API error messages, approval response contract and code/test traceability. `ui.md` now has all four M3 sections and explains database-backed data plus the approval design change. The approval suite passed 17 checks locally on 2026-10-18; running-app screenshots are now linked in ui.md, while its independent acceptance checklist remains unfilled. US10 edit/cancel and disbursement are not delivered by approval.
 
 - **Documentation alignment (2026-10-18):** corrected model/legacy-route/API/schema descriptions, exact UI error strings, wireframe links, traceability and seed-versus-migration instructions. Added current architecture/ERD SVGs and a canonical sprint-log entry point; synchronized the refined Sprint 3 issue scope and owners without inventing review results or velocity. Dataset ignore paths now match the documented data policy. The requirements baseline is retained; the US09 empty-income wording gap remains explicitly open. Prior local verification: 170 backend tests, 6 frontend tests and a successful production build.
 
-- **GitHub sprint-log reconciliation (2026-10-18):** linked the actual 53 task/chore issues (38 Tasks, 15 Chores, all Closed), corrected assignee counts to Trung 13 / Thành 12 / Hải 13 / Huy 15, separated uncreated S3-16 from additional chore #194, and used actual issue titles/body estimates. Recorded Dashboard #13 as GitHub P1, Open parent stories and the approval/edit-cancel scope gap. The 116-point local plan and 115-point mapped subset remain unverified board estimates; committed/completed/velocity and missing acceptance records are not inferred from Closed issues.
+- **GitHub sprint-log reconciliation (2026-10-18):** linked the actual 53 task/chore issues (38 Tasks, 15 Chores, all Closed), corrected assignee counts to Trung 13 / Thành 12 / Hải 13 / Huy 15, separated an uncreated backlog item from additional chore #194, and used actual issue titles/body estimates. Recorded Dashboard #13 as GitHub P1, Open parent stories and the approval/edit-cancel scope gap. The 116-point local plan and 115-point mapped subset remain unverified board estimates; committed/completed/velocity and missing acceptance records are not inferred from Closed issues.

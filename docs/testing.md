@@ -4,7 +4,7 @@ This document says what the team tests and lists the test cases for the main sto
 
 ## 1. What we test and why
 
-Tests live in `backend/tests` (pytest), `frontend/tests` (node:test) and `frontend/browser` (Playwright). The interface is checked by render tests, by the browser regressions in `frontend/browser` and by the local browser results recorded in `docs/ui.md` (section "P0 completion in this copy"). Public page/redeploy checks are recorded in deployment.md; independent private-window/physical-phone acceptance remains pending.
+Tests live in `backend/tests` (pytest), `frontend/tests` (node:test) and `frontend/browser` (Playwright). The interface is checked by render tests, by the browser regressions in `frontend/browser` and by the local browser results recorded in `docs/ui.md` (section "P0 completion in this copy"). Public page/redeploy checks are recorded in [deployment.md](deployment.md). PR #265 added Incognito public captures and two physical-phone screens, but full independent P0 acceptance remains incomplete: isolated HTTP 422/no-save, current-version persistence, scoring history and complete mobile workflows still need recorded results.
 
 | Layer | Test | Why |
 |---|---|---|
@@ -382,6 +382,6 @@ python scripts/postgres_smoke.py
 
 The last command requires M5_TEST_POSTGRES_URL set to a disposable PG database.
 Frontend npm test/build and Playwright commands remain as documented above.
-Playwright currently starts isolated API/Vite servers; recorded public/redeploy checks do not replace the remaining private/physical-phone/rollback acceptance. Scoring remains rules-v1 without a
-training dependency. See [operations](operations.md), [demo](m5-demo.md) and
+Playwright currently starts isolated API/Vite servers; recorded captures do not replace isolated HTTP 422/no-save, current-version persistence, full P0 mobile acceptance or rollback evidence. Scoring remains rules-v1 without a
+training dependency. See [operations](operations.md) and
 [the evidence checklist](images/operations/README.md).

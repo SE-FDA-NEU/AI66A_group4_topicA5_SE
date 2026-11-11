@@ -1,4 +1,4 @@
-"""S5-01 PostgreSQL migration/seed/persistence checks in a new isolated schema."""
+"""PostgreSQL migration/seed/persistence checks in a new isolated schema."""
 import os
 import sys
 import uuid
@@ -109,7 +109,7 @@ def main():
             assert client.post("/api/auth/logout", headers=officer).status_code == 204
             assert client.get("/api/auth/me", headers=officer).status_code == 401
             assert client.get("/api/auth/me", headers=manager).status_code == 200
-        print("S5-01 PostgreSQL smoke passed: additive migration twice, concurrent seed once, retained users and reconnected persistence.")
+        print("PostgreSQL smoke passed: additive migration twice, concurrent seed once, retained users and reconnected persistence.")
     finally:
         app.dependency_overrides.clear()
         if engine is not None:
@@ -126,4 +126,4 @@ if __name__ == "__main__":
         main()
     except Exception:  # noqa: BLE001
         # DBAPI exception text can contain hostnames or credentials. Keep it local/private.
-        raise SystemExit("S5-01 PostgreSQL smoke failed; inspect the disposable server and configuration privately.") from None
+        raise SystemExit("PostgreSQL smoke failed; inspect the disposable server and configuration privately.") from None
