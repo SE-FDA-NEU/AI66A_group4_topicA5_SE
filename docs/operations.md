@@ -75,7 +75,7 @@ health promptly. [Evidence checklist](images/operations/README.md).
 | Hosting idle/quota/expiry | Infrastructure | Public URL is slow or unavailable | #250: the recorded Free DB expires 2026-12-09 00:07 Vietnam; upgrade/retain data before expiry if grading continues. |
 | Lost encryption keys | Data | Identifiers or backups become unreadable | Accepted: Trung retains separate keys and rehearses restore on disposable DB. |
 | Migration rollback | Data | Old app cannot read a newer schema | Accepted: additive changes, pre-release backup and compatibility check before rollback. |
-| Missing live evidence | Tests | Green CI misses hosted persistence/mobile problems | #245: finish isolated HTTP 422/no-save and full current-version P0 acceptance; PR #265 adds partial Incognito/physical-phone captures, but current persistence, history and rollback evidence remain open. |
+| Missing live evidence | Tests | Green CI misses hosted persistence/mobile problems | #245: live API check on 11 Nov confirmed income 0 returns HTTP 422 and saves no application; the screenshot is not an isolated API check. Full current-version P0, reload/history, persistence and rollback evidence remain open; PR #265 provides partial Incognito/phone captures. |
 | Missing release proof | Docs | URL/tag/CI SHA or submission data disagree | #243: verified metadata/export gate; keep unknown fields null. |
 
 ## 5. Maintenance plan
