@@ -28,8 +28,8 @@
   "repository": "https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE",
   "project_board": "https://github.com/orgs/SE-FDA-NEU/projects/13/views/1",
   "release_v1_0": null,
-  "deployed_commit": "fb2c3dc130e392f370298840ffc873b9d067927a",
-  "latest_green_ci_on_main": "https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/actions/runs/43028281516",
+  "deployed_commit": "12ac633e3ecf6e7ec7cfc67ab5dd7e8f3e5a5749",
+  "latest_green_ci_on_main": "https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/actions/runs/43048831988",
   "branch_protection_screenshot": null,
   "merged_m5_prs": [
     257,
@@ -38,28 +38,32 @@
     260,
     261,
     262,
-    265
+    263,
+    264,
+    265,
+    266,
+    267,
+    268
   ],
   "status": "deployed_pending_final_acceptance",
   "scoring_engine": "rules-v1",
   "offline_ai_training_in_scope": false,
-  "ci_commit": "eee6938867ed31844d4e00b2098c19d0f57d4f7d",
-  "ci_run_duration_seconds": 180,
+  "ci_commit": "12ac633e3ecf6e7ec7cfc67ab5dd7e8f3e5a5749",
+  "ci_run_duration_seconds": null,
   "evidence_checked_on": "2026-11-11",
   "release_alignment": {
-    "live_matches_latest_main_ci": null,
-    "observed_live_commit": "fb2c3dc130e392f370298840ffc873b9d067927a",
-    "latest_main_ci_commit": "eee6938867ed31844d4e00b2098c19d0f57d4f7d",
-    "action": "Current live health/SHA could not be rechecked on 2026-11-11; verify and align before tagging v1.0.",
-    "last_live_health_check": "2026-11-09"
+    "live_matches_latest_main_ci": true,
+    "observed_live_commit": "12ac633e3ecf6e7ec7cfc67ab5dd7e8f3e5a5749",
+    "latest_main_ci_commit": "12ac633e3ecf6e7ec7cfc67ab5dd7e8f3e5a5749",
+    "action": "Live, main and green CI match at 12ac633; tag this commit v1.0 after remaining acceptance evidence is recorded.",
+    "last_live_health_check": "2026-11-11"
   },
   "evidence_pending": [
-    "Verify current live health/SHA and align it with the latest green-main CI before tagging v1.0",
     "Rollback rehearsal; isolated HTTP 422/no-save and complete P0 acceptance, including current-version persistence and history",
     "Capture the two M3 feedback improvements before/after with genuine evidence",
     "Member student IDs and actual branch-protection settings screenshot/rules",
-    "Verify a successful scheduled public health-monitor run after the metadata URL fallback is merged",
+    "Confirm a successful scheduled (not manual) public health-monitor run",
     "Final submission after all evidence is verified"
   ],
-  "deployed_commit_verified_on": "2026-11-09"
+  "deployed_commit_verified_on": "2026-11-11"
 }

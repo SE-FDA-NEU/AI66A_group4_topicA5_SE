@@ -7,8 +7,9 @@ local screenshot as production, or a current screenshot as an M3 "before".
 ## Public browser captures — 11 November 2026 (Vietnam)
 
 The following 11 images were supplied for this update. The desktop captures
-were taken in Chrome Incognito on the public Render HTTPS host; two captures
-were taken at a Chrome DevTools responsive viewport; two were taken on a
+were taken in Chrome Incognito on the public Render HTTPS host (seven files; the
+login capture also has DevTools open in a responsive layout); two further captures
+were taken at a 390 × 884 Chrome DevTools responsive viewport; two were taken on a
 physical phone.
 
 | File | Evidence |

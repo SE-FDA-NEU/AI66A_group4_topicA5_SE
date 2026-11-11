@@ -10,8 +10,8 @@ Release: reviewed PR → `main` → green **M5 release gate** → Render **After
 Pass** → `/health`, P0 and persistence checks. Record the live SHA, then tag that
 commit `v1.0`. Reload/redeploy persistence was recorded on 9 Nov. PR #265 added Incognito
 public and physical-phone captures on 11 Nov, but these cover only part of the
-full acceptance flow. Current live SHA is unverified; rollback and v1.0 remain
-pending.
+full acceptance flow. On 11 Nov the live SHA matched `main` and green CI at `12ac633`; complete P0
+acceptance on that version, rollback and v1.0 remain pending.
 
 Rollback: choose the last successful Render deploy. Confirm database/schema and
 encryption-key compatibility first; app rollback does not restore database data.
@@ -21,10 +21,10 @@ Checks Pass** after the correction is green. [Render rollback](https://render.co
 
 ## 2. The CI pipeline
 
-Latest verified [green main run](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/actions/runs/43028281516): `eee6938`, 2026-11-11, six jobs, about **3 minutes** elapsed.
-The last live health/SHA check is dated 9 Nov (`fb2c3dc`); this audit could not
-recheck the endpoint. Current live/main alignment is therefore unknown; verify
-the live SHA before tagging v1.0.
+Latest verified [green main run](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/actions/runs/43048831988): `12ac633`, push to `main`, success (checked 2026-11-11).
+On 2026-11-11 live `/health` returned 200 `ok` with `X-App-Commit` `12ac633`, equal to
+`origin/main`, so live, main and green CI match. The 9 Nov check (`fb2c3dc`) and
+earlier CI runs (`eee6938`) are historical.
 
 | Job | What it checks | Observed duration |
 |---|---|---|
@@ -51,10 +51,12 @@ credentials and personal identifiers. Production starts with Uvicorn access logs
 `/health` queries the users table: 200 `ok` for working DB/schema, 503 `unavailable`
 on SQL errors, with no-store. `X-App-Commit` identifies the deployment when configured.
 Run `scripts/check_live.py` to check the HTTPS URL from `PUBLIC_APP_URL` or
-`docs/m5-release.json`. The workflow update in this branch removes the repository-variable gate
- and uses the metadata URL as its fallback after merge. The last run
+`docs/m5-release.json`. The repository-variable gate removal is merged on `main`; the monitor
+uses the metadata URL as its fallback. Run
 [43028363826](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/actions/runs/43028363826)
-was skipped by the previous variable gate; confirm the next scheduled run succeeds.
+was skipped by the previous variable gate (historical). Manual run
+[43048982915](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/actions/runs/43048982915) succeeded on `12ac633`; a successful
+**scheduled** run is still to be confirmed. The monitor checks health only, not the SHA.
 
 | Signal | Proposed alert | Response / owner |
 |---|---|---|
@@ -72,7 +74,8 @@ health promptly. [Evidence checklist](images/operations/README.md).
 | Rules-based score | Code | A demo score is mistaken for a lending prediction | Accepted: rules-v1 demonstrates workflow only; no real credit decisions. |
 | Hosting idle/quota/expiry | Infrastructure | Public URL is slow or unavailable | #250: the recorded Free DB expires 2026-12-09 00:07 Vietnam; upgrade/retain data before expiry if grading continues. |
 | Lost encryption keys | Data | Identifiers or backups become unreadable | Accepted: Trung retains separate keys and rehearses restore on disposable DB. |
-| Migration rollback | Data | Old app cannot read a newer schema | Accepted: additive changes, pre-release backup and compatibility check before rollback. |Missing live evidence | Tests | Green CI misses hosted persistence/mobile problems | #245: finish isolated HTTP 422/no-save and full current-version P0 acceptance; PR #265 adds partial Incognito/physical-phone captures, but current persistence, history and rollback evidence remain open. |
+| Migration rollback | Data | Old app cannot read a newer schema | Accepted: additive changes, pre-release backup and compatibility check before rollback. |
+| Missing live evidence | Tests | Green CI misses hosted persistence/mobile problems | #245: finish isolated HTTP 422/no-save and full current-version P0 acceptance; PR #265 adds partial Incognito/physical-phone captures, but current persistence, history and rollback evidence remain open. |
 | Missing release proof | Docs | URL/tag/CI SHA or submission data disagree | #243: verified metadata/export gate; keep unknown fields null. |
 
 ## 5. Maintenance plan

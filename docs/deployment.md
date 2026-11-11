@@ -6,12 +6,13 @@ The dated deployment record below documents actual public/redeploy checks.
 
 ## Release alignment and safe rollback
 
-The recorded read-only health check on 2026-11-09 returned `ok` and live SHA
-`fb2c3dc130e392f370298840ffc873b9d067927a`. Latest verified green-main CI is now
-[run 43028281516](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/actions/runs/43028281516), SHA `eee6938867ed31844d4e00b2098c19d0f57d4f7d`,
-six successful jobs, about 180 seconds (11 November). The live endpoint timed out
-from the 11 November audit environment, so current live health/SHA and alignment
-are unverified. Treat the 9 November SHA difference as historical; recheck before v1.0.
+On 2026-11-11 (about 23:28 Vietnam time) a read-only check found live `/health`
+HTTP 200 `ok` with `X-App-Commit`
+`12ac633e3ecf6e7ec7cfc67ab5dd7e8f3e5a5749`, equal to `origin/main` (merge of PR #267).
+Latest green-main CI is [run 43048831988](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/actions/runs/43048831988) on the same commit
+(push, success). Live, main and green CI therefore match at `12ac633`. The 9 November
+state (live `fb2c3dc`, CI `cd273ab`) and the earlier 11 November run `eee6938`
+are historical.
 
 Use the current Blueprint/account setup below. Keep database, region and existing
 keys stable; do not regenerate secrets or replace a database during this docs update.
@@ -26,7 +27,8 @@ Hosted rollback rehearsal remains pending.
 
 Update the README first line and m5-release.json together whenever the URL/version
 changes. GitHub PUBLIC_APP_URL is an optional override; otherwise the monitor reads
-running_app from m5-release.json. Confirm a scheduled run succeeds after merge.
+running_app from m5-release.json. The gate removal is merged; manual monitor run 43048982915 succeeded on `12ac633`,
+but a successful scheduled run is still to be confirmed. The monitor checks health only, not the SHA.
 Student IDs, protection screenshot, actual review evidence and v1.0 still need completion.
 Release verification tools and offline tests are implemented. Final PDF export remains gated on complete, verified release evidence in the metadata.
 
@@ -219,7 +221,7 @@ References: [SQLAlchemy psycopg dialect](https://docs.sqlalchemy.org/en/20/diale
 | Item | Actual result |
 |---|---|
 | Public HTTPS app | [credit-score-team04-03or.onrender.com](https://credit-score-team04-03or.onrender.com) |
-| Application commit | `fb2c3dc130e392f370298840ffc873b9d067927a` on `main`; confirmed by `X-App-Commit` |
+| Application commit | `fb2c3dc130e392f370298840ffc873b9d067927a` on `main` at the 9 Nov check; confirmed by `X-App-Commit` |
 | Required CI | [Run 42501981538](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/actions/runs/42501981538): all six checks succeeded; run interval 16:51:11–16:54:08 UTC (2m 57s) |
 | Render service | [credit-score-team04-03or](https://dashboard.render.com/web/srv-dboaqu3rjlhs73at8pfg), Free, Oregon, `checksPass`, `/health` |
 | Initial deploy | `dep-dboaqubrjlhs73at8qu0`: live |
@@ -253,9 +255,10 @@ assertion, full phone P0 flow, current-deployment reload check, or scoring-histo
 live capture is included. Do not relabel the 9 November redeploy evidence as a
 current-version check.
 
-Still pending: rollback rehearsal, current live health/SHA verification, actual
-branch-protection evidence, monitor activation, and the `v1.0` tag. GitHub main
-CI run 43028281516 is green; monitor run 43028363826 was skipped. The Blueprint
+Still pending: rollback rehearsal, current-version (`12ac633`) persistence and P0
+acceptance evidence, actual branch-protection evidence, a successful scheduled
+monitor run, and the `v1.0` tag. GitHub main CI run 43048831988 is green on `12ac633`;
+earlier monitor run 43028363826 was skipped (historical). The Blueprint
 configuration follow-up needs review/merge before pointing the Blueprint back to
 `main`. The Free database expiry must be addressed if grading continues beyond
 9 December 2026.

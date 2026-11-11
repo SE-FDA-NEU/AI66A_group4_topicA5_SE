@@ -134,13 +134,17 @@ are reused; The app supplies server-side revocation and corresponding UI behavio
 |---|---|---|---|
 | Durable data/seed/backup | database.py, deployment.py, seed.py and backup/PG smoke | #240 / [#257](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/pull/257) | Disposable DB checks; 9 Nov public reload/redeploy retained data; PR #265 added partial Incognito/phone captures; rollback and complete acceptance pending |
 | SPA routes | frontend.py, main.py static mount | #241 / [#258](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/pull/258) | Static regression; PR #265 added address-bar-visible Incognito and physical-phone screen captures; complete P0 flow remains unverified |
-| CI release gate/monitor | ci.yml, monitor.yml, check_secrets.py, check_live.py | #242 / [#259](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/pull/259) | [Main CI](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/actions/runs/43028281516) green on 11 Nov; monitor fallback now reads the release metadata URL; next scheduled run and protection evidence remain to verify |
-| Health/logging | main.py /health and observability.py | #244 / [#260](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/pull/260) | Automated 200/503 and safe-log checks; last live /health ok on 9 Nov; current live SHA/alignment unverified |
+| CI release gate/monitor | ci.yml, monitor.yml, check_secrets.py, check_live.py | #242 / [#259](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/pull/259) | [Main CI](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/actions/runs/43048831988) green on `12ac633` (11 Nov); monitor fallback merged, manual run 43048982915 succeeded; a successful scheduled run and protection evidence remain to verify |
+| Health/logging | main.py /health and observability.py | #244 / [#260](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/pull/260) | Automated 200/503 and safe-log checks; live /health ok with `X-App-Commit` `12ac633` on 11 Nov, matching main and green CI |
 | Render foundation | render.yaml, start.py, render-build.sh | #250 / [#261](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/pull/261) | Config merged; Reload/redeploy retention recorded; rollback still pending |
 | Operations/release metadata | README, operations, deployment, m5-release | [#252](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/issues/252) | This documentation work; no fabricated URL/release/evidence |
 
+Merged M5 PRs recorded in the metadata are #257-#268 (#266 was reverted by #268;
+#267 was the docs/CI evidence update). On 2026-11-11 live, `origin/main` and green
+main CI (run 43048831988) all matched at `12ac633`.
+
 Release verification tools are implemented. Final PDF export still requires
-real student IDs, a v1.0 tag, verified live/latest-green-main SHA alignment,
+real student IDs, a v1.0 tag,
 branch-protection evidence and per-member PR/review records. PR #265 added public
 Incognito and physical-phone captures, but isolated HTTP 422/no-save, complete P0
 workflow and before/after feedback evidence remain incomplete. Record each result
