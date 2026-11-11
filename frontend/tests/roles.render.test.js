@@ -1,18 +1,10 @@
 // Render the actual routes without browser effects or requests to the user DB.
 import test from "node:test";
 import assert from "node:assert/strict";
-import { build } from "esbuild";
-import { mkdtemp, writeFile, unlink, rmdir } from "node:fs/promises";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
-import { createRequire } from "node:module";
-import { fileURLToPath } from "node:url";
-
-const FRONTEND_DIR = fileURLToPath(new URL("..", import.meta.url));
+import { loadBundle } from "./render-helper.js";
 
 test("role-specific navigation, dashboard and employee route render correctly", async () => {
-  const result = await build({
-    stdin: { contents: `
+  const { mod, cleanup } = await loadBundle(`
       import React from "react";
       import {renderToStaticMarkup} from "react-dom/server";
       import {MemoryRouter} from "react-router-dom";
@@ -24,16 +16,10 @@ test("role-specific navigation, dashboard and employee route render correctly", 
         return renderToStaticMarkup(React.createElement(MemoryRouter, {initialEntries:[route]},
           React.createElement(ThemeProvider, null, React.createElement(AuthProvider, null, React.createElement(App)))));
       };
-    `, resolveDir: FRONTEND_DIR, loader: "jsx" },
-    bundle: true, platform: "node", format: "cjs", write: false, jsx: "automatic",
-    define: { "process.env.NODE_ENV": '"production"' },
-  });
-  const directory = await mkdtemp(join(tmpdir(), "credit-role-render-"));
-  const output = join(directory, "routes.cjs");
+    `);
   const previousStorage = globalThis.sessionStorage;
   try {
-    await writeFile(output, result.outputFiles[0].text);
-    const { render } = createRequire(import.meta.url)(output);
+    const { render } = mod;
     const manager = render("admin", "/dashboard");
     assert.ok(manager.includes("Branch review overview") && manager.includes("Open review queue"));
     assert.ok(manager.includes("Employees") && manager.includes("manager-bar"));
@@ -46,7 +32,6 @@ test("role-specific navigation, dashboard and employee route render correctly", 
   } finally {
     if (previousStorage === undefined) delete globalThis.sessionStorage;
     else globalThis.sessionStorage = previousStorage;
-    await unlink(output);
-    await rmdir(directory);
+    await cleanup();
   }
 });
