@@ -103,7 +103,13 @@ Calls: `POST /api/loan-applications`, then `POST /api/loan-applications/{id}/sco
 The wireframe preserves the required-field design. An empty, blank,
 missing or null income return "Income is required" from the API; malformed numeric
 input returns "Monthly income must be a whole number." The API saves nothing on
-validation failure. Independent browser acceptance and a new error capture remain pending.
+validation failure. A production Incognito capture is now available at
+[the multiple-field validation screenshot](images/operations/live-p0-validation-multiple-fields-incognito.jpg).
+It shows clear field-level errors, including monthly income equal to zero, but
+also contains other invalid fields. It therefore does **not** isolate BR2 with
+all other fields valid. Confirm the isolated income-zero case and no-save
+behavior through the live browser/network and application list before marking
+US09 independently accepted.
 
 
 ### 2.4 Application details `/loan-applications/:id`
@@ -309,3 +315,40 @@ Independent human acceptance and GitHub CI/review remain separate.
 ![Manager notification stays read after reopening](images/ui/p2-notifications-read-persisted.png)
 
 ![Exactly two persisted attempts in the Scoring history tab](images/ui/p1-history-two-attempts.png)
+
+
+## 5. Public browser evidence — 11 November 2026 (Vietnam)
+
+The following captures were supplied from the deployed HTTPS application. Desktop
+captures were taken in Chrome Incognito and show the public host in the address
+bar. They are visual evidence of the displayed states, not a substitute for
+recording every click, API response or persistence assertion.
+
+| Evidence | Capture | What it shows / limitation |
+|---|---|---|
+| Login page | ![Login page in Chrome Incognito](images/operations/live-p0-login-incognito-responsive.jpg) | Public login screen in an Incognito session with DevTools open. This is the login page, not a failed-login or successful-login result. |
+| Authenticated Officer dashboard | ![Officer dashboard](images/operations/live-p0-dashboard-incognito.jpg) | Officer workspace and empty daily summary at capture time. |
+| Applications list | ![Eight applications](images/operations/live-p0-applications-list-incognito-8-records.jpg) | Eight records visible in the Officer's list. |
+| Valid application input | ![Valid application form](images/operations/live-p0-new-application-valid-incognito.jpg) | Populated form with income 20,000,000 VND, loan 100,000,000 VND, 24-month term, payment 5,000,000 VND and CIC group 1. Protected identifier values have been redacted in this documentation copy. |
+| Scored application details | ![Score details](images/operations/live-p0-score-details-incognito.jpg) | Score 95/100, eligibility label, rules-v1 factors and application data. |
+| Validation errors | ![Multiple field validation errors](images/operations/live-p0-validation-multiple-fields-incognito.jpg) | Clear field-level validation for several invalid values, including income 0. This is a multiple-error example, not an isolated income-only BR2 test. |
+| Applications list after additional submissions | ![Ten applications](images/operations/live-p0-applications-list-incognito-10-records.jpg) | Ten records visible. The two list captures show different record counts; by themselves they do not prove a reload or database persistence test. |
+| Responsive dashboard | ![390 by 884 responsive dashboard](images/operations/live-mobile-dashboard-390x884-devtools.jpg) | Chrome DevTools responsive viewport explicitly reports 390 × 884 CSS pixels. |
+| Responsive validation | ![390 by 884 responsive validation](images/operations/live-mobile-validation-390x884-devtools.jpg) | Validation layout at the same 390 × 884 responsive viewport. |
+| Physical phone dashboard | ![Physical phone dashboard](images/operations/physical-phone-dashboard.jpg) | Screenshot from a real phone browser; the visible page is the Officer dashboard. |
+| Physical phone validation | ![Physical phone validation](images/operations/physical-phone-validation.jpg) | Screenshot from a real phone browser showing validation messages. |
+
+Capture timestamps in the supplied filenames correspond to 11 November 2026
+Vietnam time. The two physical-phone captures show the mobile browser's address
+area; the full desktop Incognito captures show the Render host.
+
+**Acceptance limits:** the supplied images do not independently prove (1) a
+successful login click and response, (2) an isolated income=0 request returning
+HTTP 422 with all other fields valid, (3) that the invalid submission created no
+record, (4) that the same record survived a deliberate browser reload, or
+(5) persistence after a new Render redeploy. The deployment record dated
+9 November documents the earlier reload/redeploy persistence check; retain its
+date and scope rather than presenting these 11 November captures as that test.
+The existing local Scoring history screenshot is not a live production history
+capture. No M3 Before/After or feedback evidence was supplied, so that
+comparison is intentionally not claimed in this package.

@@ -260,6 +260,28 @@ configuration follow-up needs review/merge before pointing the Blueprint back to
 `main`. The Free database expiry must be addressed if grading continues beyond
 9 December 2026.
 
+## Additional public browser captures — 11 November 2026 (Vietnam)
+
+A separate set of 11 screenshots was supplied after the 9 November deployment
+record. The desktop images show the Render HTTPS host in Chrome Incognito; the
+responsive DevTools captures report a 390 × 884 CSS-pixel viewport; two further
+images are from a physical phone. See the [operations evidence index](images/operations/README.md)
+for the renamed files and exact scope.
+
+The new set shows the public login page, an authenticated Officer dashboard,
+application lists with eight and ten records, a populated valid application
+form, a 95/100 scored-details page, multiple field-validation errors, the
+responsive dashboard/validation states and physical-phone dashboard/validation.
+The valid-form documentation copy has the Citizen ID and bank-account values
+redacted.
+
+These screenshots are visual captures only. They do not independently establish
+the HTTP 422 response, no-save behavior, a reload persistence assertion, a new
+Render redeploy persistence assertion or complete P0 acceptance. Keep the
+9 November persistence/redeploy evidence above as a separate dated test record;
+do not attribute its result to the 11 November images. The validation screenshot
+contains several invalid fields, so it is not an isolated BR2 income-zero test.
+
 ## Backup and rollback
 
 Normal rollback is a reviewed `git revert` followed by green CI and deployment.
