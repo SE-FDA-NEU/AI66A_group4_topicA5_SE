@@ -4,10 +4,13 @@ import { mkdtemp, writeFile, unlink, rmdir } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createRequire } from "node:module";
+import { fileURLToPath } from "node:url";
+
+const FRONTEND_DIR = fileURLToPath(new URL("..", import.meta.url));
 
 export async function loadBundle(contents) {
   const result = await build({
-    stdin: { contents, resolveDir: process.cwd(), loader: "jsx" },
+    stdin: { contents, resolveDir: FRONTEND_DIR, loader: "jsx" },
     bundle: true, platform: "node", format: "cjs", write: false, jsx: "automatic",
     define: { "process.env.NODE_ENV": '"production"' },
   });

@@ -6,6 +6,9 @@ import { mkdtemp, writeFile, unlink, rmdir } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createRequire } from "node:module";
+import { fileURLToPath } from "node:url";
+
+const FRONTEND_DIR = fileURLToPath(new URL("..", import.meta.url));
 
 test("role-specific navigation, dashboard and employee route render correctly", async () => {
   const result = await build({
@@ -21,7 +24,7 @@ test("role-specific navigation, dashboard and employee route render correctly", 
         return renderToStaticMarkup(React.createElement(MemoryRouter, {initialEntries:[route]},
           React.createElement(ThemeProvider, null, React.createElement(AuthProvider, null, React.createElement(App)))));
       };
-    `, resolveDir: process.cwd(), loader: "jsx" },
+    `, resolveDir: FRONTEND_DIR, loader: "jsx" },
     bundle: true, platform: "node", format: "cjs", write: false, jsx: "automatic",
     define: { "process.env.NODE_ENV": '"production"' },
   });
