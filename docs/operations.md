@@ -4,11 +4,14 @@
 
 Public HTTPS URL: [https://credit-score-team04-03or.onrender.com](https://credit-score-team04-03or.onrender.com). Platform: Render Web Service plus Render Free PostgreSQL in Oregon. [Deployment](deployment.md) gives exact commands, environment settings
 and encrypted backup/restore instructions. Use synthetic demo accounts from README.
-Keep app/DB online through 2026-11-30 and until grades are published.
+Availability objective: maintain service and database access for the required evaluation period. The hosted database has a recorded expiry of 2026-12-09 00:07 Vietnam time. Plan retention or encrypted export before that date.
 
 Release: reviewed PR → `main` → green **M5 release gate** → Render **After CI Checks
 Pass** → `/health`, P0 and persistence checks. Record the live SHA, then tag that
-commit `v1.0`. Deployment/redeploy persistence is recorded; rollback, private/physical-phone acceptance and v1.0 remain pending.
+commit `v1.0`. Reload/redeploy persistence was recorded on 9 Nov. PR #265 added Incognito
+public and physical-phone captures on 11 Nov, but these cover only part of the
+full acceptance flow. Current live SHA is unverified; rollback and v1.0 remain
+pending.
 
 Rollback: choose the last successful Render deploy. Confirm database/schema and
 encryption-key compatibility first; app rollback does not restore database data.
@@ -18,8 +21,10 @@ Checks Pass** after the correction is green. [Render rollback](https://render.co
 
 ## 2. The CI pipeline
 
-Verified [green main run](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/actions/runs/42505446604): `cd273ab`, 2026-11-09, about **2m 55s** elapsed.
-Jobs run partly in parallel. Live health is good at `fb2c3dc`; main CI is for `cd273ab`. Align them before v1.0 and refresh after merge.
+Latest verified [green main run](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/actions/runs/43028281516): `eee6938`, 2026-11-11, six jobs, about **3 minutes** elapsed.
+The last live health/SHA check is dated 9 Nov (`fb2c3dc`); this audit could not
+recheck the endpoint. Current live/main alignment is therefore unknown; verify
+the live SHA before tagging v1.0.
 
 | Job | What it checks | Observed duration |
 |---|---|---|
@@ -45,9 +50,11 @@ credentials and personal identifiers. Production starts with Uvicorn access logs
 
 `/health` queries the users table: 200 `ok` for working DB/schema, 503 `unavailable`
 on SQL errors, with no-store. `X-App-Commit` identifies the deployment when configured.
-Run `scripts/check_live.py` against the actual URL. The hourly Actions monitor needs
-`PUBLIC_APP_URL`; its latest observed scheduled run was skipped, so active monitoring
-is not yet established.
+Run `scripts/check_live.py` to check the HTTPS URL from `PUBLIC_APP_URL` or
+`docs/m5-release.json`. The workflow update in this branch removes the repository-variable gate
+ and uses the metadata URL as its fallback after merge. The last run
+[43028363826](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/actions/runs/43028363826)
+was skipped by the previous variable gate; confirm the next scheduled run succeeds.
 
 | Signal | Proposed alert | Response / owner |
 |---|---|---|
@@ -65,8 +72,7 @@ health promptly. [Evidence checklist](images/operations/README.md).
 | Rules-based score | Code | A demo score is mistaken for a lending prediction | Accepted: rules-v1 demonstrates workflow only; no real credit decisions. |
 | Hosting idle/quota/expiry | Infrastructure | Public URL is slow or unavailable | #250: the recorded Free DB expires 2026-12-09 00:07 Vietnam; upgrade/retain data before expiry if grading continues. |
 | Lost encryption keys | Data | Identifiers or backups become unreadable | Accepted: Trung retains separate keys and rehearses restore on disposable DB. |
-| Migration rollback | Data | Old app cannot read a newer schema | Accepted: additive changes, pre-release backup and compatibility check before rollback. |
-| Missing live evidence | Tests | Green CI misses hosted persistence/mobile problems | #245: finish private/physical-phone and address-bar-visible evidence; existing public/redeploy checks do not cover those. |
+| Migration rollback | Data | Old app cannot read a newer schema | Accepted: additive changes, pre-release backup and compatibility check before rollback. |Missing live evidence | Tests | Green CI misses hosted persistence/mobile problems | #245: finish isolated HTTP 422/no-save and full current-version P0 acceptance; PR #265 adds partial Incognito/physical-phone captures, but current persistence, history and rollback evidence remain open. |
 | Missing release proof | Docs | URL/tag/CI SHA or submission data disagree | #243: verified metadata/export gate; keep unknown fields null. |
 
 ## 5. Maintenance plan

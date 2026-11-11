@@ -27,7 +27,7 @@ frontend/dist/
 frontend/test-results/
 frontend/playwright-report/
 
-# S5-01: raw datasets, offline model artifacts and database backups
+# Raw datasets, offline model artifacts and database backups
 dataset/
 *.joblib
 *.sql

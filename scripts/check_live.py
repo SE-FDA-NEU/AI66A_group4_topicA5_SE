@@ -9,15 +9,23 @@ import urllib.request
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--url", default=os.environ.get("PUBLIC_APP_URL", ""))
+    parser.add_argument("--url", help="Public HTTPS app URL; defaults to PUBLIC_APP_URL or docs/m5-release.json")
     parser.add_argument("--expect-commit")
     parser.add_argument("--allow-local", action="store_true")
     args = parser.parse_args()
-    if not args.url.startswith("https://") and not (args.allow_local and args.url.startswith("http://127.0.0.1:")):
-        raise SystemExit("Set PUBLIC_APP_URL to the public HTTPS app URL.")
+    url = (args.url or os.environ.get("PUBLIC_APP_URL", "")).strip()
+    if not url:
+        metadata = os.path.join(os.path.dirname(os.path.dirname(__file__)), "docs", "m5-release.json")
+        try:
+            with open(metadata, encoding="utf-8") as source:
+                url = json.load(source).get("running_app", "").strip()
+        except (OSError, json.JSONDecodeError, AttributeError):
+            url = ""
+    if not url.startswith("https://") and not (args.allow_local and url.startswith("http://127.0.0.1:")):
+        raise SystemExit("Provide --url, set PUBLIC_APP_URL, or configure running_app in docs/m5-release.json.")
     started = time.perf_counter()
     try:
-        with urllib.request.urlopen(args.url.rstrip("/") + "/health", timeout=90) as response:
+        with urllib.request.urlopen(url.rstrip("/") + "/health", timeout=90) as response:
             data = json.load(response)
             assert response.status == 200 and data.get("status") == "ok", "Unhealthy response"
             revision = response.headers.get("X-App-Commit")

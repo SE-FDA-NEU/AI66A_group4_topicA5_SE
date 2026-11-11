@@ -8,8 +8,10 @@
 | US03 Input a loan application | New application | `/loan-applications/new` | partly works (implemented; independent browser acceptance pending; saves, flags High risk when DSR > 50%, scores right away) | #10 |
 | US04 View the credit score with explanations | Application details | `/loan-applications/:id` | partly works (implemented; independent browser acceptance pending; score 0-100, label, factors, CIC group; deterministic scorer `rules-v1`; no offline training in M5 scope) | #11 |
 | US08 Overview dashboard | Dashboard | `/dashboard` | partly works (implemented; independent browser acceptance pending; today's total, average score, high-risk count; shows "0 applications today" when empty) | #13 |
-| US09 Alert on missing or malformed data | New application | `/loan-applications/new` | partly works (field errors and no-save behavior implemented; API required-income wording fixed in S4-05; independent browser acceptance pending) | #14 |
+| US09 Alert on missing or malformed data | New application | `/loan-applications/new` | partly works (field errors and no-save behavior implemented; API required-income wording fixed; independent browser acceptance pending) | #14 |
 | US10 Edit/cancel unprocessed application | Edit application and Application details | `/loan-applications/:id/edit`, `/loan-applications/:id` | works (owner/Admin edit and confirmed cancel; processed-state and access guards tested) | #22 |
+
+**Public acceptance evidence update (11 November 2026):** [PR #265](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/pull/265) added Incognito captures of public screens and physical-phone captures of the Dashboard and validation. These are useful visual evidence, but do not establish the isolated HTTP 422/no-save checks or a complete P0 flow on a phone. The independent acceptance checklist remains open; see [deployment evidence](deployment.md#additional-public-browser-captures--11-november-2026-vietnam).
 
 Also built, not P0: `/loan-applications` (list, P1, US05 partly) so a person can reach any application without typing a URL. US10 management controls are available from Details only while the application is pending and has no scoring result.
 
@@ -60,7 +62,7 @@ Calls: `POST /api/auth/login`
 
 ![Wireframe 1](images/ui/wireframe-1.svg)
 
-**S4-25 — Login field validation:** empty or whitespace-only credentials show
+**Login field validation:** empty or whitespace-only credentials show
 `Email is required.` / `Password is required.`. Email is limited to 254 Unicode
 characters and password to 128, matching the existing API limits; exceeding
 either shows `Email must not exceed 254 characters.` /
@@ -98,7 +100,7 @@ Calls: `POST /api/loan-applications`, then `POST /api/loan-applications/{id}/sco
 
 ![New application wireframe](images/ui/wireframe-2.svg)
 
-The wireframe preserves the required-field design. S4-05 makes an empty, blank,
+The wireframe preserves the required-field design. An empty, blank,
 missing or null income return "Income is required" from the API; malformed numeric
 input returns "Monthly income must be a whole number." The API saves nothing on
 validation failure. Independent browser acceptance and a new error capture remain pending.
@@ -198,7 +200,7 @@ fields and submit again." and the message beside the field.
 | `201` (not an error) | BR4 (CIC group 4 example) | Score shows "-", label "Recommendation Rejected", reason: "CIC debt group 4 (bad debt). Groups 3-5 are rejected automatically." |
 | `201` (not an error) | BR1 (score out of range) | "The model returned an invalid score, so no score is shown. A manager will review this application." |
 
-**S4-05 API validation:** an empty income string now follows the required-field
+**API validation:** an empty income string now follows the required-field
 branch and returns exactly "Income is required". Whitespace-only, null and omitted
 income use the same message. Regression tests cover these inputs, BR9 and no-save
 behavior. Automated API results do not establish independent browser acceptance.
@@ -239,7 +241,7 @@ US07 adds Manager-only Notifications, a 30-second counter and persisted read sta
 
 ![Monthly income validation error](images/ui/income-validation-error.png)
 
-This existing Sprint 3 capture is historical evidence; it is not a new capture proving the S4-05 message.
+This existing Sprint 3 capture is historical evidence; it is not a new capture proving the current validation message.
 
 ![Manager filters by eligibility and employee](images/ui/manager-application-filters.png)
 
@@ -287,7 +289,7 @@ the separately required address-bar screenshots for the LMS submission.
 ![Income validation on a 375 px viewport](images/ui/p0-mobile-validation.png)
 
 
-### S4-24 — logout session and cache protection
+### Logout session and cache protection
 
 Log out in the top bar calls `POST /api/auth/logout`, clears local session data
 and returns to Login immediately. Back must not restore private pages; another

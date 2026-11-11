@@ -80,7 +80,7 @@ With the default SQLite configuration, this creates `credit_scoring.db` (all 6 t
 | `thanh@branch.vn` | Manager (Admin) | all 12 applications |
 Running it again prints `Data already present, skipping seed.` and changes nothing.
 
-S5-01 adds optional current-day demo data: `python -m app.seed --current-demo`
+Optional current-day demo data can be created with `python -m app.seed --current-demo`
 dates four sample loans today when seeding an empty database. Alternatively,
 `SEED_DEMO=true` enables that same empty-only seed during API startup; its default
 is `false`. It never refreshes dates or resets accounts in an existing database.
@@ -154,7 +154,7 @@ Sprint 2:
 > Tested by: **Nguyễn Hoàng Tuấn**, on a Windows machine, on 4/10/2026, took about 5 minutes.
 
 
-## S4-22 edit/cancel demo
+## Edit/cancel demo
 
 Sign in as `hoang@branch.vn`, create an application and open it from **My
 applications** while it still shows **Scoring in progress** and has no score.
@@ -229,7 +229,7 @@ the existing GitHub workflow runs Playwright or that an independent review occur
 Official browser installation/reference: [Playwright browsers](https://playwright.dev/docs/browsers).
 
 
-## S4-24 logout verification
+## Logout verification
 
 Run the existing migration command (`python -m app.migrate` from backend/ with
 the documented environment) before restarting the API; it additively creates
@@ -251,7 +251,7 @@ npm run test:e2e -- --grep "US02"
 If Playwright reports `No tests found` under OneDrive, check whether the
 browser test files are cloud reparse points/symlinks: Playwright skips those
 entries during discovery. A physical checkout outside OneDrive avoids this
-local discovery issue. The S4-24 local checks used a temporary physical test
+local discovery issue. The local checks used a temporary physical test
 copy outside OneDrive, with the original app/web-server configuration.
 
 For a manual check, sign in in two separate browser contexts. Log out of one,
@@ -291,5 +291,5 @@ the legacy HTML list is not registered. Unknown API/asset/hidden paths remain 40
 The public URL is https://credit-score-team04-03or.onrender.com. Keep README/release metadata synchronized, configure PUBLIC_APP_URL, then verify the intended live commit and remaining public P0 acceptance.
 
 Release evidence and maintenance: [operations](operations.md),
-[demo](m5-demo.md), [metadata](m5-release.json). The S5-17 PDF/log-summary tools are
-not yet in this checkout; do not run absent scripts or claim final submission.
+[metadata](m5-release.json). Release verification scripts and offline tests are
+implemented. Final PDF export requires complete, verified release evidence.
