@@ -5,6 +5,7 @@ import { loadBundle } from "./render-helper.js";
 
 let bundle;
 let render;
+let renderManager;
 
 before(async () => {
   bundle = await loadBundle(`
@@ -12,10 +13,13 @@ before(async () => {
     import {renderToStaticMarkup} from "react-dom/server";
     import {MemoryRouter} from "react-router-dom";
     import {OfficerView} from "./src/pages/OfficerDashboard.jsx";
+    import {ManagerView} from "./src/pages/ManagerDashboard.jsx";
     export const render = (props) => renderToStaticMarkup(
       React.createElement(MemoryRouter, null, React.createElement(OfficerView, props)));
+    export const renderManager = (props) => renderToStaticMarkup(
+      React.createElement(MemoryRouter, null, React.createElement(ManagerView, props)));
   `);
-  ({ render } = bundle.mod);
+  ({ render, renderManager } = bundle.mod);
 });
 after(async () => { await bundle.cleanup(); });
 
@@ -39,4 +43,20 @@ test("Officer dashboard empty state shows no tables", () => {
   });
   assert.ok(html.includes("Nothing needs your action.") && html.includes("0 applications") && html.includes("0 applications today."));
   assert.ok(!html.includes("<table"));
+});
+
+test("Manager dashboard puts the review queue and filter chips before today stats", () => {
+  const html = renderManager({
+    data: { date: "2026-11-15", total_applications: 3, average_score: 60, high_risk_count: 1 },
+    applications: [
+      { ...app("aaaaaaaa-1", "pending", "2026-11-15T08:00:00Z"), owner_name: "Hoang", dsr_flag_high_risk: false },
+      { ...app("bbbbbbbb-2", "manual_review", "2026-11-15T09:00:00Z"), owner_name: "Hoang", dsr_flag_high_risk: true, latest_score: { score: 40, label: "review" } },
+      { ...app("cccccccc-3", "scored", "2026-11-15T10:00:00Z"), owner_name: "Hoang", dsr_flag_high_risk: false, latest_score: { score: 90, label: "eligible" } },
+    ],
+  });
+  for (const text of ['class="chips"', "High risk, awaiting review", "Needs review", "Eligible for decision", "Waiting for a score", "Manager review queue"]) {
+    assert.ok(html.includes(text), text);
+  }
+  assert.ok(html.indexOf("Manager review queue") < html.indexOf('class="tiles"'));
+  assert.ok(!html.includes("Manager workspace"));
 });

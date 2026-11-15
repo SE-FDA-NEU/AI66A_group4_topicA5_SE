@@ -59,7 +59,7 @@ a:focus-visible, button:focus-visible, .button:focus-visible, input:focus-visibl
   position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden;
   clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
 }
-dd, .alert, .field-error, .card li, .wrap-cell, .page-heading, .role-task { overflow-wrap: anywhere; }
+dd, .alert, .field-error, .card li, .wrap-cell, .page-heading { overflow-wrap: anywhere; }
 
 /* ---------- Buttons ---------- */
 button, .button {
@@ -180,11 +180,11 @@ dt { color: var(--muted); } dd { margin: 0; }
 .page-heading p { margin-top: 0; color: var(--muted); }
 .page-heading .button { flex-shrink: 0; }
 .review-section { margin: var(--s-7) 0; }
-.review-section .tiles { margin-bottom: var(--s-4); }
-.metric-link { color: var(--ink); text-decoration: none; }
-.metric-link:hover { border-color: var(--brand); background: var(--surface-soft); }
-.role-task { display: flex; align-items: center; justify-content: space-between; gap: var(--s-5); margin-top: var(--s-5); }
-.role-task p { margin: 0; } .role-task .button { flex-shrink: 0; }
+.chips { display: flex; flex-wrap: wrap; gap: var(--s-2); margin-bottom: var(--s-5); }
+.chip { display: inline-flex; align-items: center; gap: var(--s-2); min-height: 36px; padding: var(--s-1) var(--s-3); border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--surface); color: var(--ink); font-weight: 600; text-decoration: none; cursor: pointer; }
+.chip:hover { border-color: var(--brand); color: var(--brand); }
+.chip .count { color: var(--brand); }
+.chip[aria-pressed="true"] { background: var(--brand-soft); border-color: var(--brand); color: var(--brand); }
 .filter-tabs { display: flex; flex-wrap: wrap; gap: var(--s-2); margin-bottom: var(--s-4); }
 .owner-filter { max-width: 320px; }
 .wrap-cell { white-space: normal; min-width: 200px; } .wrap-cell p { margin: 6px 0 0; }
@@ -237,7 +237,7 @@ dt { color: var(--muted); } dd { margin: 0; }
   :root { --btn-h: 44px; }
   dl { grid-template-columns: 1fr; }
   .score { flex-direction: column; }
-  .page-heading, .role-task { flex-direction: column; }
+  .page-heading { flex-direction: column; }
   .page { width: min(100% - 24px, 1180px); margin: var(--s-5) auto var(--s-8); }
   .card { padding: var(--s-4); }
   .login-wrap { padding: var(--s-4) var(--s-3) 42px; }

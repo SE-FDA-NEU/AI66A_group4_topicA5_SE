@@ -289,7 +289,7 @@ for (const width of [1366, 1440]) {
     await page.setViewportSize({ width, height: 900 });
     await signIn(page, "thanh@branch.vn");
     await expect(page.getByRole("button", { name: "Menu" })).toBeHidden();
-    await expect(page.getByRole("navigation")).toBeVisible();
+    await expect(page.locator(".topbar").getByRole("navigation")).toBeVisible();
     await expectNoWrap(page);
     // A long real name must not wrap or grow the bar either.
     await page.evaluate(() => { document.querySelector(".user-name-text").textContent = "Nguyen Thi Thanh Huong"; });
@@ -306,9 +306,9 @@ for (const width of [1280, 768]) {
     expect(fits).toBe(true);
     const toggle = page.getByRole("button", { name: "Menu" });
     await expect(toggle).toBeVisible();
-    await expect(page.getByRole("navigation")).toBeHidden();
+    await expect(page.locator(".topbar").getByRole("navigation")).toBeHidden();
     await toggle.click();
-    await expect(page.getByRole("navigation")).toBeVisible();
+    await expect(page.locator(".topbar").getByRole("navigation")).toBeVisible();
   });
 }
 
@@ -334,4 +334,13 @@ test("US08 officer dashboard lists work that needs action", async ({ page }) => 
   await expect(card().getByRole("row").filter({ hasText: shortId })).toHaveCount(0);
   await page.setViewportSize({ width: 375, height: 812 });
   expect((await page.locator(".tiles .tile").first().boundingBox()).height).toBeLessThan(100);
+});
+
+test("US07 manager dashboard chips open the matching list filter", async ({ page }) => {
+  await signIn(page, "thanh@branch.vn");
+  const chip = page.getByRole("navigation", { name: "Review filters" }).getByRole("link", { name: /High risk, awaiting review/ });
+  const count = (await chip.locator(".count").innerText()).trim();
+  await chip.click();
+  await expect(page).toHaveURL(/view=high-risk/);
+  await expect(page.locator('p[role="status"]')).toHaveText(new RegExp(`^${count} `));
 });
