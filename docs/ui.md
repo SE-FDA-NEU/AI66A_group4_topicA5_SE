@@ -293,6 +293,33 @@ Findings re-check against the after images:
 - **D4:** fixed.
 - **D5:** fixed.
 
+### Dashboards and list (PR 3)
+
+PR 3 rebuilds `/dashboard` (both roles) and `/loan-applications` on the PR 1 components.
+
+- **Officer dashboard:** "My applications overview" with a "New application" action, tiles, a "Needs my action" card (unscored, scoring-failed and rejected items with a direct action such as "Get credit score") and a "Recent applications" card. Opening an item from the dashboard adds a "Back to the dashboard" link on the detail page.
+- **Manager dashboard:** the review queue comes first ("Manager review queue", "Open review queue"), the Needs review / High risk / Eligible chips link to the matching list view, and the branch activity tiles come last.
+- **List:** a chip filter row (counts from the glossary texts), one status chip per row (plus High risk), income, loan and term, and the Score column. Whole rows open the application. On phones (600 px and below) each row becomes a card with labelled lines.
+- **Detail follow-ups:** the back link returns to the page the user came from (the dashboard, or the list with its `?view=` filter), the Officer decision card says "The branch manager can decide once the application is scored." before a score exists, the score card stacks its number above the factors in the narrow side column, and the side column is sticky only on screens at least 901 px wide and 820 px tall (no nested scroll on short screens).
+- **Rulings:** "Recent applications" excludes items already shown under "Needs my action"; sorting is offered only in the "All" view (review views keep the queue order); the sticky side column is limited to tall screens.
+- **Removed:** the old `.filter-tabs` styles (unused after the chip filters).
+
+Before: pre-PR 3 build, captured 2026-11-15 on the seeded test server. After: branch head, same server, 1440 px wide (390 px for the mobile views); application ids and dates differ between seeded runs. Before images were reused from the earlier capture set; no before image exists for the Officer list or the Officer dashboard at 390 px.
+
+| View | Before | After |
+| --- | --- | --- |
+| Officer dashboard 1440 | ![](images/ui/redesign/pr3-before-officer-dashboard-1440.png) | ![](images/ui/redesign/pr3-after-officer-dashboard-1440.png) |
+| Manager dashboard 1440 | ![](images/ui/redesign/pr3-before-manager-dashboard-1440.png) | ![](images/ui/redesign/pr3-after-manager-dashboard-1440.png) |
+| Manager list 1440 | ![](images/ui/redesign/pr3-before-manager-list-1440.png) | ![](images/ui/redesign/pr3-after-manager-list-1440.png) |
+| List 390 (before: Manager list; after: Officer list) | ![](images/ui/redesign/pr3-before-manager-list-390.png) | ![](images/ui/redesign/pr3-after-officer-list-390.png) |
+| Officer dashboard 390 | not captured (no before image) | ![](images/ui/redesign/pr3-after-officer-dashboard-390.png) |
+
+Findings re-check against the after images:
+
+- **L1-L5:** re-checked on the list and dashboards: one status chip per row, readable income and loan columns, whole-row open, the filter chips with counts, and the queue first on the Manager dashboard. No issue found in the after images.
+- **L6** (mobile layout): fixed for the list and dashboards; at 390 px the list is a card per application and there is no horizontal page scroll (covered by E2E at 375 px).
+- **C1** (generic copy): dashboards and list now use task wording ("Needs my action", "Manager review queue") with no eyebrow or explanatory subtitle. The New application form copy is left to PR 4.
+
 ### Running-app screenshots
 
 ![Login screen](images/ui/login-screen.png)
