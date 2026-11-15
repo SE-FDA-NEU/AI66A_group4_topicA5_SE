@@ -1,5 +1,6 @@
+import { useRef } from "react";
 import Field from "./Field";
-import { CIC_OPTIONS, dsrInfo } from "../dsr";
+import { CIC_OPTIONS, dsrInfo, suggestPayment } from "../dsr";
 
 // Visual order, so focusing the first invalid field lands on the first visible one.
 export const FIELD_ORDER = [
@@ -13,11 +14,23 @@ export const EDIT_FIELD_ORDER = FIELD_ORDER.filter((name) => name !== "citizen_i
 const REQUIRED = ["application_name", "monthly_income", "loan_amount", "loan_term_months", "estimated_monthly_payment"];
 const HINTS = {
   monthly_income: "e.g. 20000000",
+  estimated_monthly_payment: "Filled in from loan amount and term; you can change it.",
   citizen_id: "9 or 12 digits. Stored encrypted; only the last 4 digits are normally shown.",
   bank_account: "6 to 20 digits. Stored encrypted; access to the full number is logged.",
 };
 
 export default function ApplicationFields({ form, setForm, errors, idPrefix, showIdentifiers }) {
+  // Auto-fill the payment from loan amount and term until the user types their own value
+  // (or the form opened with one already saved, as in Edit).
+  const paymentTyped = useRef(String(form.estimated_monthly_payment ?? "").trim() !== "");
+  const change = (name, value) => {
+    const next = { ...form, [name]: value };
+    if (name === "estimated_monthly_payment") paymentTyped.current = value.trim() !== "";
+    else if ((name === "loan_amount" || name === "loan_term_months") && !paymentTyped.current) {
+      next.estimated_monthly_payment = suggestPayment(next.loan_amount, next.loan_term_months);
+    }
+    setForm(next);
+  };
   const control = (name, { area, select, numeric = true } = {}) => {
     const id = `${idPrefix}${name}`;
     const error = errors[name];
@@ -28,7 +41,7 @@ export default function ApplicationFields({ form, setForm, errors, idPrefix, sho
       "aria-required": REQUIRED.includes(name) ? "true" : undefined,
       "aria-invalid": error ? "true" : undefined,
       "aria-describedby": describedBy || undefined,
-      onChange: (event) => setForm({ ...form, [name]: event.target.value }),
+      onChange: (event) => change(name, event.target.value),
     };
     if (select) {
       return (
