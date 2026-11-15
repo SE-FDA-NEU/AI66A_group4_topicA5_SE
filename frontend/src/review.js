@@ -10,9 +10,9 @@ export function canApprove(a) {
 }
 
 export function reviewReason(a) {
+  if (a.status === "pending") return "Waiting for a score";
   if (a.dsr_flag_high_risk) return "High DSR: review the repayment risk";
   if (a.status === "manual_review") return "Manual review required";
-  if (a.status === "pending") return "Awaiting a scoring result";
   return canApprove(a) ? "Eligible score: approval decision needed" : "Review score and supporting information";
 }
 

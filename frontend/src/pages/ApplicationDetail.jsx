@@ -142,12 +142,16 @@ export default function ApplicationDetail() {
     document.getElementById(`${next}-tab`)?.focus();
   };
 
+  const from = location.state?.from;
+  const backTarget = typeof from === "string" && (from === "/dashboard" || from.startsWith("/loan-applications")) ? from : user.role === "admin" ? "/loan-applications?view=review" : "/loan-applications";
+  const backLabel = backTarget === "/dashboard" ? "Back to the dashboard" : "Back to the list";
+
   if (state.status === "loading") return <Loading text="Loading the application..." />;
   if (state.status === "error")
     return (
       <>
         <ErrorBox message={state.message} onRetry={state.retryable ? load : undefined} />
-        <p><Link to="/loan-applications">Back to the list</Link></p>
+        <p><Link to={backTarget}>{backLabel}</Link></p>
       </>
     );
 
@@ -157,7 +161,7 @@ export default function ApplicationDetail() {
   const editable = a.status === "pending" && !a.latest_score;
   return (
     <>
-      <p><Link to={manager ? "/loan-applications?view=review" : "/loan-applications"}>Back to the list</Link></p>
+      <p><Link to={backTarget}>{backLabel}</Link></p>
       <PageHeader
         title={`Application #${a.id.slice(0, 8)}`}
         badge={<StatusBadge status={a.status} />}
@@ -203,7 +207,7 @@ export default function ApplicationDetail() {
             ) : ["cancelled", "rejected"].includes(a.status) ? (
               <p>This application is {a.status} and cannot be approved.</p>
             ) : !manager ? (
-              <p>Waiting for the branch manager's decision.</p>
+              <p>{a.latest_score ? "Waiting for the branch manager's decision." : "The branch manager can decide once the application is scored."}</p>
             ) : !canApprove ? (
               <p>Approval needs a latest score of 70 or more (Eligible for proposal).</p>
             ) : confirmApproval ? (

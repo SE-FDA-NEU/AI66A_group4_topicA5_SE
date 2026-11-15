@@ -23,7 +23,8 @@ test("role-specific navigation, dashboard and employee route render correctly", 
     assert.ok(manager.includes("Branch review overview") && manager.includes("Open review queue"));
     assert.ok(manager.includes("Employees") && manager.includes("manager-bar"));
     const officer = render("user", "/dashboard");
-    assert.ok(officer.includes("My applications overview") && officer.includes("Officer workspace"));
+    // The "Officer workspace" eyebrow was removed in PR 3.
+    assert.ok(officer.includes("My applications overview") && !officer.includes("Officer workspace"));
     assert.ok(!officer.includes("Employees") && !officer.includes("Open review queue"));
     assert.ok(render("admin", "/loan-applications").includes("Branch applications"));
     assert.ok(render("user", "/loan-applications").includes("My applications"));
