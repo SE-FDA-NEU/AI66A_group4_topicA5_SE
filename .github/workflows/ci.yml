@@ -84,6 +84,7 @@ jobs:
 
   browser-tests:
     name: Browser P0 and role workflows
+    timeout-minutes: 20
     needs: [backend-tests, frontend-tests]
     runs-on: ubuntu-24.04
     steps:

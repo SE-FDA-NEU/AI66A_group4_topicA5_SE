@@ -7,7 +7,7 @@ const VALID = { monthly_income: "20000000", loan_amount: "100000000", loan_term_
 
 async function signIn(page, email = "hoang@branch.vn") {
   await page.goto("/");
-  await page.getByLabel("Email", { exact: true }).fill(email);
+  await page.getByLabel("Email address", { exact: true }).fill(email);
   await page.getByLabel("Password", { exact: true }).fill(PASSWORD);
   const started = performance.now();
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
@@ -51,13 +51,13 @@ test("US01 login rejects invalid input, locks after three failures and opens Das
   await page.goto("/");
   let requests = 0;
   page.on("request", r => { if (r.url().endsWith("/api/auth/login")) requests++; });
-  await page.getByLabel("Email", { exact: true }).fill("a".repeat(245) + "@branch.vn");
+  await page.getByLabel("Email address", { exact: true }).fill("a".repeat(245) + "@branch.vn");
   await page.getByLabel("Password", { exact: true }).fill("p".repeat(129));
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await expect(page.locator("#email-error")).toHaveText("Email must not exceed 254 characters.");
   await expect(page.locator("#password-error")).toHaveText("Password must not exceed 128 characters.");
   expect(requests).toBe(0);
-  await page.getByLabel("Email", { exact: true }).fill("linh@branch.vn");
+  await page.getByLabel("Email address", { exact: true }).fill("linh@branch.vn");
   await page.getByLabel("Password", { exact: true }).fill("wrong");
   for (let attempt = 0; attempt < 3; attempt++) {
     await page.getByRole("button", { name: "Sign in", exact: true }).click();
