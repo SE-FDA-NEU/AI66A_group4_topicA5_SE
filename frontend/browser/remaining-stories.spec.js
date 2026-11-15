@@ -192,8 +192,9 @@ async function findScoredRow(page, minScore, status) {
     const statusAt = headers.indexOf("Status");
     for (const row of table.querySelectorAll("tbody tr")) {
       const cells = row.querySelectorAll("td");
-      const score = Number(cells[scoreAt].textContent.trim());
-      if (Number.isFinite(score) && score >= minScore && (!status || cells[statusAt].textContent.includes(status)))
+      const text = cells[scoreAt].textContent.trim();
+      const score = Number(text);
+      if (/^\d+(\.\d+)?$/.test(text) && Number.isFinite(score) && score >= minScore && (!status || cells[statusAt].textContent.includes(status)))
         return cells[0].textContent.trim().replace("#", "");
     }
     return null;
@@ -214,7 +215,7 @@ test("US04 detail page shows data beside score and decision", async ({ page }) =
   const sideBox = await side.boundingBox();
   const mainBox = await main.boundingBox();
   expect(sideBox.x).toBeGreaterThan(mainBox.x);
-  await expect(side.getByText(/Model/)).toBeVisible();
+  await expect(side.getByText(/Model/).first()).toBeVisible();
   expect(await page.getByText(/High risk\./).count()).toBeLessThanOrEqual(1);
   await expect(page.getByRole("button", { name: "Approve application", exact: true })).toBeVisible();
 
