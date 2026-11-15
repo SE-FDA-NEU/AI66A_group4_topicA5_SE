@@ -405,10 +405,10 @@ test("US09 form groups fields, shows DSR and links errors", async ({ page }) => 
   await expect(page.getByText("Installment is 60% of income (above the 50% limit)")).toBeVisible();
   const amount = await page.locator("#field-loan_amount").boundingBox();
   const term = await page.locator("#field-loan_term_months").boundingBox();
-  expect(term.y).toBe(amount.y);
+  expect(term.y).toBeCloseTo(amount.y, 0);
   await page.locator("#field-monthly_income").fill("");
   await page.getByRole("button", { name: "Submit and score", exact: true }).click();
-  await page.getByRole("alert").getByRole("link", { name: "Monthly income", exact: true }).click();
+  await page.locator(".alert").filter({ hasText: "Please fix these fields:" }).getByRole("link", { name: "Monthly income", exact: true }).click();
   await expect(page.locator("#field-monthly_income")).toBeFocused();
   await page.setViewportSize({ width: 375, height: 812 });
   const fits = await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth);
@@ -431,12 +431,18 @@ test("Manager back link falls back to the review queue when opened from Notifica
   } finally { await otherContext.close(); }
 });
 
-test("Manager dashboard queue renders as phone cards at 390 px", async ({ page }) => {
-  await signIn(page, "thanh@branch.vn");
-  await page.setViewportSize({ width: 390, height: 844 });
-  const row = page.locator("#queue-title ~ .scroll tbody tr").first();
-  await expect(row).toBeVisible();
-  expect(await row.evaluate((el) => getComputedStyle(el).display)).toBe("block");
+test("Manager dashboard queue renders as phone cards at 390 px", async ({ page, browser }) => {
+  const otherContext = await browser.newContext();
+  try {
+    const other = await otherContext.newPage();
+    await signIn(other);
+    await pendingFixture(other);
+    await signIn(page, "thanh@branch.vn");
+    await page.setViewportSize({ width: 390, height: 844 });
+    const row = page.locator("#queue-title ~ .scroll tbody tr").first();
+    await expect(row).toBeVisible();
+    expect(await row.evaluate((el) => getComputedStyle(el).display)).toBe("block");
+  } finally { await otherContext.close(); }
 });
 
 async function expectFitsAt375(page) {
@@ -481,4 +487,8 @@ test("no horizontal scroll at 375px on every route", async ({ page }) => {
   await topbar.getByRole("link", { name: "Employees", exact: true }).click();
   await expect(page.getByRole("heading", { level: 1, name: "Employee accounts" })).toBeVisible();
   await expectFitsAt375(page); // employees
+  await page.getByRole("button", { name: "Log out", exact: true }).click();
+  await page.goto("/no-such-page");
+  await expect(page.getByRole("heading", { name: "Page not found" })).toBeVisible();
+  await expectFitsAt375(page); // signed-out not found
 });

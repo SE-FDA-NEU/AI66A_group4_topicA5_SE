@@ -31,7 +31,10 @@ test("ApplicationFields groups fields, uses a CIC select and marks four required
   assert.equal((html.match(/<legend/g) || []).length, 3);
   assert.equal((html.match(/class="req"/g) || []).length, 4);
   assert.ok(html.includes("Monthly income (VND)"));
-  assert.ok(!html.includes("dsr-line"));
+  assert.ok(html.includes('class="dsr-line" aria-live="polite"'));
+  assert.ok(!html.includes("Installment is"));
+  assert.equal((html.match(/aria-required="true"/g) || []).length, 4);
+  assert.ok(!html.includes('role="alert"'));
 });
 
 test("ApplicationFields shows the live DSR line and warns above 50%", () => {
@@ -61,4 +64,13 @@ test("ErrorSummary shows a server message alone", () => {
   assert.ok(html.includes("Server busy") && !html.includes("Please fix"));
   const plain = C.render(C.ErrorSummary, { errors: {}, idPrefix: "field-", message: "Boom" });
   assert.ok(plain.includes("Boom"));
+});
+
+test("ErrorSummary lists only rendered fields and keeps the message for unrendered ones", () => {
+  const errors = { citizen_id: "Citizen ID is invalid", monthly_income: "Income is required" };
+  const html = C.render(C.ErrorSummary, { errors, idPrefix: "edit-", message: "Server said no", fields: ["monthly_income"] });
+  assert.ok(html.includes('href="#edit-monthly_income"') && !html.includes("edit-citizen_id"));
+  assert.ok(html.includes("Server said no"));
+  const only = C.render(C.ErrorSummary, { errors: { citizen_id: "bad" }, idPrefix: "edit-", message: "Server said no", fields: ["monthly_income"] });
+  assert.ok(only.includes("Server said no") && !only.includes("Please fix"));
 });

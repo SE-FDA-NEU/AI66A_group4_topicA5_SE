@@ -7,6 +7,9 @@ export const FIELD_ORDER = [
   "monthly_income", "credit_history_note", "cic_debt_group", "citizen_id", "bank_account",
 ];
 
+// Fields the Edit form renders (it omits the protected identifiers).
+export const EDIT_FIELD_ORDER = FIELD_ORDER.filter((name) => name !== "citizen_id" && name !== "bank_account");
+
 const REQUIRED = ["monthly_income", "loan_amount", "loan_term_months", "estimated_monthly_payment"];
 const HINTS = {
   monthly_income: "e.g. 20000000",
@@ -22,6 +25,7 @@ export default function ApplicationFields({ form, setForm, errors, idPrefix, sho
     const props = {
       id,
       value: form[name] ?? "",
+      "aria-required": REQUIRED.includes(name) ? "true" : undefined,
       "aria-invalid": error ? "true" : undefined,
       "aria-describedby": describedBy || undefined,
       onChange: (event) => setForm({ ...form, [name]: event.target.value }),
@@ -37,15 +41,15 @@ export default function ApplicationFields({ form, setForm, errors, idPrefix, sho
     return <input {...props} type="text" inputMode={numeric ? "numeric" : "text"} />;
   };
   const field = (name, label, options = {}) => (
-    <Field id={`${idPrefix}${name}`} label={label} required={REQUIRED.includes(name)} hint={HINTS[name]} error={errors[name]}>
+    <Field id={`${idPrefix}${name}`} label={label} required={REQUIRED.includes(name)} hint={HINTS[name]} error={errors[name]} announce={false}>
       {control(name, options)}
       {options.after}
     </Field>
   );
   const dsr = dsrInfo(form.monthly_income, form.estimated_monthly_payment);
-  const dsrLine = dsr && (
-    <p className={`dsr-line${dsr.high ? " warn" : ""}`} aria-live="polite">
-      Installment is {dsr.percent}% of income{dsr.high ? " (above the 50% limit)" : ""}
+  const dsrLine = (
+    <p className={`dsr-line${dsr?.high ? " warn" : ""}`} aria-live="polite">
+      {dsr && `Installment is ${dsr.percent}% of income${dsr.high ? " (above the 50% limit)" : ""}`}
     </p>
   );
   return (

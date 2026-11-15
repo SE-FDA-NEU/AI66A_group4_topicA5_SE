@@ -40,7 +40,7 @@
 
 /* ---------- Base ---------- */
 * { box-sizing: border-box; }
-html { min-width: 320px; background: var(--bg); font-size: 15px; }
+html { min-width: 320px; background: var(--bg); font-size: 15px; scroll-padding-top: 72px; scroll-padding-bottom: 88px; }
 body {
   margin: 0; min-height: 100vh; font-family: system-ui, "Segoe UI", Roboto, Arial, sans-serif;
   color: var(--ink); background: var(--bg); font-variant-numeric: tabular-nums;
@@ -96,6 +96,7 @@ label { display: block; margin-bottom: var(--s-4); font-weight: 600; color: var(
 .dsr-line.warn { color: var(--warn); font-weight: 600; }
 .form-note { margin: 0; }
 .form-actions { position: sticky; bottom: 0; display: flex; align-items: center; gap: var(--s-4); padding: var(--s-3) var(--s-4); background: var(--surface); border-top: 1px solid var(--line); }
+@media (max-height: 600px) { .form-actions { position: static; } }
 @media (min-width: 700px) {
   .form-group { display: grid; grid-template-columns: 1fr 1fr; column-gap: var(--s-4); align-items: start; }
   .form-group legend { grid-column: 1 / -1; }

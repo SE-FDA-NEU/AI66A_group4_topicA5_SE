@@ -71,7 +71,7 @@ export default function NewApplication() {
     <>
       <PageHeader title="New loan application" />
       <form className="form-grid" onSubmit={submit} noValidate>
-        <ErrorSummary errors={errors} idPrefix="field-" message={message} />
+        <ErrorSummary errors={errors} idPrefix="field-" message={message} fields={FIELD_ORDER} />
         <ApplicationFields form={form} setForm={setForm} errors={errors} idPrefix="field-" showIdentifiers />
         <div className="form-actions">
           <button type="submit" className="primary" disabled={!!busy}>{busy || ACTION_TEXT.submitAndScore}</button>

@@ -274,7 +274,7 @@ PR 2 rebuilds `/loan-applications/:id` on the PR 1 components.
 - **Score factors:** the "+20:" prefixes are replaced by an up or down arrow with screen-reader text; factors worth 0 points are hidden. Each result has one label from the glossary; the history tab also shows "Recommendation Rejected".
 - **Ruling, model version:** shown on the Credit score card to Managers only; the history tab keeps the model column for everyone who can open it.
 - **Decision copy:** "Waiting for the branch manager's decision." and "Approval needs a latest score of 70 or more (Eligible for proposal)."
-- **Out of scope:** D6 (Manager Reject action).
+- **Out of scope:** the Manager Reject action.
 
 Before: pre-redesign build, captured 2026-11-15 on the seeded test server. After: branch head, same server, 1440 px wide (390 px for the mobile view); application ids differ between seeded runs.
 
@@ -386,7 +386,7 @@ Re-check of every finding in the design spec table (section 2.1) against the aft
 - **F3** (CIC typed as a number): fixed; select with "Not available" as the empty choice.
 - **F4** (errors shown twice, inconsistent full stops): partly fixed; one summary of links plus one message per field. The summary no longer repeats the message text, but the validation messages themselves still differ in full stops ("Income is required" has none) because `validation.js` messages are unchanged by rule.
 - **C1** (eyebrows, subtitles, slogan, repeated copy): fixed on every screen; the old footer slogan is gone.
-- **V1** (login and workspace look different): fixed; one token set, radii, buttons and inputs everywhere, contrast checked by test.
+- **V1** (login and workspace look different): fixed; one token set, radii, buttons and inputs everywhere, token text pairs checked by test.
 
 ### Running-app screenshots
 

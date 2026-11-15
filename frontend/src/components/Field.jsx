@@ -1,4 +1,4 @@
-export default function Field({ id, label, required, hint, error, children }) {
+export default function Field({ id, label, required, hint, error, announce = true, children }) {
   return (
     <div className={`field${error ? " has-error" : ""}`}>
       <label htmlFor={id}>
@@ -7,7 +7,7 @@ export default function Field({ id, label, required, hint, error, children }) {
       </label>
       {children}
       {hint && <small id={`${id}-hint`} className="hint">{hint}</small>}
-      {error && <span id={`${id}-error`} className="field-error" role="alert">{error}</span>}
+      {error && <span id={`${id}-error`} className="field-error" role={announce ? "alert" : undefined}>{error}</span>}
     </div>
   );
 }

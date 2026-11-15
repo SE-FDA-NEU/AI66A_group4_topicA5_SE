@@ -30,7 +30,7 @@ export default function App() {
       <Route path="/notifications" element={<Protected>{user?.role === "admin" ? <Notifications /> : <><PageHeader title="Review notifications" /><Card><p>Only a manager can open review notifications.</p></Card></>}</Protected>} />
       <Route path="/loan-applications/:id" element={<Protected><ApplicationDetail /></Protected>} />
       <Route path="/admin/users" element={<Protected>{user?.role === "admin" ? <Users /> : <><PageHeader title="Employee accounts" /><Card><p>You need Manager access to manage employees. Ask your branch manager for help.</p></Card></>}</Protected>} />
-      <Route path="*" element={user ? <Layout><NotFound /></Layout> : <NotFound />} />
+      <Route path="*" element={user ? <Layout><NotFound /></Layout> : <main className="page"><NotFound /></main>} />
     </Routes>
   );
 }

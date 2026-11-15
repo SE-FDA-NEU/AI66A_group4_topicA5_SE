@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { api, isRetryable } from "../api";
 import { ErrorBox, Loading } from "../components/States";
-import ApplicationFields, { FIELD_ORDER } from "../components/ApplicationFields";
+import ApplicationFields, { EDIT_FIELD_ORDER } from "../components/ApplicationFields";
 import ErrorSummary from "../components/ErrorSummary";
 import PageHeader from "../components/PageHeader";
 import { validateApplication } from "../validation";
@@ -11,6 +11,11 @@ const FIELDS = [
   "monthly_income", "loan_amount", "loan_term_months", "estimated_monthly_payment",
   "purpose", "credit_history_note", "cic_debt_group",
 ];
+
+function focusFirstInvalid(errors) {
+  const first = EDIT_FIELD_ORDER.find(name => errors[name]);
+  if (first) document.getElementById(`edit-${first}`)?.focus();
+}
 
 export default function EditApplication() {
   const { id } = useParams();
@@ -41,8 +46,7 @@ export default function EditApplication() {
     setErrors(problems);
     setMessage("");
     if (Object.keys(problems).length) {
-      const first = FIELD_ORDER.find(name => problems[name]);
-      document.getElementById(`edit-${first}`)?.focus();
+      focusFirstInvalid(problems);
       return;
     }
     setBusy(true);
@@ -52,7 +56,9 @@ export default function EditApplication() {
       await api.editApplication(id, form);
       navigate(`/loan-applications/${id}`, { replace: true, state: { notice: "Application updated. Review the saved data before scoring." } });
     } catch (err) {
-      setErrors(err.fields || {});
+      const fields = err.fields || {};
+      setErrors(fields);
+      focusFirstInvalid(fields);
       setMessage(err.message);
       setBusy(false);
     }
@@ -66,7 +72,7 @@ export default function EditApplication() {
   return <>
     <PageHeader title="Edit application" />
     <form className="form-grid" onSubmit={submit} noValidate>
-      <ErrorSummary errors={errors} idPrefix="edit-" message={message} />
+      <ErrorSummary errors={errors} idPrefix="edit-" message={message} fields={EDIT_FIELD_ORDER} />
       <ApplicationFields form={form} setForm={setForm} errors={errors} idPrefix="edit-" showIdentifiers={false} />
       <p className="muted form-note">Protected identifiers stay unchanged by this form.</p>
       <div className="form-actions">

@@ -1,11 +1,14 @@
 import { FIELD_LABELS } from "../validation";
 
-export default function ErrorSummary({ errors, idPrefix, message }) {
-  const fieldNames = Object.keys(errors).filter((name) => name !== "form" && errors[name]);
+export default function ErrorSummary({ errors, idPrefix, message, fields }) {
+  const active = Object.keys(errors).filter((name) => name !== "form" && errors[name]);
+  const fieldNames = fields ? active.filter((name) => fields.includes(name)) : active;
+  const text = errors.form || message;
   if (fieldNames.length === 0) {
-    const text = errors.form || message;
     return text ? <div className="alert" role="alert">{text}</div> : null;
   }
+  // Keep the message when the server sent a form-level error or keys that have no rendered field.
+  const showText = text && (errors.form || active.length !== fieldNames.length);
   const focusField = (event, name) => {
     event.preventDefault();
     document.getElementById(`${idPrefix}${name}`)?.focus();
@@ -20,6 +23,7 @@ export default function ErrorSummary({ errors, idPrefix, message }) {
           </li>
         ))}
       </ul>
+      {showText && <p>{text}</p>}
     </div>
   );
 }
