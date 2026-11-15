@@ -438,3 +438,47 @@ test("Manager dashboard queue renders as phone cards at 390 px", async ({ page }
   await expect(row).toBeVisible();
   expect(await row.evaluate((el) => getComputedStyle(el).display)).toBe("block");
 });
+
+async function expectFitsAt375(page) {
+  // Navigation happens at desktop width (full top bar); only the check runs at 375 px.
+  await page.setViewportSize({ width: 375, height: 812 });
+  const fits = await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth);
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  expect(fits).toBe(true);
+}
+
+test("no horizontal scroll at 375px on every route", async ({ page }) => {
+  await signIn(page);
+  const topbar = page.locator(".topbar");
+  await expectFitsAt375(page); // dashboard
+  const loan = await pendingFixture(page);
+  await topbar.getByRole("link", { name: "My applications", exact: true }).click();
+  await expect(page.getByRole("heading", { level: 1, name: "My applications" })).toBeVisible();
+  await expectFitsAt375(page); // list
+  await topbar.getByRole("link", { name: "New application", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "New loan application" })).toBeVisible();
+  await expectFitsAt375(page); // new
+  await openFromList(page, loan.id);
+  await expectFitsAt375(page); // detail
+  await page.getByRole("button", { name: "Edit application", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Edit application", exact: true })).toBeVisible();
+  await expectFitsAt375(page); // edit
+  await page.evaluate(() => { history.pushState({}, "", "/no-such-page"); dispatchEvent(new PopStateEvent("popstate")); });
+  await expect(page.getByRole("heading", { name: "Page not found" })).toBeVisible();
+  await expectFitsAt375(page); // not found
+
+  await page.getByRole("button", { name: "Log out", exact: true }).click();
+  await signIn(page, "thanh@branch.vn");
+  await expectFitsAt375(page); // manager dashboard
+  await topbar.getByRole("link", { name: "Branch applications", exact: true }).click();
+  await expect(page.getByRole("row").filter({ hasText: loan.id.slice(0, 8) })).toBeVisible();
+  await expectFitsAt375(page); // manager list
+  await openFromList(page, loan.id, true);
+  await expectFitsAt375(page); // manager detail
+  await topbar.getByRole("link", { name: /^Notifications/ }).click();
+  await expect(page.getByRole("heading", { level: 1, name: "Review notifications" })).toBeVisible();
+  await expectFitsAt375(page); // notifications
+  await topbar.getByRole("link", { name: "Employees", exact: true }).click();
+  await expect(page.getByRole("heading", { level: 1, name: "Employee accounts" })).toBeVisible();
+  await expectFitsAt375(page); // employees
+});
