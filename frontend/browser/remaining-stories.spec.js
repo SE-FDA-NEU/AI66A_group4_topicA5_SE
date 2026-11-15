@@ -183,3 +183,26 @@ test("US10 an approved application refuses editing in the interface", async ({ p
   await expect(page.getByRole("alert")).toHaveText("Application already processed, cannot be edited");
   await expect(page.getByRole("button", { name: "Save changes", exact: true })).toHaveCount(0);
 });
+
+test("shell is usable at 375px", async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 812 });
+  await signIn(page);
+  await page.goto("/dashboard");
+  const fits = await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth);
+  expect(fits).toBe(true);
+  const toggle = page.getByRole("button", { name: "Menu" });
+  await expect(toggle).toHaveAttribute("aria-expanded", "false");
+  await toggle.click();
+  await expect(toggle).toHaveAttribute("aria-expanded", "true");
+  const link = page.getByRole("navigation").getByRole("link", { name: "My applications" });
+  await expect(link).toBeVisible();
+  await link.click();
+  await expect(page).toHaveURL(/\/loan-applications$/);
+  await expect(toggle).toHaveAttribute("aria-expanded", "false");
+  await page.evaluate(() => document.activeElement && document.activeElement.blur());
+  await page.locator("a.brand").focus();
+  await page.keyboard.press("Tab");
+  await expect(toggle).toBeFocused();
+  const outline = await toggle.evaluate((el) => getComputedStyle(el).outlineStyle);
+  expect(outline).not.toBe("none");
+});

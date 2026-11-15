@@ -25,6 +25,8 @@ async function list(page) {
 }
 
 async function fillApplication(page, overrides = {}) {
+  const menu = page.getByRole("button", { name: "Menu", exact: true });
+  if (await menu.isVisible()) await menu.click(); // collapsed nav on narrow viewports
   await page.getByRole("navigation").getByRole("link", { name: "New application", exact: true }).click();
   await expect(page.getByRole("heading", { name: "New loan application" })).toBeVisible();
   for (const [name, value] of Object.entries({ ...VALID, ...overrides })) await page.locator(`#field-${name}`).fill(value);
