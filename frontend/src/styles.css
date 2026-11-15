@@ -247,6 +247,7 @@ dt { color: var(--muted); } dd { margin: 0; }
   th, td { padding: var(--s-2) 10px; }
   .wrap-cell { min-width: 160px; }
   .tiles { flex-direction: column; }
+  .tiles > .tile { flex: 0 0 auto; }
   .actions > *, .filter-tabs > * { flex: 1 1 auto; text-align: center; }
 }
 

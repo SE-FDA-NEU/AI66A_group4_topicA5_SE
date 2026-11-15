@@ -332,4 +332,6 @@ test("US08 officer dashboard lists work that needs action", async ({ page }) => 
   await page.goto("/dashboard");
   await expect(page.getByRole("heading", { name: "Needs my action", exact: true })).toBeVisible();
   await expect(card().getByRole("row").filter({ hasText: shortId })).toHaveCount(0);
+  await page.setViewportSize({ width: 375, height: 812 });
+  expect((await page.locator(".tiles .tile").first().boundingBox()).height).toBeLessThan(100);
 });
