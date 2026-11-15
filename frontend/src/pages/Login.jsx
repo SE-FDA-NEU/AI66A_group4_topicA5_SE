@@ -38,13 +38,10 @@ export default function Login() {
   const { login, notice } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [night, setNight] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [fieldErrors, setFieldErrors] = useState({});
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
-
-  // The eye button controls both the scene and password visibility.
-  // Day = password hidden; night = password visible.
 
   const submit = async (e) => {
     e.preventDefault();
@@ -70,38 +67,8 @@ export default function Login() {
   const message = error || notice;
 
   return (
-    <div className={`login-wrap${night ? " night" : ""}`}>
-      <div className="login-scene" aria-hidden="true">
-        <div className="sky sky-day" />
-        <div className="sky sky-night" />
-        <div className="stars" />
-        <div className="celestial sun" />
-        <div className="celestial moon" />
-        <div className="scene-mountain mountain-back" />
-        <div className="scene-mountain mountain-front" />
-        <div className="scene-lake" />
-        <div className="scene-shade" />
-      </div>
-
+    <div className="login-wrap">
       <div className="login">
-        <section className="login-visual">
-          <div className="visual-sky visual-sky-day" />
-          <div className="visual-sky visual-sky-night" />
-          <div className="visual-stars" />
-          <div className="visual-sun" />
-          <div className="visual-moon" />
-          <div className="visual-mountain visual-mountain-back" />
-          <div className="visual-mountain visual-mountain-front" />
-          <div className="visual-lake" />
-          <div className="visual-shade" />
-          <div className="v-text">
-            <span className="visual-kicker">CREDIT SCORING PLATFORM</span>
-            <h2>Make every decision count.</h2>
-            <p>Review loan applications, understand risk, and manage credit decisions for your branch.</p>
-            <div className="visual-indicator"><span /> Secure workspace</div>
-          </div>
-        </section>
-
         <form className="login-form" onSubmit={submit} noValidate>
           <div className="login-brand">
             <span className="brand-mark">C</span>
@@ -128,7 +95,7 @@ export default function Login() {
             <label htmlFor="password">Password</label>
             <div className="input-wrap">
               <LockIcon />
-              <input id="password" type={night ? "text" : "password"} value={password}
+              <input id="password" type={showPassword ? "text" : "password"} value={password}
                 placeholder="Enter your password" onChange={(e) => setPassword(e.target.value)}
                 autoComplete="current-password" aria-invalid={!!fieldErrors.password}
                 aria-describedby={fieldErrors.password ? "password-error" : undefined} />
@@ -136,12 +103,11 @@ export default function Login() {
                 type="button"
                 className="pw-toggle"
                 onMouseDown={(e) => e.preventDefault()}
-                onClick={() => setNight((isNight) => !isNight)}
-                aria-label={night ? "Switch to daytime and hide password" : "Switch to nighttime and show password"}
-                aria-pressed={night}
-                title={night ? "Daytime · hide password" : "Nighttime · show password"}
+                onClick={() => setShowPassword((visible) => !visible)}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+                title={showPassword ? "Hide password" : "Show password"}
               >
-                <EyeIcon hidden={!night} />
+                <EyeIcon hidden={!showPassword} />
               </button>
             </div>
             {fieldErrors.password && <span id="password-error" className="field-error" role="alert">{fieldErrors.password}</span>}
@@ -160,7 +126,6 @@ export default function Login() {
           <p className="login-foot">Accounts are created by your branch manager.</p>
         </form>
       </div>
-      <p className="scene-caption">A clearer view of credit risk, day or night.</p>
     </div>
   );
 }

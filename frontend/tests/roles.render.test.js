@@ -10,11 +10,10 @@ test("role-specific navigation, dashboard and employee route render correctly", 
       import {MemoryRouter} from "react-router-dom";
       import App from "./src/App.jsx";
       import {AuthProvider} from "./src/auth.jsx";
-      import {ThemeProvider} from "./src/theme";
       export const render = (role, route) => {
         globalThis.sessionStorage = {getItem: () => JSON.stringify({user: {id:role, role, full_name:"Demo"}})};
         return renderToStaticMarkup(React.createElement(MemoryRouter, {initialEntries:[route]},
-          React.createElement(ThemeProvider, null, React.createElement(AuthProvider, null, React.createElement(App)))));
+          React.createElement(AuthProvider, null, React.createElement(App))));
       };
     `);
   const previousStorage = globalThis.sessionStorage;

@@ -70,7 +70,8 @@ either shows `Email must not exceed 254 characters.` /
 `Invalid email address.`. Invalid form input does not send a login request and
 focus moves to the first invalid field. API field errors are displayed next to
 their inputs and focused too. Validation does not trim or change the submitted
-password. The existing layout and password magnifier are retained.
+password. The page uses a fixed light theme, and the password field has a standard
+show/hide toggle.
 
 The helper's four automated cases run with `npm test` from `frontend/`; these
 Node tests check required fields, exact limits, unchanged credentials and email
@@ -78,7 +79,7 @@ format. Local check on 2026-10-30: all 52 frontend tests and the production
 build passed. Eight additional Edge headless interaction checks against the
 built interface passed: blank/whitespace input, invalid email, limits on both
 sides, request blocking, field focus, mapped API errors, unchanged password,
-lock-message display and the magnifier. These checks mocked the login API;
+lock-message display and the show/hide password toggle. These checks mocked the login API;
 they do not verify real-account authentication, full P0 browser acceptance
 or GitHub CI/review.
 

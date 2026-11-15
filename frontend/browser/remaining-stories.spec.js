@@ -5,7 +5,7 @@ const VALID = { monthly_income: 20000000, loan_amount: 100000000, loan_term_mont
 
 async function signIn(page, email = "hoang@branch.vn") {
   await page.goto("/");
-  await page.getByLabel("Email", { exact: true }).fill(email);
+  await page.getByLabel("Email address", { exact: true }).fill(email);
   await page.getByLabel("Password", { exact: true }).fill("Demo@2026");
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await expect(page.getByRole("heading", { name: /applications overview|Branch review overview/ })).toBeVisible();
@@ -52,10 +52,10 @@ test("US02 logout hides cached pages and revokes only that browser session", asy
     const revoked = page.waitForResponse(response => response.url().endsWith("/api/auth/logout"));
     await page.getByRole("button", { name: "Log out", exact: true }).click();
     expect((await revoked).status()).toBe(204);
-    await expect(page.getByRole("heading", { name: "Sign in", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Sign in to your account", exact: true })).toBeVisible();
     expect(await page.evaluate(() => sessionStorage.getItem("cs_session"))).toBeNull();
     await page.goBack();
-    await expect(page.getByRole("heading", { name: "Sign in", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Sign in to your account", exact: true })).toBeVisible();
     await expect(page.locator(".topbar, .tiles")).toHaveCount(0);
     const response = await page.request.get("/api/auth/me", { headers: { Authorization: `Bearer ${token}` } });
     expect(response.status()).toBe(401);
@@ -68,7 +68,7 @@ test("US02 unavailable logout API clears the browser and reports unconfirmed rev
   const token = await page.evaluate(() => JSON.parse(sessionStorage.getItem("cs_session")).access_token);
   await page.route("**/api/auth/logout", route => route.abort("failed"));
   await page.getByRole("button", { name: "Log out", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "Sign in", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Sign in to your account", exact: true })).toBeVisible();
   await expect(page.getByRole("alert")).toHaveText(
     "Signed out of this browser. The server could not confirm session revocation; check your connection before signing in again.",
   );

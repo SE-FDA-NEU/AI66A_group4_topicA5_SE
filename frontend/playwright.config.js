@@ -20,6 +20,8 @@ export default defineConfig({
     channel: process.env.PLAYWRIGHT_CHANNEL || (process.platform === "win32" ? "msedge" : undefined),
     viewport: { width: 1440, height: 1000 },
     screenshot: "only-on-failure",
+    actionTimeout: 15_000,
+    navigationTimeout: 30_000,
   },
   webServer: [
     { name: "P0 isolated API", command: `"${python}" -B tests/browser_server.py --port 8016`,
