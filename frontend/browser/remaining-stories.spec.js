@@ -222,6 +222,10 @@ test("US04 detail page shows data beside score and decision", async ({ page }) =
   await expect(side.getByText(/Model/).first()).toBeVisible();
   expect(await page.getByText(/High risk\./).count()).toBeLessThanOrEqual(1);
   await expect(page.getByRole("button", { name: "Approve application", exact: true })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Back to the list", exact: true })).toHaveAttribute("href", /^\/loan-applications(\?|$)/);
+
+  await page.setViewportSize({ width: 1440, height: 700 });
+  expect(await side.evaluate(el => getComputedStyle(el).overflowY)).toBe("visible");
 
   await page.setViewportSize({ width: 390, height: 844 });
   const fits = await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth);
@@ -243,6 +247,12 @@ test("US04 detail page shows data beside score and decision", async ({ page }) =
   await openFromList(page, ownId);
   await expect(page.locator(".detail-side")).toBeVisible();
   await expect(page.locator(".detail-side")).not.toContainText("Model");
+
+  await page.goto("/dashboard");
+  await page.getByRole("link", { name: /^(Open|Get credit score)$/ }).first().click();
+  await expect(page.getByRole("heading", { level: 1, name: /^Application / })).toBeVisible();
+  await page.getByRole("link", { name: "Back to the dashboard", exact: true }).click();
+  await expect(page).toHaveURL(/\/dashboard$/);
 });
 
 test("shell is usable at 375px", async ({ page }) => {
