@@ -28,6 +28,7 @@ export const ACTION_TEXT = {
   scoreAgain: "Score again",
   newApplication: "New application",
   submitAndScore: "Submit and score",
+  saveWithoutScoring: "Save without scoring",
   approve: "Approve application",
   confirmApproval: "Confirm approval",
   keepReviewing: "Keep reviewing",
