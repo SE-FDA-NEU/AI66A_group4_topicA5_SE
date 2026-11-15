@@ -197,7 +197,7 @@ async function findScoredRow(page, minScore, status) {
       const text = cells[scoreAt].textContent.trim();
       const score = Number(text);
       if (/^\d+(\.\d+)?$/.test(text) && Number.isFinite(score) && score >= minScore && (!status || cells[statusAt].textContent.includes(status)))
-        return cells[0].textContent.trim().replace("#", "");
+        return cells[0].querySelector("strong").textContent.trim().replace("#", "");
     }
     return null;
   }, { minScore, status });
@@ -343,4 +343,19 @@ test("US07 manager dashboard chips open the matching list filter", async ({ page
   await chip.click();
   await expect(page).toHaveURL(/view=high-risk/);
   await expect(page.locator('p[role="status"]')).toHaveText(new RegExp(`^${count} `));
+});
+
+test("US08 list rows open on click and fit a phone", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await signIn(page, "hoang@branch.vn");
+  await page.goto("/loan-applications");
+  await page.locator("tbody tr").first().locator("strong").click();
+  await expect(page).toHaveURL(/\/loan-applications\/[0-9a-f-]+$/);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/loan-applications");
+  await expect(page.locator("tbody tr").first()).toBeVisible();
+  const fits = await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth);
+  expect(fits).toBe(true);
+  const display = await page.locator("tbody tr").first().evaluate(row => getComputedStyle(row).display);
+  expect(display).toBe("block");
 });
