@@ -49,3 +49,11 @@ test("TC-UI-03 focus colour is at least 3:1 on surface", () => {
 test("TC-UI-04 stylesheet has no dark theme, blur or login-only palette", () => {
   assert.ok(!/data-theme|backdrop-filter|--login-|--glass|radial-gradient/.test(css));
 });
+
+test("notification list does not override card padding or borders", () => {
+  const rules = [...css.matchAll(/([^{}]*\.notification-list[^{}]*)\{([^}]*)\}/g)];
+  for (const [, selector, body] of rules) {
+    assert.ok(!/\bli\b/.test(selector), `no .notification-list li rule expected: ${selector.trim()}`);
+    assert.ok(!/padding|border/.test(body.replace(/padding:\s*0\s*;?/, "")), `unexpected override in ${selector.trim()}`);
+  }
+});

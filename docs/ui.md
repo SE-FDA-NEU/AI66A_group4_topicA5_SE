@@ -247,7 +247,7 @@ PR 1 of the UI unification replaces the three visual styles (dark glass login, g
 - **Tokens** (`frontend/src/styles.css`): one light theme, no gradients or glass; brand `#176b78`; radii 6 / 10 / 14 px; 4 px spacing scale; system font stack.
 - **Wording** (`frontend/src/glossary.js`): single source for status labels (`statusText`, `RISK_TEXT`); score labels are defined here and wired in PR 2.
 - **Components** (`frontend/src/components/`): `PageHeader`, `Field`, `Card`, `DataList`.
-- **Top bar:** compact 56 px bar; navigation collapses into a "Menu" toggle at 1000 px and below (the Manager bar needs about 1000 px for one row, so this is higher than the 600 px first planned). Footer reads "Credit Scoring" only.
+- **Top bar:** compact 56 px bar; navigation collapses into a "Menu" toggle at 1180 px and below (the Manager bar needs about 1170 px for one row, so this is higher than the 600 px first planned). Footer reads "Credit Scoring" only.
 - **Login:** rebuilt on the shared system, no intro panel, placeholder `name@branch.vn`.
 
 Before / after. Before: pre-redesign build d74ed7e (= origin/main); after: branch head. Both captured 2026-11-15 on the seeded test server (`backend/tests/browser_server.py`).

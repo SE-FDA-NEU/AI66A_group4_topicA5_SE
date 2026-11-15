@@ -194,6 +194,11 @@ test("shell is usable at 375px", async ({ page }) => {
   await expect(toggle).toHaveAttribute("aria-expanded", "false");
   await toggle.click();
   await expect(toggle).toHaveAttribute("aria-expanded", "true");
+  await page.keyboard.press("Escape");
+  await expect(toggle).toHaveAttribute("aria-expanded", "false");
+  await expect(toggle).toBeFocused();
+  await toggle.click();
+  await expect(toggle).toHaveAttribute("aria-expanded", "true");
   const link = page.getByRole("navigation").getByRole("link", { name: "My applications" });
   await expect(link).toBeVisible();
   await link.click();
@@ -207,15 +212,41 @@ test("shell is usable at 375px", async ({ page }) => {
   expect(outline).not.toBe("none");
 });
 
-for (const width of [1024, 1001, 768]) {
+// The single collapse breakpoint is 1180px (the Manager bar with a long name needs ~1170px).
+const BREAKPOINT = 1180;
+async function expectNoWrap(page) {
+  const fits = await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth);
+  expect(fits).toBe(true);
+  const box = await page.locator(".topbar").boundingBox();
+  expect(box.height).toBeLessThanOrEqual(57);
+  const heights = await page.locator(".topbar nav a").evaluateAll((els) => els.map((el) => el.getBoundingClientRect().height));
+  expect(heights.length).toBe(5);
+  for (const h of heights) expect(h).toBeLessThanOrEqual(40);
+}
+
+for (const width of [BREAKPOINT + 1, 1280, 1440]) {
   test(`Manager top bar stays on one row at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 });
+    await signIn(page, "thanh@branch.vn");
+    await expect(page.getByRole("button", { name: "Menu" })).toBeHidden();
+    await expect(page.getByRole("navigation")).toBeVisible();
+    await expectNoWrap(page);
+    // A long real name must not wrap or grow the bar either.
+    await page.evaluate(() => { document.querySelector(".user-name").firstChild.textContent = "Nguyen Thi Thanh Huong"; });
+    await expectNoWrap(page);
+  });
+}
+
+for (const width of [BREAKPOINT, 768]) {
+  test(`Manager nav collapses behind Menu at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 900 });
     await signIn(page, "thanh@branch.vn");
     const fits = await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth);
     expect(fits).toBe(true);
-    const box = await page.locator(".topbar").boundingBox();
-    expect(box.height).toBeLessThanOrEqual(57);
     const toggle = page.getByRole("button", { name: "Menu" });
-    if (!(await toggle.isVisible())) await expect(page.getByRole("navigation")).toBeVisible();
+    await expect(toggle).toBeVisible();
+    await expect(page.getByRole("navigation")).toBeHidden();
+    await toggle.click();
+    await expect(page.getByRole("navigation")).toBeVisible();
   });
 }
