@@ -178,6 +178,22 @@ test("US10 edit and confirm cancellation of an unprocessed application", async (
   await expect(page.getByRole("row").filter({ hasText: loan.id.slice(0, 8) })).toHaveCount(0);
 });
 
+test("US10 Save without scoring leaves a pending application that can be edited", async ({ page }) => {
+  await signIn(page);
+  await page.getByRole("navigation").getByRole("link", { name: "New application", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "New loan application" })).toBeVisible();
+  for (const [name, value] of Object.entries({ ...Object.fromEntries(Object.entries(VALID).map(([k, v]) => [k, String(v)])), application_name: "Nguyễn Văn An" })) {
+    if (name === "cic_debt_group") await page.locator(`#field-${name}`).selectOption(value);
+    else await page.locator(`#field-${name}`).fill(value);
+  }
+  await page.getByRole("button", { name: "Save without scoring", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Nguyễn Văn An", level: 1 })).toBeVisible();
+  await expect(page.locator("h1 .badge")).toHaveText("Scoring in progress");
+  await expect(page.getByRole("button", { name: "Edit application", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Cancel application", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Get credit score", exact: true })).toBeVisible();
+});
+
 test("US10 an approved application refuses editing in the interface", async ({ page }) => {
   await signIn(page);
   const loan = await pendingFixture(page);

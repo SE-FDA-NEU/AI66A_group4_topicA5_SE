@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../api";
 import ApplicationFields, { FIELD_ORDER } from "../components/ApplicationFields";
@@ -25,6 +25,8 @@ export default function NewApplication() {
   const [errors, setErrors] = useState({});
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState("");
+  // Which button submitted the form: "Save without scoring" keeps the record pending so it can still be edited or cancelled.
+  const scoreNow = useRef(true);
 
   const submit = async (e) => {
     e.preventDefault();
@@ -65,7 +67,7 @@ export default function NewApplication() {
     setForm((current) => ({ ...current, citizen_id: "", bank_account: "" }));
     // Open the persisted record immediately, then score from Details. A slow or
     // failed score must not hide the saved state or the pre-scoring High risk flag.
-    navigate(`/loan-applications/${created.id}`, { state: { scoreOnOpen: true } });
+    navigate(`/loan-applications/${created.id}`, scoreNow.current ? { state: { scoreOnOpen: true } } : undefined);
   };
 
   return (
@@ -75,7 +77,8 @@ export default function NewApplication() {
         <ErrorSummary errors={errors} idPrefix="field-" message={message} fields={FIELD_ORDER} />
         <ApplicationFields form={form} setForm={setForm} errors={errors} idPrefix="field-" showIdentifiers />
         <div className="form-actions">
-          <button type="submit" className="primary" disabled={!!busy}>{busy || ACTION_TEXT.submitAndScore}</button>
+          <button type="submit" className="primary" disabled={!!busy} onClick={() => { scoreNow.current = true; }}>{busy || ACTION_TEXT.submitAndScore}</button>
+          <button type="submit" disabled={!!busy} onClick={() => { scoreNow.current = false; }}>{ACTION_TEXT.saveWithoutScoring}</button>
         </div>
       </form>
     </>
