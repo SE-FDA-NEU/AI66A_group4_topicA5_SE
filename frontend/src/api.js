@@ -93,6 +93,7 @@ export const api = {
   createUser: (body) => request("/admin/users", { method: "POST", body }),
   updateUser: (id, body) => request(`/admin/users/${id}`, { method: "PATCH", body }),
   approve: (id) => request(`/loan-applications/${id}/approve`, { method: "PATCH" }),
+  rejectApplication: (id, body) => request(`/loan-applications/${id}/reject`, { method: "PATCH", body }),
   scoreHistory: (id) => request(`/loan-applications/${id}/scores`),
   score: (id) => request(`/loan-applications/${id}/score`, { method: "POST" }),
 };

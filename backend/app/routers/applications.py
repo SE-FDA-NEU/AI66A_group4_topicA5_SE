@@ -45,6 +45,7 @@ def _not_whole_number() -> PydanticCustomError:
 class ApplicationIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
+    application_name: str = Field(default="Loan application", min_length=1, max_length=120)
     monthly_income: int = Field(gt=0, le=10**13)
     loan_amount: int = Field(gt=0, le=10**13)
     loan_term_months: int = Field(gt=0, le=600)
@@ -56,6 +57,15 @@ class ApplicationIn(BaseModel):
     # zeros. max_length only caps the input before the digit rules run.
     citizen_id: str | None = Field(default=None, max_length=32)
     bank_account: str | None = Field(default=None, max_length=32)
+
+    @field_validator("application_name", mode="before")
+    @classmethod
+    def _clean_application_name(cls, value):
+        if isinstance(value, str):
+            value = value.strip()
+            if not value:
+                raise ValueError("Application name is required.")
+        return value
 
     @field_validator(
         "monthly_income", "loan_amount", "loan_term_months",
@@ -138,6 +148,7 @@ def loan_dict(loan: LoanApplication) -> dict:
     latest = _latest(loan)
     return {
         "id": loan.id,
+        "application_name": loan.application_name,
         "owner_id": loan.created_by,
         "owner_name": loan.created_by_user.full_name if loan.created_by_user else None,
         "monthly_income": loan.monthly_income,
@@ -176,6 +187,22 @@ def application_detail(db: Session, loan: LoanApplication) -> dict:
         "actor_id": audit[0].actor_id,
         "actor_name": audit[1] or "Former manager",
         "approved_at": _aware(audit[0].created_at).isoformat(),
+    }
+    rejection = (
+        db.query(EventLog, User.full_name)
+        .outerjoin(User, EventLog.actor_id == User.id)
+        .filter(
+            EventLog.loan_application_id == loan.id,
+            EventLog.action == "loan.manager_rejected",
+        )
+        .order_by(EventLog.created_at.desc(), EventLog.id.desc())
+        .first()
+    )
+    data["manager_rejection"] = None if rejection is None else {
+        "actor_id": rejection[0].actor_id,
+        "actor_name": rejection[1] or "Former manager",
+        "rejected_at": _aware(rejection[0].created_at).isoformat(),
+        "reason": rejection[0].detail,
     }
     return data
 
@@ -383,6 +410,78 @@ def dashboard_summary(
         "average_score": round(sum(scores) / len(scores), 1) if scores else None,
         "high_risk_count": sum(1 for loan in loans if loan.dsr_flag_high_risk),
     }
+
+
+class ManagerRejectionIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    reason: str = Field(min_length=1, max_length=500)
+
+    @field_validator("reason", mode="before")
+    @classmethod
+    def _clean_reason(cls, value):
+        if isinstance(value, str):
+            value = value.strip()
+            if not value:
+                raise ValueError("A rejection reason is required.")
+        return value
+
+
+@router.patch("/loan-applications/{loan_id}/reject")
+def reject_application(
+    loan_id: str,
+    body: ManagerRejectionIn,
+    db: Annotated[Session, Depends(get_db)],
+    user: Annotated[User, Depends(get_current_user)],
+):
+    if user.role != UserRole.ADMIN:
+        raise HTTPException(
+            403,
+            "Only a manager can reject a loan application. "
+            "Ask your manager to review this application.",
+        )
+    loan = _get_allowed(db, user, loan_id)
+    try:
+        lock_application(db, loan)
+        if loan.status not in (
+            LoanStatus.PENDING, LoanStatus.SCORED, LoanStatus.MANUAL_REVIEW,
+        ):
+            raise HTTPException(
+                409,
+                "This application is already rejected, cancelled or approved. "
+                "Select an application awaiting a manager decision.",
+            )
+        updated = (
+            db.query(LoanApplication)
+            .filter(LoanApplication.id == loan.id, LoanApplication.status == loan.status)
+            .update(
+                {
+                    LoanApplication.status: LoanStatus.REJECTED,
+                    LoanApplication.updated_at: datetime.now(UTC),
+                },
+                synchronize_session=False,
+            )
+        )
+        if updated != 1:
+            raise HTTPException(
+                409,
+                "This application changed while you were reviewing it. "
+                "Reload the details before deciding.",
+            )
+        db.add(
+            EventLog(
+                actor_id=user.id,
+                loan_application_id=loan.id,
+                action="loan.manager_rejected",
+                detail=body.reason,
+            )
+        )
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
+    db.expire_all()
+    return application_detail(db, _get_allowed(db, user, loan_id))
 
 
 @router.patch("/loan-applications/{loan_id}/approve")

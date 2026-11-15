@@ -60,7 +60,7 @@ export function ListView({ rows, allRows, manager, view, owner, sort, onFilter, 
         {manager && <th>Created by</th>}<th>Income / month</th><th>Loan · term</th><th>Score</th><th>Status</th><th><span className="sr-only">Action</span></th>
       </tr></thead>
       <tbody>{rows.map((a) => <tr key={a.id} className="clickable" onClick={(event) => open(event, a.id)}>
-        <td data-label="Application"><strong>#{a.id.slice(0, 8)}</strong> <small>{formatDateTime(a.created_at)}</small></td>
+        <td data-label="Application"><span className="cell-stack"><strong>{a.application_name || "Untitled application"}</strong> <small>#{a.id.slice(0, 8)} · {formatDateTime(a.created_at)}</small></span></td>
         {manager && <td data-label="Created by">{a.owner_name}</td>}
         <td data-label="Income / month">{vnd(a.monthly_income)}</td>
         <td data-label="Loan · term">{vnd(a.loan_amount)} · {a.loan_term_months} mo</td>

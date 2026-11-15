@@ -3,14 +3,14 @@ import { CIC_OPTIONS, dsrInfo } from "../dsr";
 
 // Visual order, so focusing the first invalid field lands on the first visible one.
 export const FIELD_ORDER = [
-  "loan_amount", "loan_term_months", "estimated_monthly_payment", "purpose",
+  "application_name", "loan_amount", "loan_term_months", "estimated_monthly_payment", "purpose",
   "monthly_income", "credit_history_note", "cic_debt_group", "citizen_id", "bank_account",
 ];
 
 // Fields the Edit form renders (it omits the protected identifiers).
 export const EDIT_FIELD_ORDER = FIELD_ORDER.filter((name) => name !== "citizen_id" && name !== "bank_account");
 
-const REQUIRED = ["monthly_income", "loan_amount", "loan_term_months", "estimated_monthly_payment"];
+const REQUIRED = ["application_name", "monthly_income", "loan_amount", "loan_term_months", "estimated_monthly_payment"];
 const HINTS = {
   monthly_income: "e.g. 20000000",
   citizen_id: "9 or 12 digits. Stored encrypted; only the last 4 digits are normally shown.",
@@ -56,6 +56,7 @@ export default function ApplicationFields({ form, setForm, errors, idPrefix, sho
     <>
       <fieldset className="form-group">
         <legend>Loan</legend>
+        {field("application_name", "Application name", { numeric: false })}
         {field("loan_amount", "Loan amount (VND)")}
         {field("loan_term_months", "Loan term (months)")}
         {field("estimated_monthly_payment", "Estimated monthly payment (VND)", { after: dsrLine })}

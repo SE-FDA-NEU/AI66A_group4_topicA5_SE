@@ -15,7 +15,7 @@ function focusFirstInvalid(errors) {
 }
 
 const EMPTY = {
-  monthly_income: "", loan_amount: "", loan_term_months: "", estimated_monthly_payment: "",
+  application_name: "", monthly_income: "", loan_amount: "", loan_term_months: "", estimated_monthly_payment: "",
   purpose: "", credit_history_note: "", cic_debt_group: "", citizen_id: "", bank_account: "",
 };
 
@@ -40,6 +40,7 @@ export default function NewApplication() {
     let created;
     try {
       const payload = {
+        application_name: form.application_name.trim(),
         monthly_income: form.monthly_income,
         loan_amount: form.loan_amount,
         loan_term_months: form.loan_term_months,

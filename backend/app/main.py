@@ -61,6 +61,8 @@ app.include_router(notifications.router)
 
 
 FIELD_LABELS = {
+    "application_name": "Application name",
+    "reason": "Rejection reason",
     "monthly_income": "Monthly income",
     "loan_amount": "Loan amount",
     "loan_term_months": "Loan term",

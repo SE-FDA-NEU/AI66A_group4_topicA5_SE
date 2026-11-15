@@ -37,8 +37,11 @@ def _log(db: Session, user: User, loan: LoanApplication, action: str, detail: st
 
 def score_application(db: Session, loan: LoanApplication, user: User) -> ScoringResult:
     lock_application(db, loan)
-    if loan.status in (LoanStatus.CANCELLED, LoanStatus.APPROVED):
-        raise HTTPException(409, "This application is cancelled or already approved, so it cannot be scored again. Go back to the list or ask your manager for help.")
+    manager_rejected = db.query(EventLog.id).filter_by(
+        loan_application_id=loan.id, action="loan.manager_rejected"
+    ).first() is not None
+    if loan.status in (LoanStatus.CANCELLED, LoanStatus.APPROVED) or manager_rejected:
+        raise HTTPException(409, "This application is cancelled, approved or rejected by a manager, so it cannot be scored again. Go back to the list or ask your manager for help.")
 
     features = scoring.build_features(loan)
     snapshot = {k: v for k, v in features.items()}

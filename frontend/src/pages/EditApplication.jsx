@@ -8,7 +8,7 @@ import PageHeader from "../components/PageHeader";
 import { validateApplication } from "../validation";
 
 const FIELDS = [
-  "monthly_income", "loan_amount", "loan_term_months", "estimated_monthly_payment",
+  "application_name", "monthly_income", "loan_amount", "loan_term_months", "estimated_monthly_payment",
   "purpose", "credit_history_note", "cic_debt_group",
 ];
 
