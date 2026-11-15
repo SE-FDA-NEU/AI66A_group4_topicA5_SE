@@ -184,6 +184,60 @@ test("US10 an approved application refuses editing in the interface", async ({ p
   await expect(page.getByRole("button", { name: "Save changes", exact: true })).toHaveCount(0);
 });
 
+// Returns the short id of the first list row with a numeric score >= minScore and the given status text.
+async function findScoredRow(page, minScore, status) {
+  return page.locator("table").evaluate((table, { minScore, status }) => {
+    const headers = [...table.querySelectorAll("thead th")].map(th => th.textContent.trim());
+    const scoreAt = headers.indexOf("Score");
+    const statusAt = headers.indexOf("Status");
+    for (const row of table.querySelectorAll("tbody tr")) {
+      const cells = row.querySelectorAll("td");
+      const score = Number(cells[scoreAt].textContent.trim());
+      if (Number.isFinite(score) && score >= minScore && (!status || cells[statusAt].textContent.includes(status)))
+        return cells[0].textContent.trim().replace("#", "");
+    }
+    return null;
+  }, { minScore, status });
+}
+
+test("US04 detail page shows data beside score and decision", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await signIn(page, "thanh@branch.vn");
+  await page.getByRole("navigation").getByRole("link", { name: "Branch applications", exact: true }).click();
+  await expect(page.getByRole("table")).toBeVisible();
+  const shortId = await findScoredRow(page, 70, "Scored");
+  expect(shortId).toBeTruthy();
+  await openFromList(page, shortId, true);
+  await expect(page.getByRole("heading", { name: "Manage application" })).toHaveCount(0);
+  const side = page.locator(".detail-side");
+  const main = page.locator(".detail-main");
+  const sideBox = await side.boundingBox();
+  const mainBox = await main.boundingBox();
+  expect(sideBox.x).toBeGreaterThan(mainBox.x);
+  await expect(side.getByText(/Model/)).toBeVisible();
+  expect(await page.getByText(/High risk\./).count()).toBeLessThanOrEqual(1);
+  await expect(page.getByRole("button", { name: "Approve application", exact: true })).toBeVisible();
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  const fits = await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth);
+  expect(fits).toBe(true);
+  expect((await side.boundingBox()).y).toBeLessThan((await main.boundingBox()).y);
+  const approve = page.getByRole("button", { name: "Approve application", exact: true });
+  await approve.scrollIntoViewIfNeeded();
+  await expect(approve).toBeVisible();
+
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.getByRole("button", { name: "Log out", exact: true }).click();
+  await signIn(page);
+  await page.getByRole("navigation").getByRole("link", { name: "My applications", exact: true }).click();
+  await expect(page.getByRole("table")).toBeVisible();
+  const ownId = await findScoredRow(page, 0);
+  expect(ownId).toBeTruthy();
+  await openFromList(page, ownId);
+  await expect(page.locator(".detail-side")).toBeVisible();
+  await expect(page.locator(".detail-side")).not.toContainText("Model");
+});
+
 test("shell is usable at 375px", async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 812 });
   await signIn(page);
