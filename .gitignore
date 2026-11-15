@@ -37,3 +37,4 @@ dataset/
 backups/
 *.dump.fernet
 tmp/
+docs/superpowers/
