@@ -378,6 +378,23 @@ test("US08 list rows open on click and fit a phone", async ({ page }) => {
   expect(display).toBe("block");
 });
 
+test("US11 manager manages an officer from the table", async ({ page }) => {
+  const email = `table.officer.${Date.now()}@branch.vn`;
+  await signIn(page, "thanh@branch.vn");
+  await page.locator(".topbar").getByRole("link", { name: "Employees", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Employee accounts", exact: true })).toBeVisible();
+  await page.getByLabel("Name", { exact: true }).fill("Table Officer");
+  await page.getByLabel("Email", { exact: true }).fill(email);
+  await page.getByLabel("Initial password (12–128 characters)").fill("Table-Officer-2026");
+  await page.getByRole("button", { name: "Create Officer", exact: true }).click();
+  const row = page.getByRole("row").filter({ hasText: email });
+  await expect(row).toBeVisible();
+  await expect(row.getByText("Active", { exact: true })).toBeVisible();
+  await row.getByRole("button", { name: "Deactivate", exact: true }).click();
+  await row.getByRole("button", { name: "Confirm", exact: true }).click();
+  await expect(row.getByText("Inactive", { exact: true })).toBeVisible();
+});
+
 test("US09 form groups fields, shows DSR and links errors", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await signIn(page);

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api, isRetryable } from "../api";
 import { StatusBadge } from "../components/Badges";
+import PageHeader from "../components/PageHeader";
 import { Empty, ErrorBox, Loading } from "../components/States";
 import { formatDateTime } from "../format";
 
@@ -49,16 +50,15 @@ export default function Notifications() {
   };
 
   return <>
-    <h1>Review notifications</h1>
-    <p className="muted">New applications awaiting review. The unread counter refreshes every 30 seconds and when you return to the app. Read status is saved for your own Manager account.</p>
+    <PageHeader title="Review notifications" />
     {state.status === "loading" ? <Loading text="Loading notifications..." />
       : state.status === "error" ? <ErrorBox message={state.message} onRetry={state.retryable ? load : undefined} />
         : <>
           <p role="status">{state.data.unread_count} unread notifications</p>
           {error && <div className="alert" role="alert">{error}</div>}
           {state.data.items.length === 0 ? <Empty text="No applications awaiting review." /> : <ul className="notification-list">
-            {state.data.items.map(item => <li className="card" key={item.id} data-notification-id={item.id}>
-              <strong>{item.message}</strong> <span className="badge">{item.is_read ? "Read" : "Unread"}</span>
+            {state.data.items.map(item => <li className={`card${item.is_read ? "" : " unread"}`} key={item.id} data-notification-id={item.id}>
+              <strong>{item.message}</strong> <span className={`badge${item.is_read ? " muted" : ""}`}>{item.is_read ? "Read" : "Unread"}</span>
               <p>{item.owner_name} · {formatDateTime(item.created_at)} · <StatusBadge status={item.status} /></p>
               <button onClick={() => read(item, true)} disabled={!!busy}>Open application</button>{" "}
               {!item.is_read && <button onClick={() => read(item, false)} disabled={!!busy}>{busy === item.id ? "Saving..." : "Mark as read"}</button>}

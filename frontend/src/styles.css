@@ -116,6 +116,8 @@ label { display: block; margin-bottom: var(--s-4); font-weight: 600; color: var(
 .badge.st-manual_review { background: var(--warn-soft); color: var(--warn); }
 .badge.st-scored, .badge.st-approved { background: var(--ok-soft); color: var(--ok); }
 .notification-list { list-style: none; margin: 0; padding: 0; }
+.card.unread { border-left: 4px solid var(--brand); }
+.badge.muted { background: var(--surface-soft); color: var(--muted); }
 
 /* ---------- Data (table / dl / tiles / score) ---------- */
 .tiles { display: flex; flex-wrap: wrap; gap: var(--s-4); margin-bottom: var(--s-4); }
@@ -199,6 +201,15 @@ dt { color: var(--muted); } dd { margin: 0; }
 .list-table tr.clickable:hover td { background: var(--surface-soft); }
 .list-table td small { display: block; color: var(--muted); }
 .wrap-cell { white-space: normal; min-width: 200px; } .wrap-cell p { margin: 6px 0 0; }
+.user-form { display: grid; grid-template-columns: 1fr; gap: var(--s-3); }
+.user-form .field, .user-form > .alert { margin: 0; }
+.inline-form { display: flex; align-items: center; gap: var(--s-2); flex-wrap: wrap; }
+.inline-form input { flex: 1 1 140px; min-width: 0; margin: 0; }
+.list-table td [role="group"] p { margin: 0 0 var(--s-2); text-align: left; }
+@media (min-width: 900px) {
+  .user-form { grid-template-columns: repeat(3, minmax(0, 1fr)) auto; align-items: end; }
+  .user-form > .alert { grid-column: 1 / -1; }
+}
 .manager-decision { border-left: 4px solid var(--brand); }
 
 /* ---------- Login (shared tokens only) ---------- */
