@@ -26,7 +26,8 @@ export function ManagerView({ data, applications }) {
       </Link>)}
     </nav>
     <section className="review-section" aria-labelledby="queue-title">
-      <h2 id="queue-title">Manager review queue <small className="muted">All dates</small></h2>
+      <h2 id="queue-title">Manager review queue</h2>
+      <p className="muted"><small>All dates</small></p>
       {queue.length === 0 ? <Empty text="No applications awaiting manager review." /> : <>
         <div className="scroll"><table className="list-table">
           <thead><tr><th>Application / Officer</th><th>Loan / score</th><th>Review reason</th><th><span className="sr-only">Action</span></th></tr></thead>

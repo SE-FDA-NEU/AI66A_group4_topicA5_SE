@@ -176,7 +176,7 @@ test("US08 zero and ten real persisted applications show the correct count and a
   await page.getByRole("button", { name: "Log out", exact: true }).click();
   await signIn(page, "thanh@branch.vn");
   await expect(page.getByRole("link", { name: "Employees", exact: true })).toBeVisible();
-  await expect(page.getByRole("heading", { name: /^Manager review queue/ })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Manager review queue", exact: true })).toBeVisible();
   await capture(page, info, "p0-manager-dashboard");
 });
 
