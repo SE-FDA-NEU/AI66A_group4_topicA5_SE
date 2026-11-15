@@ -6,7 +6,7 @@ import { filterApplications, reviewQueue } from "../review";
 import { RiskBadge, StatusBadge } from "../components/Badges";
 import PageHeader from "../components/PageHeader";
 import { formatDateTime } from "../format";
-import { QUEUE_FILTER_TEXT } from "../glossary";
+import { ACTION_TEXT, QUEUE_FILTER_TEXT } from "../glossary";
 import { sortByCreated } from "../worklists";
 import { Empty, ErrorBox, Loading } from "../components/States";
 
@@ -17,7 +17,7 @@ const SORT_TEXT = { newest: "Sort: newest first", oldest: "Sort: oldest first", 
 const ARIA_SORT = { newest: "descending", oldest: "ascending" };
 
 const heading = (manager) => <PageHeader title={manager ? "Branch applications" : "My applications"}
-  actions={!manager && <Link className="button primary" to="/loan-applications/new">New application</Link>} />;
+  actions={!manager && <Link className="button primary" to="/loan-applications/new">{ACTION_TEXT.newApplication}</Link>} />;
 
 // rows = rows to show; allRows = unfiltered rows (chip counts, owner options).
 export function ListView({ rows, allRows, manager, view, owner, sort, onFilter, onClear, onSort, onOpen }) {
@@ -26,6 +26,8 @@ export function ListView({ rows, allRows, manager, view, owner, sort, onFilter, 
   const owners = [...new Map(allRows.map((a) => [a.owner_id, a.owner_name || "Unknown employee"])).entries()].sort((a, b) => a[1].localeCompare(b[1]));
   const open = (event, id) => {
     if (event.target.closest("a, button")) return;
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0) return;
+    if (window.getSelection()?.toString()) return;
     onOpen(id);
   };
   return <>
@@ -64,7 +66,7 @@ export function ListView({ rows, allRows, manager, view, owner, sort, onFilter, 
         <td data-label="Loan · term">{vnd(a.loan_amount)} · {a.loan_term_months} mo</td>
         <td data-label="Score">{a.latest_score?.score ?? "Not scored"}</td>
         <td data-label="Status"><StatusBadge status={a.status} /> <RiskBadge high={a.dsr_flag_high_risk} /></td>
-        <td data-label="Action"><Link to={`/loan-applications/${a.id}`} state={{ from }}>{manager ? "Review" : "Open"}</Link></td>
+        <td data-label="Action"><Link to={`/loan-applications/${a.id}`} state={{ from }}>{manager ? ACTION_TEXT.review : ACTION_TEXT.open}</Link></td>
       </tr>)}</tbody>
     </table></div>}
   </>;

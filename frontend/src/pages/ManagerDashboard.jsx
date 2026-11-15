@@ -5,8 +5,11 @@ import { canApprove, reviewQueue, reviewReason } from "../review";
 import { RiskBadge, StatusBadge } from "../components/Badges";
 import PageHeader from "../components/PageHeader";
 import { formatDateTime } from "../format";
-import { QUEUE_FILTER_TEXT } from "../glossary";
+import { ACTION_TEXT, QUEUE_FILTER_TEXT } from "../glossary";
 import { Empty, ErrorBox, Loading } from "../components/States";
+
+const heading = <PageHeader title="Branch review overview"
+  actions={<Link className="button primary" to="/loan-applications?view=review">Open review queue</Link>} />;
 
 export function ManagerView({ data, applications }) {
   const queue = reviewQueue(applications);
@@ -16,24 +19,23 @@ export function ManagerView({ data, applications }) {
     eligible: queue.filter(canApprove).length,
   };
   return <>
-    <PageHeader title="Branch review overview"
-      actions={<Link className="button primary" to="/loan-applications?view=review">Open review queue</Link>} />
+    {heading}
     <nav className="chips" aria-label="Review filters">
       {Object.keys(counts).map((key) => <Link key={key} className="chip" to={`/loan-applications?view=${key}`}>
         {QUEUE_FILTER_TEXT[key]} <span className="count">{counts[key]}</span>
       </Link>)}
     </nav>
     <section className="review-section" aria-labelledby="queue-title">
-      <h2 id="queue-title">Manager review queue</h2>
+      <h2 id="queue-title">Manager review queue <small className="muted">All dates</small></h2>
       {queue.length === 0 ? <Empty text="No applications awaiting manager review." /> : <>
-        <div className="scroll"><table>
+        <div className="scroll"><table className="list-table">
           <thead><tr><th>Application / Officer</th><th>Loan / score</th><th>Review reason</th><th><span className="sr-only">Action</span></th></tr></thead>
           <tbody>{queue.slice(0, 8).map((a) => <tr key={a.id}>
-            <td><strong>#{a.id.slice(0, 8)}</strong><br />{a.owner_name}<br /><small>{formatDateTime(a.created_at)}</small></td>
-            <td>{vnd(a.loan_amount)}<br />Score: {a.latest_score?.score ?? "Not scored"}</td>
-            <td className="wrap-cell"><StatusBadge status={a.status} /> <RiskBadge high={a.dsr_flag_high_risk} />
+            <td data-label="Application / Officer"><strong>#{a.id.slice(0, 8)}</strong> {a.owner_name} <small>{formatDateTime(a.created_at)}</small></td>
+            <td data-label="Loan / score">{vnd(a.loan_amount)} · Score: {a.latest_score?.score ?? "Not scored"}</td>
+            <td data-label="Review reason" className="wrap-cell"><StatusBadge status={a.status} /> <RiskBadge high={a.dsr_flag_high_risk} />
               {a.status === "pending" ? <p className="muted">{reviewReason(a)}</p> : <p>{reviewReason(a)}</p>}</td>
-            <td><Link to={`/loan-applications/${a.id}`} state={{ from: "/dashboard" }}>Review application</Link></td>
+            <td data-label="Action"><Link to={`/loan-applications/${a.id}`} state={{ from: "/dashboard" }}>{ACTION_TEXT.reviewApplication}</Link></td>
           </tr>)}</tbody>
         </table></div>
         <p><Link to="/loan-applications?view=review">View the full review queue ({queue.length})</Link></p>
@@ -65,8 +67,6 @@ export default function ManagerDashboard() {
   }, []);
   useEffect(load, [load]);
 
-  const heading = <PageHeader title="Branch review overview"
-    actions={<Link className="button primary" to="/loan-applications?view=review">Open review queue</Link>} />;
   if (state.status === "loading") return <>{heading}<Loading text="Loading branch overview and review queue..." /></>;
   if (state.status === "error") return <>{heading}<ErrorBox message={state.message} onRetry={state.retryable ? load : undefined} /></>;
 

@@ -4,6 +4,7 @@ import { api } from "../api";
 import ApplicationFields, { FIELD_ORDER } from "../components/ApplicationFields";
 import ErrorSummary from "../components/ErrorSummary";
 import PageHeader from "../components/PageHeader";
+import { ACTION_TEXT } from "../glossary";
 import { validateApplication } from "../validation";
 
 const fieldId = (name) => `field-${name}`;
@@ -73,7 +74,7 @@ export default function NewApplication() {
         <ErrorSummary errors={errors} idPrefix="field-" message={message} />
         <ApplicationFields form={form} setForm={setForm} errors={errors} idPrefix="field-" showIdentifiers />
         <div className="form-actions">
-          <button type="submit" className="primary" disabled={!!busy}>{busy || "Submit and score"}</button>
+          <button type="submit" className="primary" disabled={!!busy}>{busy || ACTION_TEXT.submitAndScore}</button>
         </div>
       </form>
     </>

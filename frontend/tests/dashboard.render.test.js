@@ -69,3 +69,11 @@ test("Manager dashboard puts the review queue and filter chips before today stat
   assert.ok(html.indexOf("Manager review queue") < html.indexOf('class="tiles"'));
   assert.ok(!html.includes("Manager workspace"));
 });
+
+test("Dashboard tables render as phone-card list tables", () => {
+  const apps = [{ ...app("aaaaaaaa-1", "manual_review", "2026-11-15T08:00:00Z"), owner_name: "Hoang" }];
+  const data = { date: "2026-11-15", total_applications: 1, average_score: 95, high_risk_count: 0 };
+  const manager = renderManager({ data, applications: apps });
+  assert.ok(manager.includes("All dates") && manager.includes('data-label="Loan / score"'));
+  assert.ok(render({ data, applications: [app("bbbbbbbb-2", "pending", "2026-11-15T09:00:00Z")] }).includes('class="list-table"'));
+});

@@ -20,6 +20,21 @@ export const QUEUE_FILTER_TEXT = {
   eligible: "Eligible for decision",
 };
 
+export const ACTION_TEXT = {
+  open: "Open",
+  review: "Review",
+  reviewApplication: "Review application",
+  getScore: "Get credit score",
+  scoreAgain: "Score again",
+  newApplication: "New application",
+  submitAndScore: "Submit and score",
+  approve: "Approve application",
+  confirmApproval: "Confirm approval",
+  keepReviewing: "Keep reviewing",
+  edit: "Edit application",
+  cancel: "Cancel application",
+};
+
 export const RISK_TEXT = "High risk";
 
 export function statusText(code) {

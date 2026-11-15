@@ -10,6 +10,7 @@ import ScoreCard from "../components/ScoreCard";
 import ScoreHistory from "../components/ScoreHistory";
 import { ErrorBox, Loading } from "../components/States";
 import { formatDateTime } from "../format";
+import { ACTION_TEXT } from "../glossary";
 import SensitiveData from "../components/SensitiveData";
 import { canApprove as eligibleForApproval } from "../review";
 
@@ -166,8 +167,8 @@ export default function ApplicationDetail() {
         title={`Application #${a.id.slice(0, 8)}`}
         badge={<StatusBadge status={a.status} />}
         actions={editable && !confirmCancel ? <>
-          <button onClick={() => navigate(`/loan-applications/${id}/edit`)} disabled={scoring || cancelling}>Edit application</button>
-          <button onClick={() => setConfirmCancel(true)} disabled={cancelling}>Cancel application</button>
+          <button onClick={() => navigate(`/loan-applications/${id}/edit`)} disabled={scoring || cancelling}>{ACTION_TEXT.edit}</button>
+          <button onClick={() => setConfirmCancel(true)} disabled={cancelling}>{ACTION_TEXT.cancel}</button>
         </> : undefined}
       />
       <p className="detail-meta muted">Created by {a.owner_name} · {formatDateTime(a.created_at)}</p>
@@ -193,7 +194,7 @@ export default function ApplicationDetail() {
             <ScoreCard result={a.latest_score} status={a.status} showModelVersion={manager} />
             {scoreError && <div className="alert" role="alert">{scoreError}</div>}
             {!["cancelled", "approved"].includes(a.status) && (
-              <button onClick={rescore} disabled={scoring || approving || confirmApproval}>{scoring ? "Scoring..." : a.latest_score ? "Score again" : "Get credit score"}</button>
+              <button onClick={rescore} disabled={scoring || approving || confirmApproval}>{scoring ? "Scoring..." : a.latest_score ? ACTION_TEXT.scoreAgain : ACTION_TEXT.getScore}</button>
             )}
           </Card>
           <Card title={manager ? "Your approval decision" : "Manager decision"} className={manager ? "manager-decision" : undefined}>
@@ -213,11 +214,11 @@ export default function ApplicationDetail() {
             ) : confirmApproval ? (
               <div className="alert warn" role="group" aria-label="Confirm manager approval">
                 <p>Confirm you have reviewed the application data, score and reasons{a.dsr_flag_high_risk ? ", including the High risk warning" : ""}.</p>
-                <button className="primary" onClick={approve} disabled={approving || scoring}>{approving ? "Approving..." : "Confirm approval"}</button>{" "}
-                <button onClick={() => setConfirmApproval(false)} disabled={approving}>Keep reviewing</button>
+                <button className="primary" onClick={approve} disabled={approving || scoring}>{approving ? "Approving..." : ACTION_TEXT.confirmApproval}</button>{" "}
+                <button onClick={() => setConfirmApproval(false)} disabled={approving}>{ACTION_TEXT.keepReviewing}</button>
               </div>
             ) : (
-              <button className="primary" onClick={() => { setApprovalError(""); setConfirmApproval(true); }} disabled={scoring || approving}>Approve application</button>
+              <button className="primary" onClick={() => { setApprovalError(""); setConfirmApproval(true); }} disabled={scoring || approving}>{ACTION_TEXT.approve}</button>
             )}
           </Card>
         </aside>

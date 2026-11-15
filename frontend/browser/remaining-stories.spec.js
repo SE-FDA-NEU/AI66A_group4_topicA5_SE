@@ -146,10 +146,10 @@ test("US10 edit and confirm cancellation of an unprocessed application", async (
   await openFromList(page, loan.id);
   await page.getByRole("button", { name: "Edit application", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Edit application", exact: true })).toBeVisible();
-  await page.getByLabel("Monthly income (VND)").fill("0");
+  await page.getByRole("textbox", { name: "Monthly income (VND)", exact: true }).fill("0");
   await page.getByRole("button", { name: "Save changes", exact: true }).click();
   await expect(page.locator("#edit-monthly_income-error")).toHaveText("Monthly income must be greater than 0 VND.");
-  await page.getByLabel("Monthly income (VND)").fill("9000000");
+  await page.getByRole("textbox", { name: "Monthly income (VND)", exact: true }).fill("9000000");
   await page.getByRole("button", { name: "Save changes", exact: true }).click();
   await expect(page.getByText("9,000,000 VND", { exact: true })).toBeVisible();
   await expect(page.locator(".alert.warn").filter({ hasText: "High risk." })).toBeVisible();
@@ -413,4 +413,28 @@ test("US09 form groups fields, shows DSR and links errors", async ({ page }) => 
   await page.setViewportSize({ width: 375, height: 812 });
   const fits = await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth);
   expect(fits).toBe(true);
+});
+
+test("Manager back link falls back to the review queue when opened from Notifications", async ({ page, browser }) => {
+  const otherContext = await browser.newContext();
+  try {
+    await signIn(page, "thanh@branch.vn");
+    const other = await otherContext.newPage();
+    await signIn(other);
+    const loan = await pendingFixture(other);
+    await page.getByRole("navigation").getByRole("link", { name: /^Notifications/ }).click();
+    await page.reload();
+    const row = page.locator(".notification-list li").filter({ hasText: loan.id.slice(0, 8) });
+    await row.getByRole("button", { name: "Open application", exact: true }).click();
+    await expect(page.getByRole("heading", { level: 1, name: /^Application / })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Back to the list", exact: true })).toHaveAttribute("href", "/loan-applications?view=review");
+  } finally { await otherContext.close(); }
+});
+
+test("Manager dashboard queue renders as phone cards at 390 px", async ({ page }) => {
+  await signIn(page, "thanh@branch.vn");
+  await page.setViewportSize({ width: 390, height: 844 });
+  const row = page.locator("#queue-title ~ .scroll tbody tr").first();
+  await expect(row).toBeVisible();
+  expect(await row.evaluate((el) => getComputedStyle(el).display)).toBe("block");
 });

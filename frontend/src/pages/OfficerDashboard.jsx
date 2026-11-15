@@ -5,31 +5,32 @@ import { StatusBadge } from "../components/Badges";
 import Card from "../components/Card";
 import PageHeader from "../components/PageHeader";
 import { formatDateTime } from "../format";
+import { ACTION_TEXT } from "../glossary";
 import { Empty, ErrorBox, Loading } from "../components/States";
 import { officerWorklist } from "../worklists";
 
 function WorkTable({ rows, action }) {
-  return <div className="scroll"><table>
+  return <div className="scroll"><table className="list-table">
     <thead><tr><th>Application</th><th>Loan</th><th>Status</th><th><span className="sr-only">Action</span></th></tr></thead>
     <tbody>{rows.map((a) => <tr key={a.id}>
-      <td><strong>#{a.id.slice(0, 8)}</strong><br /><small>{formatDateTime(a.created_at)}</small></td>
-      <td>{vnd(a.loan_amount)}</td>
-      <td><StatusBadge status={a.status} /></td>
-      <td>{action(a)}</td>
+      <td data-label="Application"><strong>#{a.id.slice(0, 8)}</strong> <small>{formatDateTime(a.created_at)}</small></td>
+      <td data-label="Loan">{vnd(a.loan_amount)}</td>
+      <td data-label="Status"><StatusBadge status={a.status} /></td>
+      <td data-label="Action">{action(a)}</td>
     </tr>)}</tbody>
   </table></div>;
 }
 
-const openLink = (a) => <Link to={`/loan-applications/${a.id}`} state={{ from: "/dashboard" }}>Open</Link>;
+const openLink = (a) => <Link to={`/loan-applications/${a.id}`} state={{ from: "/dashboard" }}>{ACTION_TEXT.open}</Link>;
 const actionLink = (a) => a.status === "pending"
-  ? <Link to={`/loan-applications/${a.id}`} state={{ scoreOnOpen: true, from: "/dashboard" }}>Get credit score</Link>
+  ? <Link to={`/loan-applications/${a.id}`} state={{ scoreOnOpen: true, from: "/dashboard" }}>{ACTION_TEXT.getScore}</Link>
   : openLink(a);
 
 export function OfficerView({ data, applications }) {
   const { needsAction, recent } = officerWorklist(applications);
   return <>
     <PageHeader title="My applications overview"
-      actions={<Link className="button primary" to="/loan-applications/new">New application</Link>} />
+      actions={<Link className="button primary" to="/loan-applications/new">{ACTION_TEXT.newApplication}</Link>} />
     <div className="tiles">
       <div className="card tile"><span className="num">{data.total_applications}</span>my applications today</div>
       <div className="card tile"><span className="num">{data.average_score ?? "-"}</span>average score</div>
