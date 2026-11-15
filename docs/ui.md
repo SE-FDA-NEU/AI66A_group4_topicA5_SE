@@ -265,6 +265,34 @@ Findings re-check against the after images:
 - **C1** (generic copy), login part: fixed ("WELCOME BACK" and intro removed, placeholder `name@branch.vn`). Form and remaining page copy is left to PR 4.
 - **L6** (mobile top bar about 180 px tall), top bar part: partly fixed. The closed bar is 56 px; with Menu open it lists all links and the user row. List and dashboard layout on mobile is left to PR 3.
 
+### Application detail (PR 2)
+
+PR 2 rebuilds `/loan-applications/:id` on the PR 1 components.
+
+- **Layout:** two columns at 900 px and above. Left: tabs "Application details" (data list and protected identifiers) and "Scoring history". Right (sticky): Credit score card and decision card. Below 900 px it is one column with the score and decision first.
+- **Removed:** the eyebrow, the subtitle, the "Manage application" card, the duplicate back link and the extra High risk badge. The High risk banner is shown once (the missing space after "High risk." is fixed). Edit and Cancel moved to the page header with the same rule as before: pending and unscored only.
+- **Score factors:** the "+20:" prefixes are replaced by an up or down arrow with screen-reader text; factors worth 0 points are hidden. Each result has one label from the glossary; the history tab also shows "Recommendation Rejected".
+- **Ruling, model version:** shown on the Credit score card to Managers only; the history tab keeps the model column for everyone who can open it.
+- **Decision copy:** "Waiting for the branch manager's decision." and "Approval needs a latest score of 70 or more (Eligible for proposal)."
+- **Out of scope:** D6 (Manager Reject action).
+
+Before: pre-redesign build, captured 2026-11-15 on the seeded test server. After: branch head, same server, 1440 px wide (390 px for the mobile view); application ids differ between seeded runs.
+
+| View | Before | After |
+| --- | --- | --- |
+| Officer, scored (75) 1440 | ![](images/ui/redesign/pr2-before-officer-detail-1440.png) | ![](images/ui/redesign/pr2-after-officer-detail-1440.png) |
+| Officer, rejected (10) 1440 | ![](images/ui/redesign/pr2-before-officer-rejected-1440.png) | ![](images/ui/redesign/pr2-after-officer-rejected-1440.png) |
+| Manager, eligible (95) 1440 | ![](images/ui/redesign/pr2-before-manager-detail-1440.png) | ![](images/ui/redesign/pr2-after-manager-detail-1440.png) |
+| Manager 390 | not captured (no before image) | ![](images/ui/redesign/pr2-after-manager-detail-390.png) |
+
+Findings re-check against the after images:
+
+- **D1:** fixed.
+- **D2** (inconsistent score labels): fixed on the detail page and the history tab; the list pages are left to PR 3.
+- **D3** (score factors): fixed except that the base score is still not shown, so the listed points do not sum to the score.
+- **D4:** fixed.
+- **D5:** fixed.
+
 ### Running-app screenshots
 
 ![Login screen](images/ui/login-screen.png)
