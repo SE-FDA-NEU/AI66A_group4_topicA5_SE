@@ -195,11 +195,16 @@ dt { color: var(--muted); } dd { margin: 0; }
 .login-foot { margin: var(--s-5) 0 0; text-align: center; color: var(--muted); font-size: .8125rem; }
 
 /* ---------- Responsive ---------- */
-@media (max-width: 900px) {
-  .topbar { gap: var(--s-3); }
-  .topbar nav { gap: 2px; }
-  .topbar nav a { padding: var(--s-2); }
-  .topbar-actions { margin-left: auto; }
+@media (max-width: 1000px) {
+  .topbar { flex-wrap: wrap; padding: 0 var(--s-3); gap: 0 var(--s-3); }
+  .topbar .brand { min-height: 56px; }
+  .menu-toggle { display: inline-flex; align-items: center; margin-left: auto; min-height: var(--btn-h); }
+  .menu-toggle:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+  .topbar nav, .topbar-actions { display: none; flex-basis: 100%; width: 100%; }
+  .topbar.menu-open nav { display: flex; flex-direction: column; align-items: stretch; gap: 2px; }
+  .topbar.menu-open .topbar-actions { display: flex; padding: var(--s-3) 0; border-top: 1px solid var(--line); }
+  .topbar nav a { padding: var(--s-3); font-size: .9rem; }
+  .who { justify-content: space-between; width: 100%; }
   .login-brand { margin-bottom: var(--s-6); }
   .login-form { padding: var(--s-6) clamp(20px, 6vw, 40px) var(--s-7); }
 }
@@ -210,15 +215,6 @@ dt { color: var(--muted); } dd { margin: 0; }
   .page-heading, .role-task { flex-direction: column; }
   .page { width: min(100% - 24px, 1180px); margin: var(--s-5) auto var(--s-8); }
   .card { padding: var(--s-4); }
-  .topbar { flex-wrap: wrap; padding: 0 var(--s-3); gap: 0 var(--s-3); }
-  .topbar .brand { min-height: 56px; }
-  .menu-toggle { display: inline-flex; align-items: center; margin-left: auto; min-height: var(--btn-h); }
-  .menu-toggle:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
-  .topbar nav, .topbar-actions { display: none; flex-basis: 100%; width: 100%; }
-  .topbar.menu-open nav { display: flex; flex-direction: column; align-items: stretch; gap: 2px; }
-  .topbar.menu-open .topbar-actions { display: flex; padding: var(--s-3) 0; border-top: 1px solid var(--line); }
-  .topbar nav a { padding: var(--s-3); font-size: .9rem; }
-  .who { justify-content: space-between; width: 100%; }
   .login-wrap { padding: var(--s-4) var(--s-3) 42px; }
   .login { padding: var(--s-1); }
   .login-form { padding: var(--s-6) var(--s-4) var(--s-7); }

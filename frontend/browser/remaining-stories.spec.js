@@ -206,3 +206,16 @@ test("shell is usable at 375px", async ({ page }) => {
   const outline = await toggle.evaluate((el) => getComputedStyle(el).outlineStyle);
   expect(outline).not.toBe("none");
 });
+
+for (const width of [1024, 1001, 768]) {
+  test(`Manager top bar stays on one row at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 });
+    await signIn(page, "thanh@branch.vn");
+    const fits = await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth);
+    expect(fits).toBe(true);
+    const box = await page.locator(".topbar").boundingBox();
+    expect(box.height).toBeLessThanOrEqual(57);
+    const toggle = page.getByRole("button", { name: "Menu" });
+    if (!(await toggle.isVisible())) await expect(page.getByRole("navigation")).toBeVisible();
+  });
+}
