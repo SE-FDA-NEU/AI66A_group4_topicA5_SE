@@ -190,6 +190,8 @@ async function findScoredRow(page, minScore, status) {
     const headers = [...table.querySelectorAll("thead th")].map(th => th.textContent.trim());
     const scoreAt = headers.indexOf("Score");
     const statusAt = headers.indexOf("Status");
+    if (scoreAt < 0 || statusAt < 0)
+      throw new Error(`Score/Status header not found; headers: ${JSON.stringify(headers)}`);
     for (const row of table.querySelectorAll("tbody tr")) {
       const cells = row.querySelectorAll("td");
       const text = cells[scoreAt].textContent.trim();
@@ -205,6 +207,8 @@ test("US04 detail page shows data beside score and decision", async ({ page }) =
   await page.setViewportSize({ width: 1440, height: 900 });
   await signIn(page, "thanh@branch.vn");
   await page.getByRole("navigation").getByRole("link", { name: "Branch applications", exact: true }).click();
+  await expect(page).toHaveURL(/\/loan-applications(\?|$)/);
+  await expect(page.getByRole("heading", { name: "Branch applications", exact: true })).toBeVisible();
   await expect(page.getByRole("table")).toBeVisible();
   const shortId = await findScoredRow(page, 70, "Scored");
   expect(shortId).toBeTruthy();
@@ -231,6 +235,8 @@ test("US04 detail page shows data beside score and decision", async ({ page }) =
   await page.getByRole("button", { name: "Log out", exact: true }).click();
   await signIn(page);
   await page.getByRole("navigation").getByRole("link", { name: "My applications", exact: true }).click();
+  await expect(page).toHaveURL(/\/loan-applications(\?|$)/);
+  await expect(page.getByRole("heading", { name: "My applications", exact: true })).toBeVisible();
   await expect(page.getByRole("table")).toBeVisible();
   const ownId = await findScoredRow(page, 0);
   expect(ownId).toBeTruthy();
