@@ -91,12 +91,41 @@ def _scoring_result(loan, index, created) -> ScoringResult:
         rejected_reason="score_below_40" if label == ScoreLabel.REJECTED else None, **common)
 
 
+def _is_placeholder_name(name) -> bool:
+    return not name or name == "Loan application" or name.startswith("Application ")
+
+
+def name_existing_demo_loans(db) -> int:
+    """Give already-seeded demo loans their applicant name.
+
+    A database seeded before application names existed holds the placeholder
+    ("Loan application" or "Application <id>"). Only those placeholders are replaced,
+    and only on rows that still match a seed loan, so real data is never touched.
+    """
+    emails = {user.id: user.email for user in db.query(User).filter(User.email.in_([u["email"] for u in USERS]))}
+    by_key = {
+        (owner, income, amount, term, purpose): APPLICANT_NAMES[i]
+        for i, (owner, income, amount, term, _payment, purpose, *_rest) in enumerate(LOANS)
+    }
+    renamed = 0
+    for loan in db.query(LoanApplication).filter(LoanApplication.created_by.in_(list(emails))):
+        name = by_key.get((emails[loan.created_by], loan.monthly_income, loan.loan_amount,
+                           loan.loan_term_months, loan.purpose))
+        if name and _is_placeholder_name(loan.application_name):
+            loan.application_name = name
+            renamed += 1
+    if renamed:
+        db.commit()
+    return renamed
+
+
 def seed_database(db, current_demo: bool = False) -> dict:
     # Serialize opt-in seeding across PostgreSQL workers/processes. The lock is
     # released on commit/rollback; existing accounts and loans are never reset.
     if db.get_bind().dialect.name == "postgresql":
         db.execute(text("SELECT pg_advisory_xact_lock(5012026)"))
     if db.query(LoanApplication).count() > 0:
+        name_existing_demo_loans(db)
         return {}
 
     users = {}
