@@ -89,7 +89,17 @@ label { display: block; margin-bottom: var(--s-4); font-weight: 600; color: var(
 .field { margin-bottom: var(--s-4); } .field > label { margin-bottom: 6px; }
 .field-error { display: block; color: var(--bad); font-weight: 500; margin-top: var(--s-1); font-size: .8125rem; }
 .field.has-error input, .field.has-error textarea, .field.has-error select { border-color: var(--bad); }
-.form { max-width: 560px; }
+.form-grid { display: grid; grid-template-columns: 1fr; gap: var(--s-4); max-width: 960px; }
+.form-group { border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--surface); margin: 0; padding: var(--s-4); min-width: 0; }
+.form-group legend { font-weight: 700; padding: 0 var(--s-2); color: var(--ink); }
+.dsr-line { margin: var(--s-1) 0 0; font-size: .8125rem; color: var(--muted); }
+.dsr-line.warn { color: var(--warn); font-weight: 600; }
+.form-note { margin: 0; }
+.form-actions { position: sticky; bottom: 0; display: flex; align-items: center; gap: var(--s-4); padding: var(--s-3) var(--s-4); background: var(--surface); border-top: 1px solid var(--line); }
+@media (min-width: 700px) {
+  .form-group { display: grid; grid-template-columns: 1fr 1fr; column-gap: var(--s-4); align-items: start; }
+  .form-group legend { grid-column: 1 / -1; }
+}
 .hint { display: block; color: var(--muted); margin-top: var(--s-1); font-size: .8125rem; }
 .req { color: var(--bad); margin-left: var(--s-1); }
 

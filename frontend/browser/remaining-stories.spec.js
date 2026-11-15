@@ -146,10 +146,10 @@ test("US10 edit and confirm cancellation of an unprocessed application", async (
   await openFromList(page, loan.id);
   await page.getByRole("button", { name: "Edit application", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Edit application", exact: true })).toBeVisible();
-  await page.getByLabel("Monthly income (VND)", { exact: true }).fill("0");
+  await page.getByLabel("Monthly income (VND)").fill("0");
   await page.getByRole("button", { name: "Save changes", exact: true }).click();
   await expect(page.locator("#edit-monthly_income-error")).toHaveText("Monthly income must be greater than 0 VND.");
-  await page.getByLabel("Monthly income (VND)", { exact: true }).fill("9000000");
+  await page.getByLabel("Monthly income (VND)").fill("9000000");
   await page.getByRole("button", { name: "Save changes", exact: true }).click();
   await expect(page.getByText("9,000,000 VND", { exact: true })).toBeVisible();
   await expect(page.locator(".alert.warn").filter({ hasText: "High risk." })).toBeVisible();
@@ -332,8 +332,10 @@ test("US08 officer dashboard lists work that needs action", async ({ page }) => 
   await signIn(page, email, "Needs-Action-2026");
   await page.getByRole("navigation").getByRole("link", { name: "New application", exact: true }).click();
   await expect(page.getByRole("heading", { name: "New loan application" })).toBeVisible();
-  for (const [name, value] of Object.entries({ ...Object.fromEntries(Object.entries(VALID).map(([k, v]) => [k, String(v)])), purpose: "Needs action fixture" }))
-    await page.locator(`#field-${name}`).fill(value);
+  for (const [name, value] of Object.entries({ ...Object.fromEntries(Object.entries(VALID).map(([k, v]) => [k, String(v)])), purpose: "Needs action fixture" })) {
+    if (name === "cic_debt_group") await page.locator(`#field-${name}`).selectOption(value);
+    else await page.locator(`#field-${name}`).fill(value);
+  }
   await page.route("**/api/loan-applications/*/score", route => route.fulfill({ status: 503, contentType: "application/json", body: JSON.stringify({ detail: "Scoring is temporarily unavailable. Try again." }) }), { times: 1 });
   const saved = page.waitForResponse(r => r.url().endsWith("/api/loan-applications") && r.request().method() === "POST");
   await page.getByRole("button", { name: "Submit and score", exact: true }).click();
@@ -374,4 +376,24 @@ test("US08 list rows open on click and fit a phone", async ({ page }) => {
   expect(fits).toBe(true);
   const display = await page.locator("tbody tr").first().evaluate(row => getComputedStyle(row).display);
   expect(display).toBe("block");
+});
+
+test("US09 form groups fields, shows DSR and links errors", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await signIn(page);
+  await page.locator(".topbar").getByRole("link", { name: "New application", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "New loan application" })).toBeVisible();
+  await page.locator("#field-monthly_income").fill("20000000");
+  await page.locator("#field-estimated_monthly_payment").fill("12000000");
+  await expect(page.getByText("Installment is 60% of income (above the 50% limit)")).toBeVisible();
+  const amount = await page.locator("#field-loan_amount").boundingBox();
+  const term = await page.locator("#field-loan_term_months").boundingBox();
+  expect(term.y).toBe(amount.y);
+  await page.locator("#field-monthly_income").fill("");
+  await page.getByRole("button", { name: "Submit and score", exact: true }).click();
+  await page.getByRole("alert").getByRole("link", { name: "Monthly income", exact: true }).click();
+  await expect(page.locator("#field-monthly_income")).toBeFocused();
+  await page.setViewportSize({ width: 375, height: 812 });
+  const fits = await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth);
+  expect(fits).toBe(true);
 });
