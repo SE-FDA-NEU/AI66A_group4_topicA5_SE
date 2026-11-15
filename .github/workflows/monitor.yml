@@ -7,7 +7,6 @@ permissions:
   contents: read
 jobs:
   health:
-    if: vars.PUBLIC_APP_URL != ''
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

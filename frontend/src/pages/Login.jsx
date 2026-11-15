@@ -1,6 +1,10 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAuth } from "../auth";
+
 import { validateLogin } from "../login-validation";
+
+const LENS_R = 34;    // magnifier radius (px), must match .magnifier width / 2
+const TEXT_LEFT = 43; // input border (1px) + left padding (42px)
 
 const svgProps = {
   viewBox: "0 0 24 24",
@@ -13,38 +17,111 @@ const svgProps = {
 };
 
 function MailIcon() {
-  return <svg className="field-icon" width="18" height="18" {...svgProps}>
-    <rect x="3" y="5" width="18" height="14" rx="2" />
-    <path d="m3 7 9 6 9-6" />
-  </svg>;
+  return (
+    <svg className="field-icon" width="18" height="18" {...svgProps}>
+      <rect x="3" y="5" width="18" height="14" rx="2" />
+      <path d="m3 7 9 6 9-6" />
+    </svg>
+  );
 }
 
 function LockIcon() {
-  return <svg className="field-icon" width="18" height="18" {...svgProps}>
-    <rect x="4" y="11" width="16" height="10" rx="2" />
-    <path d="M8 11V8a4 4 0 0 1 8 0v3" />
-  </svg>;
+  return (
+    <svg className="field-icon" width="18" height="18" {...svgProps}>
+      <rect x="4" y="11" width="16" height="10" rx="2" />
+      <path d="M8 11V8a4 4 0 0 1 8 0v3" />
+    </svg>
+  );
 }
 
-function EyeIcon({ hidden = false }) {
-  return <svg width="20" height="20" {...svgProps}>
-    {hidden
-      ? <><path d="m3 3 18 18" /><path d="M10.6 10.6a2 2 0 0 0 2.8 2.8" /><path d="M9.9 5.2A10.8 10.8 0 0 1 12 5c6.5 0 10 7 10 7a17 17 0 0 1-3.1 3.9" /><path d="M6.2 6.2C3.5 8 2 12 2 12s3.5 7 10 7c1.4 0 2.7-.3 3.8-.8" /></>
-      : <><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" /><circle cx="12" cy="12" r="3" /></>}
-  </svg>;
+function EyeIcon() {
+  return (
+    <svg width="20" height="20" {...svgProps}>
+      <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  );
+}
+
+function MagnifierIcon() {
+  return (
+    <svg width="20" height="20" {...svgProps}>
+      <circle cx="11" cy="11" r="6" />
+      <path d="m20 20-4.2-4.2" />
+    </svg>
+  );
 }
 
 export default function Login() {
   const { login, notice } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [night, setNight] = useState(false);
+  const [showPw, setShowPw] = useState(false);
   const [fieldErrors, setFieldErrors] = useState({});
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
-  // The eye button controls both the scene and password visibility.
-  // Day = password hidden; night = password visible.
+  const inputRef = useRef(null);
+  const layerRef = useRef(null);
+  const dotsRef = useRef(null);
+  const revealRef = useRef(null);
+  const textRef = useRef(null);
+  const lensRef = useRef(null);
+  const pointer = useRef(null);
+
+  // Night mode = "magnifier" mode
+  const night = showPw;
+
+  // Move the magnifier with the mouse and reveal only the text under the lens
+  useEffect(() => {
+    if (!night) return undefined;
+    const input = inputRef.current;
+    const layer = layerRef.current;
+    const dots = dotsRef.current;
+    const reveal = revealRef.current;
+    const text = textRef.current;
+    const lens = lensRef.current;
+    if (!input || !layer || !dots || !reveal || !text || !lens) return undefined;
+
+    const onMove = (e) => {
+      pointer.current = { x: e.clientX, y: e.clientY };
+    };
+    window.addEventListener("pointermove", onMove);
+
+    let raf = 0;
+    const tick = () => {
+      const box = layer.getBoundingClientRect();
+      const sl = input.scrollLeft; // keep overlay in sync when a long password scrolls
+      dots.style.translate = `${-sl}px 0`;
+      text.style.translate = `${-sl}px 0`;
+
+      const p = pointer.current;
+      if (p) {
+        lens.style.opacity = "1";
+        lens.style.transform = `translate(${p.x - LENS_R}px, ${p.y - LENS_R}px)`;
+        const lx = p.x - box.left;
+        const ly = p.y - box.top;
+        reveal.style.clipPath = `circle(${LENS_R - 3}px at ${lx}px ${ly}px)`;
+        text.style.transformOrigin = `${lx - (TEXT_LEFT - sl)}px ${ly}px`; // zoom around the lens center
+      } else {
+        lens.style.opacity = "0";
+        reveal.style.clipPath = "circle(0px at 0 0)";
+      }
+      raf = requestAnimationFrame(tick);
+    };
+    tick();
+
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener("pointermove", onMove);
+      lens.style.opacity = "0";
+    };
+  }, [night]);
+
+  const toggle = (e) => {
+    if (e.detail > 0) pointer.current = { x: e.clientX, y: e.clientY }; // real mouse click
+    setShowPw((v) => !v);
+  };
 
   const submit = async (e) => {
     e.preventDefault();
@@ -58,7 +135,7 @@ export default function Login() {
     setBusy(true);
     setError("");
     try {
-      await login(email, password);
+      await login(email, password); // App redirects to /dashboard once the user is set
     } catch (err) {
       setFieldErrors(err.fields || {});
       document.getElementById(Object.keys(err.fields || {})[0])?.focus();
@@ -70,97 +147,119 @@ export default function Login() {
   const message = error || notice;
 
   return (
-    <div className={`login-wrap${night ? " night" : ""}`}>
-      <div className="login-scene" aria-hidden="true">
-        <div className="sky sky-day" />
-        <div className="sky sky-night" />
-        <div className="stars" />
-        <div className="celestial sun" />
-        <div className="celestial moon" />
-        <div className="scene-mountain mountain-back" />
-        <div className="scene-mountain mountain-front" />
-        <div className="scene-lake" />
-        <div className="scene-shade" />
-      </div>
+    <div className={"login-wrap" + (night ? " night" : "")}>
+      {/* Page background */}
+      <div className="sky sky-day" aria-hidden="true" />
+      <div className="sky sky-night" aria-hidden="true" />
+      <div className="stars" aria-hidden="true" />
+      <div className="p-mtn p-mtn-left" aria-hidden="true" />
+      <div className="p-mtn p-mtn-right" aria-hidden="true" />
+
+      {/* Magnifying glass (replaces the mouse cursor in night mode) */}
+      <div className="magnifier" ref={lensRef} aria-hidden="true" />
 
       <div className="login">
-        <section className="login-visual">
-          <div className="visual-sky visual-sky-day" />
-          <div className="visual-sky visual-sky-night" />
-          <div className="visual-stars" />
-          <div className="visual-sun" />
-          <div className="visual-moon" />
-          <div className="visual-mountain visual-mountain-back" />
-          <div className="visual-mountain visual-mountain-front" />
-          <div className="visual-lake" />
-          <div className="visual-shade" />
+        {/* Left: illustrated panel */}
+        <div className="login-visual">
+          <div className="v-sky v-sky-day" aria-hidden="true" />
+          <div className="v-sky v-sky-night" aria-hidden="true" />
+          <div className="v-stars" aria-hidden="true" />
+          <div className="v-sun" aria-hidden="true" />
+          <div className="v-moon" aria-hidden="true" />
+          <div className="v-mtn v-mtn-1" aria-hidden="true" />
+          <div className="v-mtn v-mtn-2" aria-hidden="true" />
+          <div className="v-pines" aria-hidden="true" />
+          <div className="v-lake" aria-hidden="true" />
+          <div className="v-shade" aria-hidden="true" />
           <div className="v-text">
-            <span className="visual-kicker">CREDIT SCORING PLATFORM</span>
-            <h2>Make every decision count.</h2>
-            <p>Review loan applications, understand risk, and manage credit decisions for your branch.</p>
-            <div className="visual-indicator"><span /> Secure workspace</div>
+            <h2>Credit Scoring</h2>
+            <p>Sign in to review loan applications and track credit decisions for your branch.</p>
           </div>
-        </section>
+        </div>
 
+        {/* Right: form */}
         <form className="login-form" onSubmit={submit} noValidate>
-          <div className="login-brand">
-            <span className="brand-mark">C</span>
-            <span>Credit Scoring</span>
-          </div>
-          <p className="form-eyebrow">WELCOME BACK</p>
-          <h1>Sign in to your account</h1>
-          <p className="form-intro">Enter your credentials to continue to your workspace.</p>
+          <h1>Sign in</h1>
 
           {message && <div className="alert" role="alert">{message}</div>}
 
-          <div className={`field${fieldErrors.email ? " has-error" : ""}`}>
-            <label htmlFor="email">Email address</label>
+          <div className={"field" + (fieldErrors.email ? " has-error" : "")}>
+            <label htmlFor="email" className="sr-only">Email</label>
             <div className="input-wrap">
               <MailIcon />
-              <input id="email" type="email" value={email} placeholder="name@company.com"
-                onChange={(e) => setEmail(e.target.value)} autoComplete="username" autoFocus
-                aria-invalid={!!fieldErrors.email} aria-describedby={fieldErrors.email ? "email-error" : undefined} />
+              <input
+                id="email"
+                type="email"
+                value={email}
+                placeholder="Email"
+                onChange={(e) => setEmail(e.target.value)}
+                autoComplete="username"
+                autoFocus
+                aria-invalid={!!fieldErrors.email}
+                aria-describedby={fieldErrors.email ? "email-error" : undefined}
+              />
             </div>
             {fieldErrors.email && <span id="email-error" className="field-error" role="alert">{fieldErrors.email}</span>}
           </div>
 
-          <div className={`field${fieldErrors.password ? " has-error" : ""}`}>
-            <label htmlFor="password">Password</label>
+          <div className={"field" + (fieldErrors.password ? " has-error" : "")}>
+            <label htmlFor="password" className="sr-only">Password</label>
             <div className="input-wrap">
               <LockIcon />
-              <input id="password" type={night ? "text" : "password"} value={password}
-                placeholder="Enter your password" onChange={(e) => setPassword(e.target.value)}
-                autoComplete="current-password" aria-invalid={!!fieldErrors.password}
-                aria-describedby={fieldErrors.password ? "password-error" : undefined} />
+              {/* Always type="password": the real text is never shown by the input itself */}
+              <input
+                id="password"
+                ref={inputRef}
+                className={night ? "scan" : ""}
+                type="password"
+                value={password}
+                placeholder="Password"
+                onChange={(e) => setPassword(e.target.value)}
+                autoComplete="current-password"
+                aria-invalid={!!fieldErrors.password}
+                aria-describedby={fieldErrors.password ? "password-error" : undefined}
+              />
+
+              {/* Night mode overlay: dots everywhere, real text only under the lens */}
+              {night && (
+                <div className="pw-layer" ref={layerRef} aria-hidden="true">
+                  <div className="pw-dots" ref={dotsRef}>{"•".repeat(password.length)}</div>
+                  <div className="pw-reveal" ref={revealRef}>
+                    <div className="pw-reveal-text" ref={textRef}>{password}</div>
+                  </div>
+                </div>
+              )}
+
               <button
                 type="button"
                 className="pw-toggle"
-                onMouseDown={(e) => e.preventDefault()}
-                onClick={() => setNight((isNight) => !isNight)}
-                aria-label={night ? "Switch to daytime and hide password" : "Switch to nighttime and show password"}
+                onClick={toggle}
+                aria-label={night ? "Put the magnifier away" : "Inspect password with a magnifier"}
                 aria-pressed={night}
-                title={night ? "Daytime · hide password" : "Nighttime · show password"}
               >
-                <EyeIcon hidden={!night} />
+                {night ? <MagnifierIcon /> : <EyeIcon />}
               </button>
             </div>
             {fieldErrors.password && <span id="password-error" className="field-error" role="alert">{fieldErrors.password}</span>}
           </div>
 
           <div className="login-row">
-            <button type="button" className="link-btn"
-              onClick={() => setError("Please contact your branch manager to reset your password.")}>
+            <button
+              type="button"
+              className="link-btn"
+              onClick={() => setError("Please contact your branch manager to reset your password.")}
+            >
               Forgot password?
             </button>
           </div>
 
-          <button type="submit" className="primary login-submit" disabled={busy}>
+          <button type="submit" className="primary" disabled={busy}>
             {busy ? "Signing in..." : <>Sign in <span aria-hidden="true">→</span></>}
           </button>
+
           <p className="login-foot">Accounts are created by your branch manager.</p>
         </form>
       </div>
-      <p className="scene-caption">A clearer view of credit risk, day or night.</p>
     </div>
   );
 }

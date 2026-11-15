@@ -6,11 +6,13 @@ The dated deployment record below documents actual public/redeploy checks.
 
 ## Release alignment and safe rollback
 
-The read-only health check on 2026-11-09 returned `ok` and live SHA
-`fb2c3dc130e392f370298840ffc873b9d067927a`. The latest verified green-main CI is
-[run 42505446604](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/actions/runs/42505446604), SHA `cd273ab156723f72f7124bdbbe618e08e1ce0595`,
-six successful jobs, about 175 seconds. These are different commits: preserve
-both facts and verify the intended green main SHA reaches Render before tagging v1.0.
+On 2026-11-11 (about 23:28 Vietnam time) a read-only check found live `/health`
+HTTP 200 `ok` with `X-App-Commit`
+`12ac633e3ecf6e7ec7cfc67ab5dd7e8f3e5a5749`, equal to `origin/main` (merge of PR #267).
+Latest green-main CI is [run 43048831988](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/actions/runs/43048831988) on the same commit
+(push, success). Live, main and green CI therefore match at `12ac633`. The 9 November
+state (live `fb2c3dc`, CI `cd273ab`) and the earlier 11 November run `eee6938`
+are historical.
 
 Use the current Blueprint/account setup below. Keep database, region and existing
 keys stable; do not regenerate secrets or replace a database during this docs update.
@@ -24,9 +26,11 @@ re-enable **After CI Checks Pass** only after the corrected main is green.
 Hosted rollback rehearsal remains pending.
 
 Update the README first line and m5-release.json together whenever the URL/version
-changes; set GitHub PUBLIC_APP_URL and confirm the monitor actually runs. Student
-IDs, protection screenshot, actual review evidence and v1.0 still need completion.
-The S5-17 PDF/log-summary tools are not in this checkout, so final export is pending.
+changes. GitHub PUBLIC_APP_URL is an optional override; otherwise the monitor reads
+running_app from m5-release.json. The gate removal is merged; manual monitor run 43048982915 succeeded on `12ac633`,
+but a successful scheduled run is still to be confirmed. The monitor checks health only, not the SHA.
+Student IDs, protection screenshot, actual review evidence and v1.0 still need completion.
+Release verification tools and offline tests are implemented. Final PDF export remains gated on complete, verified release evidence in the metadata.
 
 References: [Render deploy-after-checks](https://render.com/docs/deploys#automatic-deploys),
 [rollback behavior](https://render.com/docs/rollbacks), [health checks](https://render.com/docs/health-checks).
@@ -156,9 +160,9 @@ identifiers in a test instance, supply the matching original data-encryption key
 securely. Do not point the app or this rehearsal at a production restore target.
 After a successful rehearsal, retain the encrypted backup and keys separately.
 
-## Local S5-01 verification
+## Local PostgreSQL verification
 
-On 2026-11-06, the proposed S5-01 source passed **576 backend tests**, with
+On 2026-11-06, the PostgreSQL changes passed **576 backend tests**, with
 **95.32% application coverage**, and the backend/scripts Ruff checks. A disposable
 loopback PostgreSQL **16.15** cluster passed additive legacy migration twice,
 concurrent seed-once, a real server restart, encrypted backup verification and
@@ -205,8 +209,9 @@ References: [SQLAlchemy psycopg dialect](https://docs.sqlalchemy.org/en/20/diale
    record; submit income 0 and verify 422/message/no record created. Restart or
    redeploy the service and verify the created record still exists in Postgres.
 8. Run `python scripts/check_live.py --url https://ACTUAL-URL` and compare
-    `X-App-Commit` with the green CI head SHA. Then set GitHub repository variable
-    `PUBLIC_APP_URL` for the hourly `monitor.yml`. Review failed-run notifications.
+    `X-App-Commit` with the green CI head SHA. The hourly `monitor.yml` uses
+    `PUBLIC_APP_URL` when configured and otherwise reads `running_app` from
+    `docs/m5-release.json`. Review the next scheduled run and failed-run notifications.
 9. Record URL, deployment SHA, green-main CI run and actual branch screenshot in
     `docs/m5-release.json`; put the URL as the first line of README. Add member
     student IDs. Replace only verified pending fields, never a guessed service URL.
@@ -216,7 +221,7 @@ References: [SQLAlchemy psycopg dialect](https://docs.sqlalchemy.org/en/20/diale
 | Item | Actual result |
 |---|---|
 | Public HTTPS app | [credit-score-team04-03or.onrender.com](https://credit-score-team04-03or.onrender.com) |
-| Application commit | `fb2c3dc130e392f370298840ffc873b9d067927a` on `main`; confirmed by `X-App-Commit` |
+| Application commit | `fb2c3dc130e392f370298840ffc873b9d067927a` on `main` at the 9 Nov check; confirmed by `X-App-Commit` |
 | Required CI | [Run 42501981538](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/actions/runs/42501981538): all six checks succeeded; run interval 16:51:11–16:54:08 UTC (2m 57s) |
 | Render service | [credit-score-team04-03or](https://dashboard.render.com/web/srv-dboaqu3rjlhs73at8pfg), Free, Oregon, `checksPass`, `/health` |
 | Initial deploy | `dep-dboaqubrjlhs73at8qu0`: live |
@@ -239,11 +244,24 @@ Actual page captures: [saved data](images/operations/live-p0-data.jpg),
 [390×844 mobile-width viewport](images/operations/mobile-p0.jpg).
 These are page-only captures; the mobile viewport is not a physical-phone test.
 
-Still pending: rollback rehearsal, physical-phone/private-window acceptance,
-actual branch-protection evidence and setting/verifying GitHub `PUBLIC_APP_URL`.
-The Blueprint configuration follow-up needs review/merge before pointing the
-Blueprint back to `main`. No release tag was created. The Free database expiry
-must be addressed if grading continues beyond 9 December 2026.
+## Public acceptance update — 11 November 2026 (Vietnam)
+
+At the time of the 9 November check, physical-phone/private-window captures,
+branch-protection evidence and monitor activation were pending. On 11 November,
+PR [#265](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/pull/265) merged
+Incognito public screenshots and physical-phone dashboard/validation captures.
+These are partial visual evidence: no isolated income-only HTTP 422/no-save
+assertion, full phone P0 flow, current-deployment reload check, or scoring-history
+live capture is included. Do not relabel the 9 November redeploy evidence as a
+current-version check.
+
+Still pending: rollback rehearsal, current-version (`12ac633`) persistence and P0
+acceptance evidence, actual branch-protection evidence, a successful scheduled
+monitor run, and the `v1.0` tag. GitHub main CI run 43048831988 is green on `12ac633`;
+earlier monitor run 43028363826 was skipped (historical). The Blueprint
+configuration follow-up needs review/merge before pointing the Blueprint back to
+`main`. The Free database expiry must be addressed if grading continues beyond
+9 December 2026.
 
 ## Additional public browser captures — 11 November 2026 (Vietnam)
 
@@ -281,4 +299,4 @@ JWT and data keys; code rollback does not reverse database schema/data changes.
 
 Render free web-service files are ephemeral and free Render Postgres expires
 after 30 days. Confirm the existing database's provider/expiry and choose a plan
-that actually lasts through grading. No paid plan has been purchased by this work.
+that meets the required evaluation window. No paid plan has been purchased by this work.

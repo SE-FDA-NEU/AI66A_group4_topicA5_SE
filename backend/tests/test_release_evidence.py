@@ -1,4 +1,4 @@
-"""Offline regression tests for the S5-17 release-evidence tools.
+"""Offline regression tests for the release-evidence tools.
 
 These tests deliberately use temporary files and mocked HTTP/GitHub responses.
 They must not require Render, GitHub credentials, a public URL, or a database.

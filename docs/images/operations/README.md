@@ -7,8 +7,9 @@ local screenshot as production, or a current screenshot as an M3 "before".
 ## Public browser captures — 11 November 2026 (Vietnam)
 
 The following 11 images were supplied for this update. The desktop captures
-were taken in Chrome Incognito on the public Render HTTPS host; two captures
-were taken at a Chrome DevTools responsive viewport; two were taken on a
+were taken in Chrome Incognito on the public Render HTTPS host (seven files; the
+login capture also has DevTools open in a responsive layout); two further captures
+were taken at a 390 × 884 Chrome DevTools responsive viewport; two were taken on a
 physical phone.
 
 | File | Evidence |
@@ -44,7 +45,7 @@ These pre-existing captures are retained unchanged:
   phone test.
 
 The 11 November captures above do not replace the 9 November redeploy evidence.
-The earlier JPEGs are page captures and do not show desktop browser chrome.
+The earlier JPEGs are page captures and do not show desktop browser chrome. Their 9 November URL, commit SHA and Render deploy IDs are recorded in [deployment.md](../../deployment.md). Branch-protection and rollback evidence remain pending.
 
 ## Existing UI evidence
 
@@ -75,4 +76,4 @@ test/release record. Do not fill a Pass result based on a screenshot alone when
 the assertion requires an API response or persistence check.
 
 See [deployment](../../deployment.md), [UI](../../ui.md),
-[M5 demo](../../m5-demo.md) and [operations](../../operations.md).
+[operations](../../operations.md).

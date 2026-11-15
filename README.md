@@ -28,20 +28,32 @@ Vũ Ngọc Hải (@HaiMeoden), Nguyễn Quang Huy (@criticalmatt-dot).
 
 ## Release status
 
-The HTTPS app is live; `/health` returned `ok` on 2026-11-09, with
-`X-App-Commit: fb2c3dc130e392f370298840ffc873b9d067927a`. [Recorded public deployment checks](docs/deployment.md#public-deployment-verification--9-november-2026-vietnam)
-include a synthetic record retained after reload and same-commit Render redeploy.
-Existing JPEGs are page-only captures, and the 390×844 viewport is not a physical-phone test.
+On 2026-11-11 (about 23:28 Vietnam time) the live `/health` returned HTTP 200
+`{"status":"ok"}` with `X-App-Commit: 12ac633e3ecf6e7ec7cfc67ab5dd7e8f3e5a5749`,
+which equals `origin/main` (merge of PR #267) and the latest green-main CI commit.
+The earlier 9 November check (live `fb2c3dc`, CI `cd273ab`) is historical and
+recorded reload and same-commit Render redeploy persistence ([deployment record](docs/deployment.md#public-deployment-verification--9-november-2026-vietnam)).
 
-Latest verified main CI: [run 42505446604](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/actions/runs/42505446604), commit `cd273ab`,
-six jobs green in about **2 min 55 s**. The live SHA and latest main SHA currently
-differ. Before tagging `v1.0`, verify a green main commit actually reaches the URL,
-then record matching live/tag/CI evidence. Do not replace the observed live SHA
-with the main SHA without checking deployment.
+On 2026-11-11, [PR #265](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/pull/265)
+merged new public Incognito screenshots and physical-phone captures. They show
+several real screens, but do not by themselves prove every P0 workflow, an
+isolated HTTP 422/no-save case, or persistence after the current deployment.
 
-Rollback rehearsal, private-window/physical-phone acceptance, branch-protection
-screenshot, member IDs and v1.0 remain pending. Keep verified metadata in
-[m5-release.json](docs/m5-release.json) synchronized when the URL/version changes.
+Latest green main CI: [run 43048831988](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/actions/runs/43048831988), commit `12ac633`
+(push to `main`, success). The "Public health monitor" run
+[43048982915](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/actions/runs/43048982915) on `12ac633` succeeded, but it was a manual
+`workflow_dispatch`, not a scheduled run. Run [43028363826](https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/actions/runs/43028363826)
+was skipped by the former `PUBLIC_APP_URL` gate (historical); that gate removal is
+merged on `main`, and the monitor falls back to the URL in `docs/m5-release.json`.
+The monitor checks health only, not the deployed SHA. Merged M5 PRs: #257-#268
+(#266 was reverted by #268; #267 updated docs/CI evidence).
+
+Still outstanding: tag `v1.0` (no tag or GitHub Release exists yet); complete P0
+acceptance, including the isolated HTTP 422/no-save case, physical-phone checks and
+current-version (`12ac633`) reload/persistence and history; rehearse rollback;
+capture branch-protection settings; add real member student IDs; confirm a
+successful scheduled (not manual) public health-monitor run; and final submission.
+Release metadata is in [m5-release.json](docs/m5-release.json).
 
 ## Run locally
 
@@ -81,9 +93,7 @@ Details also supports scoring history, protected identifier lookup and unprocess
 application edit/cancel. Manager has Notifications and Employees. The server
 enforces ownership, role rules and audit persistence.
 
-- [12-minute demo and evidence checklist](docs/m5-demo.md)
 - [Requirements](docs/requirements.md), [design](docs/design.md), [UI](docs/ui.md), [traceability](docs/traceability.md)
 - [Changelog](docs/changelog.md), [Definition of Done](docs/definition-of-done.md), [sprint records](docs/sprint-log/)
 
-Keep the service and database available at least through **2026-11-30 and until
-grades are published**. See operations for monitoring and maintenance ownership.
+Operational availability targets, monitoring and maintenance ownership are documented in [Operations](docs/operations.md).

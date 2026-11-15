@@ -87,7 +87,7 @@ Business rules enforced by the service/API, rather than by a single column const
 | `detail` | TEXT NULL | | action-specific audit text; identifiers appear only as masked suffixes, never full numbers - **BR7** |
 | `created_at` | DateTime(timezone=True) NOT NULL | | |
 
-### Session revocation table (S4-24)
+### Session revocation table
 
 `revoked_tokens` stores `token_hash` (SHA-256, 64-character primary key),
 `user_id` (required FK to users, indexed, ON DELETE CASCADE) and `created_at`.
@@ -126,7 +126,7 @@ The create flow validates BR2/BR9/input, computes BR3 and saves a pending applic
 
 The dashboard selects applications **created during today's Vietnam calendar day (UTC+7)**, using UTC start/end boundaries. It averages the latest result of each selected application only when that result has a numeric score; it does not fall back to an earlier result. It does not average all scoring attempts or select attempts by the scoring date. Officer scope is their own applications; Manager scope is the whole branch. Seed loans have earlier creation dates, so a fresh seed can correctly show zero applications today.
 
-For 422 schema errors the common `detail` is `Please correct the highlighted fields and submit again.` The exact field messages are listed in [ui.md section 3](ui.md#3-error-messages). S4-05 makes missing, empty, whitespace-only and null `monthly_income` return exactly `Income is required`; nonnumeric or malformed numeric input returns `Monthly income must be a whole number.` The API wording gap is fixed; independent browser acceptance still needs a recorded result. BR9 errors identify `estimated_monthly_payment` and invalid requests save no new application.
+For 422 schema errors the common `detail` is `Please correct the highlighted fields and submit again.` The exact field messages are listed in [ui.md section 3](ui.md#3-error-messages). Missing, empty, whitespace-only and null `monthly_income` return exactly `Income is required`; nonnumeric or malformed numeric input returns `Monthly income must be a whole number.` The API wording gap is fixed; independent browser acceptance still needs a recorded result. BR9 errors identify `estimated_monthly_payment` and invalid requests save no new application.
 
 US10 edit/cancel is implemented by `backend/app/routers/application_changes.py`.
 Partial edits are merged with the persisted row while it is locked, then the
@@ -153,7 +153,7 @@ cannot be rescored. The confirmation flow and API error text are documented in
 applications remain protected from US10 edit/cancel operations.
 
 
-### Application input validation and BR9 (S4-05)
+### Application input validation and BR9
 
 `POST /api/loan-applications` accepts whole-number monetary inputs and a whole-number
 term/CIC group, rejecting booleans and malformed numeric text such as `1_000`, `1.5`
@@ -170,7 +170,7 @@ All validation failures save no new loan. Unknown fields and non-object/malforme
 receive clear field/form errors through the shared validation handler.
 
 
-### Login input and lock expiry (S4-06)
+### Login input and lock expiry
 
 `POST /api/auth/login` requires nonblank text: email is at most 254 characters
 and password at most 128. Missing, null, empty or whitespace-only values return
@@ -187,7 +187,7 @@ login and clears the counter and lock. The fixed-clock regression test checks
 lock creation and expiry at -1, 0 and +1 microsecond.
 
 
-### Logout and private-response caching (S4-24)
+### Logout and private-response caching
 
 Each login adds a random JWT `jti`, distinguishing simultaneous sessions.
 `get_current_user` rejects fingerprints in `revoked_tokens` before loading the
@@ -203,7 +203,7 @@ All `/api/` responses and retained `/loan-applications` HTML now carry
 `Cache-Control: no-store` and `Pragma: no-cache`, including masked details.
 The `pageshow` guard and protected routes prevent Back restoring signed-out UI.
 
-### Login form validation (S4-25)
+### Login form validation
 
 `frontend/src/login-validation.js` mirrors the existing API's nonblank and
 254/128-character limits before Sign in sends a request. Length counts Unicode
@@ -217,7 +217,7 @@ shared client into inline errors. Client-side failures never call login. Server
 401/403/423 and network errors retain their existing message display. The four
 `frontend/tests/login-validation.test.js` cases cover blanks, length boundaries,
 preserved credential text and malformed email. No API, schema or lockout change
-is part of S4-25.
+is part of the form validation behavior.
 
 ## 4. Walking skeleton retained from M2
 

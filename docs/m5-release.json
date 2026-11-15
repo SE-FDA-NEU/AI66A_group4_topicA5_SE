@@ -28,8 +28,8 @@
   "repository": "https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE",
   "project_board": "https://github.com/orgs/SE-FDA-NEU/projects/13/views/1",
   "release_v1_0": null,
-  "deployed_commit": "fb2c3dc130e392f370298840ffc873b9d067927a",
-  "latest_green_ci_on_main": "https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/actions/runs/42505446604",
+  "deployed_commit": "12ac633e3ecf6e7ec7cfc67ab5dd7e8f3e5a5749",
+  "latest_green_ci_on_main": "https://github.com/SE-FDA-NEU/AI66A_group4_topicA5_SE/actions/runs/43048831988",
   "branch_protection_screenshot": null,
   "merged_m5_prs": [
     257,
@@ -37,27 +37,33 @@
     259,
     260,
     261,
-    262
+    262,
+    263,
+    264,
+    265,
+    266,
+    267,
+    268
   ],
-  "keep_online_at_least_until": "2026-11-30",
-  "keep_online_until_grades_published": true,
   "status": "deployed_pending_final_acceptance",
   "scoring_engine": "rules-v1",
   "offline_ai_training_in_scope": false,
-  "ci_commit": "cd273ab156723f72f7124bdbbe618e08e1ce0595",
-  "ci_run_duration_seconds": 175,
-  "evidence_checked_on": "2026-11-09",
+  "ci_commit": "12ac633e3ecf6e7ec7cfc67ab5dd7e8f3e5a5749",
+  "ci_run_duration_seconds": null,
+  "evidence_checked_on": "2026-11-11",
   "release_alignment": {
-    "live_matches_latest_main_ci": false,
-    "observed_live_commit": "fb2c3dc130e392f370298840ffc873b9d067927a",
-    "latest_main_ci_commit": "cd273ab156723f72f7124bdbbe618e08e1ce0595",
-    "action": "Deploy and verify a green main commit, then tag the matching live commit v1.0."
+    "live_matches_latest_main_ci": true,
+    "observed_live_commit": "12ac633e3ecf6e7ec7cfc67ab5dd7e8f3e5a5749",
+    "latest_main_ci_commit": "12ac633e3ecf6e7ec7cfc67ab5dd7e8f3e5a5749",
+    "action": "Live, main and green CI match at 12ac633; tag this commit v1.0 after remaining acceptance evidence is recorded.",
+    "last_live_health_check": "2026-11-11"
   },
   "evidence_pending": [
-    "Rollback rehearsal and private-window/physical-phone acceptance",
-    "Address-bar-visible live captures and genuine M3 before/after feedback evidence",
-    "Align actual live commit, v1.0 tag and latest green-main CI commit",
-    "Member student IDs and actual protection screenshot/exact required rules",
-    "Per-member reviews/closed issues, monitor PUBLIC_APP_URL activation and final submission"
-  ]
+    "Rollback rehearsal; isolated HTTP 422/no-save and complete P0 acceptance, including current-version persistence and history",
+    "Capture the two M3 feedback improvements before/after with genuine evidence",
+    "Member student IDs and actual branch-protection settings screenshot/rules",
+    "Confirm a successful scheduled (not manual) public health-monitor run",
+    "Final submission after all evidence is verified"
+  ],
+  "deployed_commit_verified_on": "2026-11-11"
 }

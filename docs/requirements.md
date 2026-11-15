@@ -4,7 +4,7 @@ This document is the product requirement baseline. Implementation and acceptance
 status for Sprint 3 are tracked in [ui.md](ui.md#1-p0-stories-and-status) and
 [traceability.md](traceability.md); a requirement appearing here does not mean it
 is already implemented. US07 adds Manager-only Notifications, a 30-second counter and persisted read state. US06 history UI and
-US10 edit/cancel are implemented in this copy. S4-05 fixes the API's exact empty-income message while retaining
+US10 edit/cancel are implemented in this copy. The API now returns its exact empty-income message while retaining
 the US09 acceptance criterion below. Independent browser acceptance still needs
 a recorded result; see [ui.md](ui.md#3-error-messages).
 
@@ -94,7 +94,7 @@ With 2 years of experience in the profession, Hoang processes an average of 1 to
 **US02 — Logout**
 - Given an active session, when selecting logout, then the session terminates and the user is redirected to `/`.
 - Given a logged-out state, when clicking the browser's Back button, then the system must not display cached Dashboard data.
-- S4-24: logout revokes the current bearer token on the server (204); subsequent
+- Logout revokes the current bearer token on the server (204); subsequent
   protected requests using it return 401, while an independent session remains
   valid. Only the token's SHA-256 fingerprint is stored.
 - Private API/legacy HTML responses use no-store/no-cache. If revocation cannot
@@ -165,7 +165,7 @@ With 2 years of experience in the profession, Hoang processes an average of 1 to
 
 ![Screen flow](images/screen-flow.jpg)
 
-### S4-05 validation clarification
+### Validation clarification
 
 US09 empty/missing/null income returns exactly `Income is required`. Numeric fields
 reject booleans and malformed numeric text; optional blank CIC/text are normalized to
