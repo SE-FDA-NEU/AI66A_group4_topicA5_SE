@@ -183,3 +183,70 @@ test("US10 an approved application refuses editing in the interface", async ({ p
   await expect(page.getByRole("alert")).toHaveText("Application already processed, cannot be edited");
   await expect(page.getByRole("button", { name: "Save changes", exact: true })).toHaveCount(0);
 });
+
+test("shell is usable at 375px", async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 812 });
+  await signIn(page);
+  await page.goto("/dashboard");
+  const fits = await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth);
+  expect(fits).toBe(true);
+  const toggle = page.getByRole("button", { name: "Menu" });
+  await expect(toggle).toHaveAttribute("aria-expanded", "false");
+  await toggle.click();
+  await expect(toggle).toHaveAttribute("aria-expanded", "true");
+  await page.keyboard.press("Escape");
+  await expect(toggle).toHaveAttribute("aria-expanded", "false");
+  await expect(toggle).toBeFocused();
+  await toggle.click();
+  await expect(toggle).toHaveAttribute("aria-expanded", "true");
+  const link = page.getByRole("navigation").getByRole("link", { name: "My applications" });
+  await expect(link).toBeVisible();
+  await link.click();
+  await expect(page).toHaveURL(/\/loan-applications$/);
+  await expect(toggle).toHaveAttribute("aria-expanded", "false");
+  await page.evaluate(() => document.activeElement && document.activeElement.blur());
+  await page.locator("a.brand").focus();
+  await page.keyboard.press("Tab");
+  await expect(toggle).toBeFocused();
+  const outline = await toggle.evaluate((el) => getComputedStyle(el).outlineStyle);
+  expect(outline).not.toBe("none");
+});
+
+// The single collapse breakpoint is 1280px (the Manager bar needs ~1170px on Windows fonts; Linux fonts run wider).
+async function expectNoWrap(page) {
+  const fits = await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth);
+  expect(fits).toBe(true);
+  const box = await page.locator(".topbar").boundingBox();
+  expect(box.height).toBeLessThanOrEqual(57);
+  const heights = await page.locator(".topbar nav a").evaluateAll((els) => els.map((el) => el.getBoundingClientRect().height));
+  expect(heights.length).toBe(5);
+  for (const h of heights) expect(h).toBeLessThanOrEqual(40);
+}
+
+for (const width of [1366, 1440]) {
+  test(`Manager top bar stays on one row at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 });
+    await signIn(page, "thanh@branch.vn");
+    await expect(page.getByRole("button", { name: "Menu" })).toBeHidden();
+    await expect(page.getByRole("navigation")).toBeVisible();
+    await expectNoWrap(page);
+    // A long real name must not wrap or grow the bar either.
+    await page.evaluate(() => { document.querySelector(".user-name-text").textContent = "Nguyen Thi Thanh Huong"; });
+    await expect(page.locator(".user-name-text")).toHaveAttribute("title", "Do Hong Thanh");
+    await expectNoWrap(page);
+  });
+}
+
+for (const width of [1280, 768]) {
+  test(`Manager nav collapses behind Menu at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 });
+    await signIn(page, "thanh@branch.vn");
+    const fits = await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth);
+    expect(fits).toBe(true);
+    const toggle = page.getByRole("button", { name: "Menu" });
+    await expect(toggle).toBeVisible();
+    await expect(page.getByRole("navigation")).toBeHidden();
+    await toggle.click();
+    await expect(page.getByRole("navigation")).toBeVisible();
+  });
+}

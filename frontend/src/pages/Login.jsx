@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useAuth } from "../auth";
 import { validateLogin } from "../login-validation";
+import Field from "../components/Field";
 
 const svgProps = {
   viewBox: "0 0 24 24",
@@ -74,25 +75,20 @@ export default function Login() {
             <span className="brand-mark">C</span>
             <span>Credit Scoring</span>
           </div>
-          <p className="form-eyebrow">WELCOME BACK</p>
           <h1>Sign in to your account</h1>
-          <p className="form-intro">Enter your credentials to continue to your workspace.</p>
 
           {message && <div className="alert" role="alert">{message}</div>}
 
-          <div className={`field${fieldErrors.email ? " has-error" : ""}`}>
-            <label htmlFor="email">Email address</label>
+          <Field id="email" label="Email address" error={fieldErrors.email}>
             <div className="input-wrap">
               <MailIcon />
-              <input id="email" type="email" value={email} placeholder="name@company.com"
+              <input id="email" type="email" value={email} placeholder="name@branch.vn"
                 onChange={(e) => setEmail(e.target.value)} autoComplete="username" autoFocus
                 aria-invalid={!!fieldErrors.email} aria-describedby={fieldErrors.email ? "email-error" : undefined} />
             </div>
-            {fieldErrors.email && <span id="email-error" className="field-error" role="alert">{fieldErrors.email}</span>}
-          </div>
+          </Field>
 
-          <div className={`field${fieldErrors.password ? " has-error" : ""}`}>
-            <label htmlFor="password">Password</label>
+          <Field id="password" label="Password" error={fieldErrors.password}>
             <div className="input-wrap">
               <LockIcon />
               <input id="password" type={showPassword ? "text" : "password"} value={password}
@@ -110,8 +106,7 @@ export default function Login() {
                 <EyeIcon hidden={!showPassword} />
               </button>
             </div>
-            {fieldErrors.password && <span id="password-error" className="field-error" role="alert">{fieldErrors.password}</span>}
-          </div>
+          </Field>
 
           <div className="login-row">
             <button type="button" className="link-btn"

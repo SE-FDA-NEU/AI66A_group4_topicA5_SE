@@ -28,6 +28,9 @@ test("role-specific navigation, dashboard and employee route render correctly", 
     assert.ok(render("admin", "/loan-applications").includes("Branch applications"));
     assert.ok(render("user", "/loan-applications").includes("My applications"));
     assert.ok(render("user", "/admin/users").includes("You need Manager access"));
+    assert.ok(officer.includes('class="menu-toggle"') && officer.includes('aria-expanded="false"') && officer.includes('aria-controls="main-nav"'));
+    assert.ok(!officer.includes("Risk insights") && !manager.includes("Risk insights"));
+    assert.ok(manager.includes("manager-bar"));
   } finally {
     if (previousStorage === undefined) delete globalThis.sessionStorage;
     else globalThis.sessionStorage = previousStorage;

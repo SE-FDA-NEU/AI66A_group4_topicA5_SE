@@ -25,6 +25,8 @@ async function list(page) {
 }
 
 async function fillApplication(page, overrides = {}) {
+  const menu = page.getByRole("button", { name: "Menu", exact: true });
+  if (await menu.isVisible()) await menu.click(); // collapsed nav on narrow viewports
   await page.getByRole("navigation").getByRole("link", { name: "New application", exact: true }).click();
   await expect(page.getByRole("heading", { name: "New loan application" })).toBeVisible();
   for (const [name, value] of Object.entries({ ...VALID, ...overrides })) await page.locator(`#field-${name}`).fill(value);
@@ -57,6 +59,15 @@ test("US01 login rejects invalid input, locks after three failures and opens Das
   await expect(page.locator("#email-error")).toHaveText("Email must not exceed 254 characters.");
   await expect(page.locator("#password-error")).toHaveText("Password must not exceed 128 characters.");
   expect(requests).toBe(0);
+  const desktop = page.viewportSize();
+  await page.setViewportSize({ width: 375, height: 812 });
+  await page.getByLabel("Email address", { exact: true }).fill("a".repeat(246) + "@branch.vn");
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  await expect(page.locator("#email-error")).toBeVisible();
+  await expect(page.locator("#password-error")).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+  expect(requests).toBe(0);
+  if (desktop) await page.setViewportSize(desktop);
   await page.getByLabel("Email address", { exact: true }).fill("linh@branch.vn");
   await page.getByLabel("Password", { exact: true }).fill("wrong");
   for (let attempt = 0; attempt < 3; attempt++) {

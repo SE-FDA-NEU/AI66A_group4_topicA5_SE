@@ -240,6 +240,31 @@ US07 adds Manager-only Notifications, a 30-second counter and persisted read sta
 
 **Evidence status:** five running-app screenshots are included below.
 
+### Design system (PR 1)
+
+PR 1 of the UI unification replaces the three visual styles (dark glass login, gradient workspace, plain pages) with one system.
+
+- **Tokens** (`frontend/src/styles.css`): one light theme, no gradients or glass; brand `#176b78`; radii 6 / 10 / 14 px; 4 px spacing scale; system font stack.
+- **Wording** (`frontend/src/glossary.js`): single source for status labels (`statusText`, `RISK_TEXT`); score labels are defined here and wired in PR 2.
+- **Components** (`frontend/src/components/`): `PageHeader`, `Field`, `Card`, `DataList`.
+- **Top bar:** compact 56 px bar; navigation collapses into a "Menu" toggle at 1280 px and below (the Manager bar needs about 1170 px for one row on Windows fonts and Linux fonts run wider, so this is higher than the 600 px first planned); the user name is truncated with an ellipsis at 14ch (full name in the tooltip). Footer reads "Credit Scoring" only.
+- **Login:** rebuilt on the shared system, no intro panel, placeholder `name@branch.vn`.
+
+Before / after. Before: pre-redesign build d74ed7e (= origin/main); after: branch head. Both captured 2026-11-15 on the seeded test server (`backend/tests/browser_server.py`).
+
+| View | Before | After |
+| --- | --- | --- |
+| Login 1440 | ![](images/ui/redesign/pr1-before-login-1440.png) | ![](images/ui/redesign/pr1-after-login-1440.png) |
+| Login 390 | not captured (no before image) | ![](images/ui/redesign/pr1-after-login-390.png) |
+| Officer dashboard 1440 | ![](images/ui/redesign/pr1-before-officer-dashboard-1440.png) | ![](images/ui/redesign/pr1-after-officer-dashboard-1440.png) |
+| Manager top bar 390 (before: old bar, no menu; after: Menu open) | ![](images/ui/redesign/pr1-before-manager-topbar-390.png) | ![](images/ui/redesign/pr1-after-manager-topbar-390.png) |
+
+Findings re-check against the after images:
+
+- **V1** (login vs workspace visual mismatch): fixed for login and top bar; both use the same tokens. Other pages still carry old layouts until PR 2-4.
+- **C1** (generic copy), login part: fixed ("WELCOME BACK" and intro removed, placeholder `name@branch.vn`). Form and remaining page copy is left to PR 4.
+- **L6** (mobile top bar about 180 px tall), top bar part: partly fixed. The closed bar is 56 px; with Menu open it lists all links and the user row. List and dashboard layout on mobile is left to PR 3.
+
 ### Running-app screenshots
 
 ![Login screen](images/ui/login-screen.png)
