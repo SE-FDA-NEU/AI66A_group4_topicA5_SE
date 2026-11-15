@@ -1,6 +1,6 @@
-export default function Field({ id, label, required, hint, error, announce = true, children }) {
+export default function Field({ id, label, required, hint, error, announce = true, wide = false, children }) {
   return (
-    <div className={`field${error ? " has-error" : ""}`}>
+    <div className={`field${wide ? " field-wide" : ""}${error ? " has-error" : ""}`}>
       <label htmlFor={id}>
         {label}
         {required && <span className="req" aria-hidden="true">*</span>}

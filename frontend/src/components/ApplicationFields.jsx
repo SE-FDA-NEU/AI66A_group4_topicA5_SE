@@ -41,7 +41,7 @@ export default function ApplicationFields({ form, setForm, errors, idPrefix, sho
     return <input {...props} type="text" inputMode={numeric ? "numeric" : "text"} />;
   };
   const field = (name, label, options = {}) => (
-    <Field id={`${idPrefix}${name}`} label={label} required={REQUIRED.includes(name)} hint={HINTS[name]} error={errors[name]} announce={false}>
+    <Field id={`${idPrefix}${name}`} label={label} required={REQUIRED.includes(name)} hint={HINTS[name]} error={errors[name]} announce={false} wide={options.wide}>
       {control(name, options)}
       {options.after}
     </Field>
@@ -56,7 +56,7 @@ export default function ApplicationFields({ form, setForm, errors, idPrefix, sho
     <>
       <fieldset className="form-group">
         <legend>Loan</legend>
-        {field("application_name", "Application name", { numeric: false })}
+        {field("application_name", "Application name", { numeric: false, wide: true })}
         {field("loan_amount", "Loan amount (VND)")}
         {field("loan_term_months", "Loan term (months)")}
         {field("estimated_monthly_payment", "Estimated monthly payment (VND)", { after: dsrLine })}

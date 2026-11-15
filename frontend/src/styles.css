@@ -99,7 +99,7 @@ label { display: block; margin-bottom: var(--s-4); font-weight: 600; color: var(
 @media (max-height: 600px) { .form-actions { position: static; } }
 @media (min-width: 700px) {
   .form-group { display: grid; grid-template-columns: 1fr 1fr; column-gap: var(--s-4); align-items: start; }
-  .form-group legend { grid-column: 1 / -1; }
+  .form-group legend, .form-group .field-wide { grid-column: 1 / -1; }
 }
 .hint { display: block; color: var(--muted); margin-top: var(--s-1); font-size: .8125rem; }
 .req { color: var(--bad); margin-left: var(--s-1); }
