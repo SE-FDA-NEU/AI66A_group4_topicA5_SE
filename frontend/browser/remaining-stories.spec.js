@@ -311,3 +311,25 @@ for (const width of [1280, 768]) {
     await expect(page.getByRole("navigation")).toBeVisible();
   });
 }
+
+test("US08 officer dashboard lists work that needs action", async ({ page }) => {
+  await signIn(page);
+  await page.getByRole("navigation").getByRole("link", { name: "New application", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "New loan application" })).toBeVisible();
+  for (const [name, value] of Object.entries({ ...Object.fromEntries(Object.entries(VALID).map(([k, v]) => [k, String(v)])), purpose: "Needs action fixture" }))
+    await page.locator(`#field-${name}`).fill(value);
+  await page.route("**/api/loan-applications/*/score", route => route.fulfill({ status: 503, contentType: "application/json", body: JSON.stringify({ detail: "Scoring is temporarily unavailable. Try again." }) }), { times: 1 });
+  const saved = page.waitForResponse(r => r.url().endsWith("/api/loan-applications") && r.request().method() === "POST");
+  await page.getByRole("button", { name: "Submit and score", exact: true }).click();
+  const loan = await (await saved).json();
+  await expect(page.getByRole("alert").filter({ hasText: "Scoring is temporarily unavailable" })).toBeVisible();
+  const shortId = loan.id.slice(0, 8);
+  await page.goto("/dashboard");
+  const card = () => page.locator(".card").filter({ has: page.getByRole("heading", { name: "Needs my action", exact: true }) });
+  const row = card().getByRole("row").filter({ hasText: shortId });
+  await row.getByRole("link", { name: "Get credit score", exact: true }).click();
+  await expect(page.locator(".score .big")).toBeVisible();
+  await page.goto("/dashboard");
+  await expect(page.getByRole("heading", { name: "Needs my action", exact: true })).toBeVisible();
+  await expect(card().getByRole("row").filter({ hasText: shortId })).toHaveCount(0);
+});

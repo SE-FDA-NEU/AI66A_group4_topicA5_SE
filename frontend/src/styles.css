@@ -108,9 +108,10 @@ label { display: block; margin-bottom: var(--s-4); font-weight: 600; color: var(
 .notification-list { list-style: none; margin: 0; padding: 0; }
 
 /* ---------- Data (table / dl / tiles / score) ---------- */
-.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--s-4); }
+.tiles { display: flex; flex-wrap: wrap; gap: var(--s-4); margin-bottom: var(--s-4); }
+.tiles > .tile { flex: 1 1 200px; }
 .tile { text-align: left; margin: 0; }
-.tile .num { display: block; font-size: 2rem; font-weight: 600; color: var(--brand); }
+.tile .num { display: inline-block; margin-right: var(--s-2); font-size: 1.5rem; font-weight: 600; color: var(--brand); }
 .scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--surface); }
 table { width: 100%; border-collapse: collapse; background: transparent; }
 th, td { padding: var(--s-3) var(--s-4); text-align: left; border-bottom: 1px solid var(--line); white-space: nowrap; }
@@ -153,7 +154,7 @@ dt { color: var(--muted); } dd { margin: 0; }
 }
 .card-head { display: flex; align-items: center; justify-content: space-between; gap: var(--s-4); margin-bottom: var(--s-4); }
 .card-head h2 { margin: 0; }
-.tile.card { min-height: 112px; }
+.tile.card { min-height: 0; }
 .page-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--s-4); margin-bottom: var(--s-6); }
 .page-header h1 { margin: 0; }
 .page-actions { display: flex; align-items: center; gap: var(--s-3); }
@@ -245,7 +246,7 @@ dt { color: var(--muted); } dd { margin: 0; }
   .score .big { min-width: 0; font-size: 2.4rem; }
   th, td { padding: var(--s-2) 10px; }
   .wrap-cell { min-width: 160px; }
-  .tiles { grid-template-columns: 1fr; }
+  .tiles { flex-direction: column; }
   .actions > *, .filter-tabs > * { flex: 1 1 auto; text-align: center; }
 }
 
