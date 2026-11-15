@@ -143,7 +143,7 @@ export default function ApplicationDetail() {
   };
 
   const from = location.state?.from;
-  const backTarget = typeof from === "string" && (from === "/dashboard" || from.startsWith("/loan-applications")) ? from : "/loan-applications";
+  const backTarget = typeof from === "string" && (from === "/dashboard" || from.startsWith("/loan-applications")) ? from : user.role === "admin" ? "/loan-applications?view=review" : "/loan-applications";
   const backLabel = backTarget === "/dashboard" ? "Back to the dashboard" : "Back to the list";
 
   if (state.status === "loading") return <Loading text="Loading the application..." />;

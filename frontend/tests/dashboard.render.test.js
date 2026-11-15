@@ -45,6 +45,15 @@ test("Officer dashboard empty state shows no tables", () => {
   assert.ok(!html.includes("<table"));
 });
 
+test("Officer dashboard Recent card does not claim 0 applications when work needs action", () => {
+  const html = render({
+    data: { date: "2026-11-15", total_applications: 1, average_score: null, high_risk_count: 0 },
+    applications: [app("aaaaaaaa-1", "pending", "2026-11-15T08:00:00Z")],
+  });
+  assert.ok(html.includes("Nothing else to show.") && html.includes("Today, 2026-11-15"));
+  assert.ok(!html.includes(">0 applications<"));
+});
+
 test("Manager dashboard puts the review queue and filter chips before today stats", () => {
   const html = renderManager({
     data: { date: "2026-11-15", total_applications: 3, average_score: 60, high_risk_count: 1 },

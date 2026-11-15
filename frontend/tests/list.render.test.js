@@ -48,4 +48,13 @@ test("Date sort control only appears on the all view", () => {
   assert.ok(render({ ...props, manager: true, view: "all" }).includes('aria-sort="none"'));
   assert.ok(render({ ...props, manager: true, view: "all", sort: "newest" }).includes('aria-sort="descending"'));
   assert.ok(!render({ ...props, manager: true, view: "review" }).includes("aria-sort"));
+  assert.ok(!render({ ...props, manager: true, view: "review" }).includes("Sort"));
+});
+
+test("Sort control sits outside the table header and states the current order", () => {
+  const html = render({ ...props, manager: true, view: "all", sort: "newest" });
+  const head = html.slice(html.indexOf("<thead"), html.indexOf("</thead>"));
+  assert.ok(!head.includes("<button"));
+  assert.ok(html.includes("Sort: newest first"));
+  assert.ok(render({ ...props, manager: true, view: "all", sort: "oldest" }).includes("Sort: oldest first"));
 });

@@ -13,6 +13,7 @@ import { Empty, ErrorBox, Loading } from "../components/States";
 const VIEWS = ["all", ...Object.keys(QUEUE_FILTER_TEXT)];
 const VIEW_TEXT = { all: "All applications", ...QUEUE_FILTER_TEXT };
 const SORT_DIRECTION = { newest: "desc", oldest: "asc" };
+const SORT_TEXT = { newest: "Sort: newest first", oldest: "Sort: oldest first", none: "Sort by date" };
 const ARIA_SORT = { newest: "descending", oldest: "ascending" };
 
 const heading = (manager) => <PageHeader title={manager ? "Branch applications" : "My applications"}
@@ -44,16 +45,15 @@ export function ListView({ rows, allRows, manager, view, owner, sort, onFilter, 
       {(view !== "all" || owner !== "all") && <button type="button" onClick={onClear}>Clear filters</button>}
     </section>}
     <p role="status">{rows.length} {manager ? "matching branch applications" : "applications created by you"}</p>
+    {view === "all" && rows.length > 0 && <div className="list-toolbar">
+      <button type="button" onClick={() => onSort(sort === "newest" ? "oldest" : "newest")}>{SORT_TEXT[sort] ?? SORT_TEXT.none}</button>
+    </div>}
     {rows.length === 0 ? <Empty text={manager ? "No applications match this view." : "You have no applications yet."}>
       {manager ? <button onClick={onClear}>Show all branch applications</button> : <Link className="button primary" to="/loan-applications/new">Create an application</Link>}
     </Empty> : <div className="scroll"><table className="list-table">
       <thead><tr>
         <th aria-sort={view === "all" ? ARIA_SORT[sort] ?? "none" : undefined}>
-          {view === "all"
-            ? <button type="button" className="link-btn" onClick={() => onSort(sort === "newest" ? "oldest" : "newest")}>
-              Application{sort === "newest" ? " (newest first)" : sort === "oldest" ? " (oldest first)" : " (sort by date)"}
-            </button>
-            : "Application"}
+          Application
         </th>
         {manager && <th>Created by</th>}<th>Income / month</th><th>Loan · term</th><th>Score</th><th>Status</th><th><span className="sr-only">Action</span></th>
       </tr></thead>

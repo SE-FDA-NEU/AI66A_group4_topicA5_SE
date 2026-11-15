@@ -27,10 +27,10 @@ export function ManagerView({ data, applications }) {
       <h2 id="queue-title">Manager review queue</h2>
       {queue.length === 0 ? <Empty text="No applications awaiting manager review." /> : <>
         <div className="scroll"><table>
-          <thead><tr><th>Application / Officer</th><th>Loan / score</th><th>Review reason</th><th /></tr></thead>
+          <thead><tr><th>Application / Officer</th><th>Loan / score</th><th>Review reason</th><th><span className="sr-only">Action</span></th></tr></thead>
           <tbody>{queue.slice(0, 8).map((a) => <tr key={a.id}>
             <td><strong>#{a.id.slice(0, 8)}</strong><br />{a.owner_name}<br /><small>{formatDateTime(a.created_at)}</small></td>
-            <td>{vnd(a.loan_amount)}<br />Score: {a.latest_score?.score ?? "Not available"}</td>
+            <td>{vnd(a.loan_amount)}<br />Score: {a.latest_score?.score ?? "Not scored"}</td>
             <td className="wrap-cell"><StatusBadge status={a.status} /> <RiskBadge high={a.dsr_flag_high_risk} />
               {a.status === "pending" ? <p className="muted">{reviewReason(a)}</p> : <p>{reviewReason(a)}</p>}</td>
             <td><Link to={`/loan-applications/${a.id}`} state={{ from: "/dashboard" }}>Review application</Link></td>

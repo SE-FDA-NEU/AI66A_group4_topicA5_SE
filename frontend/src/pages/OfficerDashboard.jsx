@@ -10,7 +10,7 @@ import { officerWorklist } from "../worklists";
 
 function WorkTable({ rows, action }) {
   return <div className="scroll"><table>
-    <thead><tr><th>Application</th><th>Loan</th><th>Status</th><th /></tr></thead>
+    <thead><tr><th>Application</th><th>Loan</th><th>Status</th><th><span className="sr-only">Action</span></th></tr></thead>
     <tbody>{rows.map((a) => <tr key={a.id}>
       <td><strong>#{a.id.slice(0, 8)}</strong><br /><small>{formatDateTime(a.created_at)}</small></td>
       <td>{vnd(a.loan_amount)}</td>
@@ -35,13 +35,13 @@ export function OfficerView({ data, applications }) {
       <div className="card tile"><span className="num">{data.average_score ?? "-"}</span>average score</div>
       <div className="card tile"><span className="num">{data.high_risk_count}</span>high risk today</div>
     </div>
-    <p className="muted"><small>{data.date}</small></p>
+    <p className="muted"><small>Today, {data.date}</small></p>
     {data.total_applications === 0 && <p className="muted">0 applications today.</p>}
     <Card title="Needs my action">
       {needsAction.length === 0 ? <Empty text="Nothing needs your action." /> : <WorkTable rows={needsAction} action={actionLink} />}
     </Card>
     <Card title="Recent applications" actions={<Link to="/loan-applications">All my applications</Link>}>
-      {recent.length === 0 ? <Empty text="0 applications" /> : <WorkTable rows={recent} action={openLink} />}
+      {recent.length === 0 ? <Empty text={needsAction.length === 0 ? "0 applications" : "Nothing else to show."} /> : <WorkTable rows={recent} action={openLink} />}
     </Card>
   </>;
 }

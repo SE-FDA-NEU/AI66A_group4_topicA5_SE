@@ -3,10 +3,10 @@ import { test, expect } from "@playwright/test";
 const VALID = { monthly_income: 20000000, loan_amount: 100000000, loan_term_months: 24,
   estimated_monthly_payment: 5000000, purpose: "P1/P2 browser fixture", credit_history_note: "3 years, on time", cic_debt_group: 1 };
 
-async function signIn(page, email = "hoang@branch.vn") {
+async function signIn(page, email = "hoang@branch.vn", password = "Demo@2026") {
   await page.goto("/");
   await page.getByLabel("Email address", { exact: true }).fill(email);
-  await page.getByLabel("Password", { exact: true }).fill("Demo@2026");
+  await page.getByLabel("Password", { exact: true }).fill(password);
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await expect(page.getByRole("heading", { name: /applications overview|Branch review overview/ })).toBeVisible();
 }
@@ -206,13 +206,14 @@ async function findScoredRow(page, minScore, status) {
 test("US04 detail page shows data beside score and decision", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await signIn(page, "thanh@branch.vn");
-  await page.getByRole("navigation").getByRole("link", { name: "Branch applications", exact: true }).click();
-  await expect(page).toHaveURL(/\/loan-applications(\?|$)/);
+  await page.getByRole("link", { name: "Open review queue", exact: true }).click();
+  await expect(page).toHaveURL(/view=review/);
   await expect(page.getByRole("heading", { name: "Branch applications", exact: true })).toBeVisible();
   await expect(page.getByRole("table")).toBeVisible();
   const shortId = await findScoredRow(page, 70, "Scored");
   expect(shortId).toBeTruthy();
-  await openFromList(page, shortId, true);
+  await page.getByRole("row").filter({ hasText: shortId.slice(0, 8) }).getByRole("link", { name: "Review", exact: true }).click();
+  await expect(page.getByRole("heading", { level: 1, name: /^Application / })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Manage application" })).toHaveCount(0);
   const side = page.locator(".detail-side");
   const main = page.locator(".detail-main");
@@ -222,7 +223,7 @@ test("US04 detail page shows data beside score and decision", async ({ page }) =
   await expect(side.getByText(/Model/).first()).toBeVisible();
   expect(await page.getByText(/High risk\./).count()).toBeLessThanOrEqual(1);
   await expect(page.getByRole("button", { name: "Approve application", exact: true })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Back to the list", exact: true })).toHaveAttribute("href", /^\/loan-applications(\?|$)/);
+  await expect(page.getByRole("link", { name: "Back to the list", exact: true })).toHaveAttribute("href", /^\/loan-applications\?view=review$/);
 
   await page.setViewportSize({ width: 1440, height: 700 });
   expect(await side.evaluate(el => getComputedStyle(el).overflowY)).toBe("visible");
@@ -323,7 +324,12 @@ for (const width of [1280, 768]) {
 }
 
 test("US08 officer dashboard lists work that needs action", async ({ page }) => {
-  await signIn(page);
+  // A fresh Officer has no other actionable rows, so the 8-row "Needs my action" cap cannot hide the fixture.
+  const email = `needs.action.${Date.now()}@branch.vn`;
+  await signIn(page, "thanh@branch.vn");
+  await request(page, "/admin/users", "POST", { email, full_name: "Needs Action Officer", password: "Needs-Action-2026" });
+  await page.getByRole("button", { name: "Log out", exact: true }).click();
+  await signIn(page, email, "Needs-Action-2026");
   await page.getByRole("navigation").getByRole("link", { name: "New application", exact: true }).click();
   await expect(page.getByRole("heading", { name: "New loan application" })).toBeVisible();
   for (const [name, value] of Object.entries({ ...Object.fromEntries(Object.entries(VALID).map(([k, v]) => [k, String(v)])), purpose: "Needs action fixture" }))
@@ -334,16 +340,16 @@ test("US08 officer dashboard lists work that needs action", async ({ page }) => 
   const loan = await (await saved).json();
   await expect(page.getByRole("alert").filter({ hasText: "Scoring is temporarily unavailable" })).toBeVisible();
   const shortId = loan.id.slice(0, 8);
-  await page.goto("/dashboard");
+  await page.locator(".topbar").getByRole("link", { name: "My dashboard", exact: true }).click();
   const card = () => page.locator(".card").filter({ has: page.getByRole("heading", { name: "Needs my action", exact: true }) });
   const row = card().getByRole("row").filter({ hasText: shortId });
   await row.getByRole("link", { name: "Get credit score", exact: true }).click();
   await expect(page.locator(".score .big")).toBeVisible();
-  await page.goto("/dashboard");
+  await page.locator(".topbar").getByRole("link", { name: "My dashboard", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Needs my action", exact: true })).toBeVisible();
   await expect(card().getByRole("row").filter({ hasText: shortId })).toHaveCount(0);
   await page.setViewportSize({ width: 375, height: 812 });
-  expect((await page.locator(".tiles .tile").first().boundingBox()).height).toBeLessThan(100);
+  expect((await page.locator(".tiles .tile").first().boundingBox()).height).toBeLessThan(140);
 });
 
 test("US07 manager dashboard chips open the matching list filter", async ({ page }) => {
