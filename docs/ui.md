@@ -274,7 +274,7 @@ PR 2 rebuilds `/loan-applications/:id` on the PR 1 components.
 - **Score factors:** the "+20:" prefixes are replaced by an up or down arrow with screen-reader text; factors worth 0 points are hidden. Each result has one label from the glossary; the history tab also shows "Recommendation Rejected".
 - **Ruling, model version:** shown on the Credit score card to Managers only; the history tab keeps the model column for everyone who can open it.
 - **Decision copy:** "Waiting for the branch manager's decision." and "Approval needs a latest score of 70 or more (Eligible for proposal)."
-- **Out of scope:** D6 (Manager Reject action).
+- **Out of scope:** the Manager Reject action.
 
 Before: pre-redesign build, captured 2026-11-15 on the seeded test server. After: branch head, same server, 1440 px wide (390 px for the mobile view); application ids differ between seeded runs.
 
@@ -323,6 +323,70 @@ Findings re-check against the after images:
 - **L5:** fixed by re-labelling only. Queue rows the Manager cannot act on yet are still listed but labelled "Waiting for a score"; they are not filtered out.
 - **L6** (mobile layout): fixed for the list and dashboards; at 390 px the list is a card per application and there is no horizontal page scroll (covered by E2E at 375 px).
 - **C1** (generic copy): dashboards and list now use task wording ("Needs my action", "Manager review queue") with no eyebrow or explanatory subtitle. The New application form copy is left to PR 4.
+
+### Forms and remaining screens (PR 4)
+
+PR 4 rebuilds the New application and Edit application forms, Employees, Notifications and Not found on the PR 1 components, and adds the final contrast and 375 px checks.
+
+- **Forms:** New and Edit share one layout with the groups "Loan", "Customer finances" and "Protected identifiers (optional)" (New only; Edit says "Protected identifiers stay unchanged by this form."). Required fields carry an `aria-hidden` `*`, so accessible names do not change. Fields sit in two columns from the desktop width and in one column on phones. Errors appear once, as a summary of links above the form that focus the field, plus one message under each field. The action bar holds "Submit and score" (New) or "Save changes" and "Keep existing data" (Edit).
+- **Rulings:** the Officer still types the monthly payment; the DSR line ("Installment is 25% of income", or "above the 50% limit") is display only and never blocks submit. The CIC debt group is a select; "Not available" keeps the empty value, so a record without a CIC group is still sent without one.
+- **Glossary:** the form action "Submit and score" comes from the glossary (`ACTION_TEXT.submitAndScore`), next to the other action names ("Review application", "Get credit score", "Edit application"). The Notifications buttons "Open application" and "Mark as read" are kept as written because E2E tests rely on them.
+- **Unchanged:** `validation.js` rules and messages, the create and edit API bodies, the open-then-score navigation after create, the "already processed" guard on Edit, and the Edit form leaving protected identifiers out.
+- **Employees and Notifications:** same cards, tables and buttons as the rest of the app; the Employees table becomes a card per employee on phones; read and unread notifications are told apart by a badge and an accent border.
+
+Before: pre-redesign build, captured 2026-11-15. After: branch head on the seeded test server, 1440 px wide (390 px for the mobile views); ids and dates differ between seeded runs. Only the New form with errors has a before image.
+
+| View | Before | After |
+| --- | --- | --- |
+| New form with errors 1440 | ![](images/ui/redesign/pr4-before-officer-new-errors-1440.png) | ![](images/ui/redesign/pr4-after-officer-new-errors-1440.png) |
+| New form with errors 390 | not captured | ![](images/ui/redesign/pr4-after-officer-new-errors-390.png) |
+| Edit form 1440 | not captured | ![](images/ui/redesign/pr4-after-officer-edit-1440.png) |
+| Employees 1440 | not captured | ![](images/ui/redesign/pr4-after-manager-employees-1440.png) |
+| Employees 390 | not captured | ![](images/ui/redesign/pr4-after-manager-employees-390.png) |
+| Notifications 1440 | not captured | ![](images/ui/redesign/pr4-after-manager-notifications-1440.png) |
+| Not found 1440 | not captured | ![](images/ui/redesign/pr4-after-not-found-1440.png) |
+
+#### Contrast (automated: `frontend/tests/contrast.test.js`)
+
+WCAG ratios computed from the `:root` tokens; all pairs meet 4.5:1 and no token value was changed.
+
+| Text | On | Ratio |
+| --- | --- | --- |
+| `--ink` | `--surface` / `--bg` | 14.87 / 13.81 |
+| `--muted` | `--surface` / `--bg` | 5.23 / 4.86 |
+| `--brand` | `--surface` / `--bg` | 6.16 / 5.72 |
+| `--bad` | `--surface` / `--bg` | 6.57 / 6.11 |
+| `--warn` | `--surface` / `--bg` | 5.43 / 5.04 |
+| `--ok` | `--surface` / `--bg` | 5.69 / 5.29 |
+| `--bad` / `--warn` / `--ok` / `--brand` | their `-soft` background | 5.75 / 4.98 / 5.10 / 5.32 |
+| `--muted` | `--surface-soft` (muted "Read" badge) | 4.76 |
+| white (`--surface`) | `--brand` (primary button) | 6.16 |
+
+#### 375 px route sweep (E2E: "no horizontal scroll at 375px on every route")
+
+No horizontal page scroll (`scrollWidth <= clientWidth`) at 375 px on: Officer dashboard, list, New application, application detail, Edit application and Not found; Manager dashboard, list, detail, Notifications and Employees. Result: pass.
+
+### Heuristic re-check (final)
+
+Re-check of every finding in the design spec table (section 2.1) against the after images of PR 1 to PR 4.
+
+- **D1** (Manage card, Approve above the data): fixed in PR 2; the decision card sits beside the score and the data comes first.
+- **D2** (same result named three ways): fixed; one label per result from the glossary on detail, history, list and dashboards. Whether the system or the Manager rejected is shown by the label wording only; the Manager Reject action (D6) is out of scope.
+- **D3** (score factors): fixed except that the base score is still not shown, so listed points do not sum to the score.
+- **D4** ("already processed" card with no action): fixed in PR 2.
+- **D5** (triple High risk, missing space, model shown to Officers, two back links): fixed in PR 2.
+- **L1** (High-risk count 0 next to High risk rows): fixed; the filter reads "High risk, awaiting review".
+- **L2** ("Scoring in progress" with score "-"): fixed; "Not scored" and "Waiting for a score".
+- **L3** (hex id as main identifier, no date, far-right action): fixed; id and created date in the Application column, whole row opens.
+- **L4** (tiles dominate, Officer home empty): fixed; work lists first, tiles compact below.
+- **L5** (queue mixes rows the Manager cannot act on): fixed by re-labelling only; those rows are still listed as "Waiting for a score".
+- **L6** (mobile top bar and list): fixed; closed top bar 56 px, list and Employees become cards, no horizontal page scroll on any route at 375 px.
+- **F1** (one long column, no required markers): fixed; three groups, two columns on desktop, `*` on required fields.
+- **F2** (DSR not visible while typing): fixed; live DSR line under the payment field, display only.
+- **F3** (CIC typed as a number): fixed; select with "Not available" as the empty choice.
+- **F4** (errors shown twice, inconsistent full stops): partly fixed; one summary of links plus one message per field. The summary no longer repeats the message text, but the validation messages themselves still differ in full stops ("Income is required" has none) because `validation.js` messages are unchanged by rule.
+- **C1** (eyebrows, subtitles, slogan, repeated copy): fixed on every screen; the old footer slogan is gone.
+- **V1** (login and workspace look different): fixed; one token set, radii, buttons and inputs everywhere, token text pairs checked by test.
 
 ### Running-app screenshots
 

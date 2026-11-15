@@ -3,6 +3,17 @@ import { test, expect } from "@playwright/test";
 const VALID = { monthly_income: 20000000, loan_amount: 100000000, loan_term_months: 24,
   estimated_monthly_payment: 5000000, purpose: "P1/P2 browser fixture", credit_history_note: "3 years, on time", cic_debt_group: 1 };
 
+// Linux CI renders wider fonts than Windows; force a wide face before overflow checks so every OS catches them.
+async function useWideFont(page) {
+  await page.evaluate(() => {
+    if (document.getElementById("wide-font-guard")) return;
+    const style = document.createElement("style");
+    style.id = "wide-font-guard";
+    style.textContent = "*{font-family: Verdana, 'DejaVu Sans', sans-serif !important}";
+    document.head.appendChild(style);
+  });
+}
+
 async function signIn(page, email = "hoang@branch.vn", password = "Demo@2026") {
   await page.goto("/");
   await page.getByLabel("Email address", { exact: true }).fill(email);
@@ -146,10 +157,10 @@ test("US10 edit and confirm cancellation of an unprocessed application", async (
   await openFromList(page, loan.id);
   await page.getByRole("button", { name: "Edit application", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Edit application", exact: true })).toBeVisible();
-  await page.getByLabel("Monthly income (VND)", { exact: true }).fill("0");
+  await page.getByRole("textbox", { name: "Monthly income (VND)", exact: true }).fill("0");
   await page.getByRole("button", { name: "Save changes", exact: true }).click();
   await expect(page.locator("#edit-monthly_income-error")).toHaveText("Monthly income must be greater than 0 VND.");
-  await page.getByLabel("Monthly income (VND)", { exact: true }).fill("9000000");
+  await page.getByRole("textbox", { name: "Monthly income (VND)", exact: true }).fill("9000000");
   await page.getByRole("button", { name: "Save changes", exact: true }).click();
   await expect(page.getByText("9,000,000 VND", { exact: true })).toBeVisible();
   await expect(page.locator(".alert.warn").filter({ hasText: "High risk." })).toBeVisible();
@@ -313,6 +324,7 @@ for (const width of [1280, 768]) {
   test(`Manager nav collapses behind Menu at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 900 });
     await signIn(page, "thanh@branch.vn");
+    await useWideFont(page);
     const fits = await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth);
     expect(fits).toBe(true);
     const toggle = page.getByRole("button", { name: "Menu" });
@@ -332,8 +344,10 @@ test("US08 officer dashboard lists work that needs action", async ({ page }) => 
   await signIn(page, email, "Needs-Action-2026");
   await page.getByRole("navigation").getByRole("link", { name: "New application", exact: true }).click();
   await expect(page.getByRole("heading", { name: "New loan application" })).toBeVisible();
-  for (const [name, value] of Object.entries({ ...Object.fromEntries(Object.entries(VALID).map(([k, v]) => [k, String(v)])), purpose: "Needs action fixture" }))
-    await page.locator(`#field-${name}`).fill(value);
+  for (const [name, value] of Object.entries({ ...Object.fromEntries(Object.entries(VALID).map(([k, v]) => [k, String(v)])), purpose: "Needs action fixture" })) {
+    if (name === "cic_debt_group") await page.locator(`#field-${name}`).selectOption(value);
+    else await page.locator(`#field-${name}`).fill(value);
+  }
   await page.route("**/api/loan-applications/*/score", route => route.fulfill({ status: 503, contentType: "application/json", body: JSON.stringify({ detail: "Scoring is temporarily unavailable. Try again." }) }), { times: 1 });
   const saved = page.waitForResponse(r => r.url().endsWith("/api/loan-applications") && r.request().method() === "POST");
   await page.getByRole("button", { name: "Submit and score", exact: true }).click();
@@ -374,4 +388,121 @@ test("US08 list rows open on click and fit a phone", async ({ page }) => {
   expect(fits).toBe(true);
   const display = await page.locator("tbody tr").first().evaluate(row => getComputedStyle(row).display);
   expect(display).toBe("block");
+});
+
+test("US11 manager manages an officer from the table", async ({ page }) => {
+  const email = `table.officer.${Date.now()}@branch.vn`;
+  await signIn(page, "thanh@branch.vn");
+  await page.locator(".topbar").getByRole("link", { name: "Employees", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Employee accounts", exact: true })).toBeVisible();
+  await page.getByLabel("Name", { exact: true }).fill("Table Officer");
+  await page.getByLabel("Email", { exact: true }).fill(email);
+  await page.getByLabel("Initial password (12–128 characters)").fill("Table-Officer-2026");
+  await page.getByRole("button", { name: "Create Officer", exact: true }).click();
+  const row = page.getByRole("row").filter({ hasText: email });
+  await expect(row).toBeVisible();
+  await expect(row.getByText("Active", { exact: true })).toBeVisible();
+  await row.getByRole("button", { name: "Deactivate", exact: true }).click();
+  await row.getByRole("button", { name: "Confirm", exact: true }).click();
+  await expect(row.getByText("Inactive", { exact: true })).toBeVisible();
+});
+
+test("US09 form groups fields, shows DSR and links errors", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await signIn(page);
+  await page.locator(".topbar").getByRole("link", { name: "New application", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "New loan application" })).toBeVisible();
+  await page.locator("#field-monthly_income").fill("20000000");
+  await page.locator("#field-estimated_monthly_payment").fill("12000000");
+  await expect(page.getByText("Installment is 60% of income (above the 50% limit)")).toBeVisible();
+  const amount = await page.locator("#field-loan_amount").boundingBox();
+  const term = await page.locator("#field-loan_term_months").boundingBox();
+  expect(term.y).toBeCloseTo(amount.y, 0);
+  await page.locator("#field-monthly_income").fill("");
+  await page.getByRole("button", { name: "Submit and score", exact: true }).click();
+  await page.locator(".alert").filter({ hasText: "Please fix these fields:" }).getByRole("link", { name: "Monthly income", exact: true }).click();
+  await expect(page.locator("#field-monthly_income")).toBeFocused();
+  await page.setViewportSize({ width: 375, height: 812 });
+  await useWideFont(page);
+  const fits = await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth);
+  expect(fits).toBe(true);
+});
+
+test("Manager back link falls back to the review queue when opened from Notifications", async ({ page, browser }) => {
+  const otherContext = await browser.newContext();
+  try {
+    await signIn(page, "thanh@branch.vn");
+    const other = await otherContext.newPage();
+    await signIn(other);
+    const loan = await pendingFixture(other);
+    await page.getByRole("navigation").getByRole("link", { name: /^Notifications/ }).click();
+    await page.reload();
+    const row = page.locator(".notification-list li").filter({ hasText: loan.id.slice(0, 8) });
+    await row.getByRole("button", { name: "Open application", exact: true }).click();
+    await expect(page.getByRole("heading", { level: 1, name: /^Application / })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Back to the list", exact: true })).toHaveAttribute("href", "/loan-applications?view=review");
+  } finally { await otherContext.close(); }
+});
+
+test("Manager dashboard queue renders as phone cards at 390 px", async ({ page, browser }) => {
+  const otherContext = await browser.newContext();
+  try {
+    const other = await otherContext.newPage();
+    await signIn(other);
+    await pendingFixture(other);
+    await signIn(page, "thanh@branch.vn");
+    await page.setViewportSize({ width: 390, height: 844 });
+    const row = page.locator("#queue-title ~ .scroll tbody tr").first();
+    await expect(row).toBeVisible();
+    expect(await row.evaluate((el) => getComputedStyle(el).display)).toBe("block");
+  } finally { await otherContext.close(); }
+});
+
+async function expectFitsAt375(page) {
+  // Navigation happens at desktop width (full top bar); only the check runs at 375 px.
+  await page.setViewportSize({ width: 375, height: 812 });
+  await useWideFont(page);
+  const fits = await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth);
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  expect(fits).toBe(true);
+}
+
+test("no horizontal scroll at 375px on every route", async ({ page }) => {
+  await signIn(page);
+  const topbar = page.locator(".topbar");
+  await expectFitsAt375(page); // dashboard
+  const loan = await pendingFixture(page);
+  await topbar.getByRole("link", { name: "My applications", exact: true }).click();
+  await expect(page.getByRole("heading", { level: 1, name: "My applications" })).toBeVisible();
+  await expectFitsAt375(page); // list
+  await topbar.getByRole("link", { name: "New application", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "New loan application" })).toBeVisible();
+  await expectFitsAt375(page); // new
+  await openFromList(page, loan.id);
+  await expectFitsAt375(page); // detail
+  await page.getByRole("button", { name: "Edit application", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Edit application", exact: true })).toBeVisible();
+  await expectFitsAt375(page); // edit
+  await page.evaluate(() => { history.pushState({}, "", "/no-such-page"); dispatchEvent(new PopStateEvent("popstate")); });
+  await expect(page.getByRole("heading", { name: "Page not found" })).toBeVisible();
+  await expectFitsAt375(page); // not found
+
+  await page.getByRole("button", { name: "Log out", exact: true }).click();
+  await signIn(page, "thanh@branch.vn");
+  await expectFitsAt375(page); // manager dashboard
+  await topbar.getByRole("link", { name: "Branch applications", exact: true }).click();
+  await expect(page.getByRole("row").filter({ hasText: loan.id.slice(0, 8) })).toBeVisible();
+  await expectFitsAt375(page); // manager list
+  await openFromList(page, loan.id, true);
+  await expectFitsAt375(page); // manager detail
+  await topbar.getByRole("link", { name: /^Notifications/ }).click();
+  await expect(page.getByRole("heading", { level: 1, name: "Review notifications" })).toBeVisible();
+  await expectFitsAt375(page); // notifications
+  await topbar.getByRole("link", { name: "Employees", exact: true }).click();
+  await expect(page.getByRole("heading", { level: 1, name: "Employee accounts" })).toBeVisible();
+  await expectFitsAt375(page); // employees
+  await page.getByRole("button", { name: "Log out", exact: true }).click();
+  await page.goto("/no-such-page");
+  await expect(page.getByRole("heading", { name: "Page not found" })).toBeVisible();
+  await expectFitsAt375(page); // signed-out not found
 });

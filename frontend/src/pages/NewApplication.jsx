@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../api";
+import ApplicationFields, { FIELD_ORDER } from "../components/ApplicationFields";
+import ErrorSummary from "../components/ErrorSummary";
+import PageHeader from "../components/PageHeader";
+import { ACTION_TEXT } from "../glossary";
 import { validateApplication } from "../validation";
 
-const FIELD_ORDER = [
-  "monthly_income", "loan_amount", "loan_term_months", "estimated_monthly_payment",
-  "citizen_id", "bank_account", "purpose", "credit_history_note", "cic_debt_group",
-];
 const fieldId = (name) => `field-${name}`;
 
 function focusFirstInvalid(errors) {
@@ -18,29 +18,6 @@ const EMPTY = {
   monthly_income: "", loan_amount: "", loan_term_months: "", estimated_monthly_payment: "",
   purpose: "", credit_history_note: "", cic_debt_group: "", citizen_id: "", bank_account: "",
 };
-
-function Field({ name, label, hint, form, setForm, errors, area }) {
-  const Tag = area ? "textarea" : "input";
-  const props = area ? { rows: 2 } : { type: "text", inputMode: name === "purpose" ? "text" : "numeric" };
-  const id = fieldId(name);
-  const error = errors[name];
-  const describedBy = [hint && `${id}-hint`, error && `${id}-error`].filter(Boolean).join(" ");
-  return (
-    <div className={error ? "field has-error" : "field"}>
-      <label htmlFor={id}>{label}</label>
-      <Tag
-        {...props}
-        id={id}
-        value={form[name]}
-        aria-invalid={error ? "true" : undefined}
-        aria-describedby={describedBy || undefined}
-        onChange={(e) => setForm({ ...form, [name]: e.target.value })}
-      />
-      {hint && <small id={`${id}-hint`} className="muted">{hint}</small>}
-      {error && <small id={`${id}-error`} className="field-error">{error}</small>}
-    </div>
-  );
-}
 
 export default function NewApplication() {
   const navigate = useNavigate();
@@ -55,7 +32,6 @@ export default function NewApplication() {
     const problems = validateApplication(form);
     if (Object.keys(problems).length > 0) {
       setErrors(problems);
-      setMessage("Please correct the highlighted fields and submit again.");
       focusFirstInvalid(problems);
       return;
     }
@@ -91,29 +67,15 @@ export default function NewApplication() {
     navigate(`/loan-applications/${created.id}`, { state: { scoreOnOpen: true } });
   };
 
-  const f = { form, setForm, errors };
-  const errorList = Object.entries(errors);
-  const showList = errorList.length > 1 || errorList.some(([name]) => name === "form");
   return (
     <>
-      <h1>New loan application</h1>
-      <form className="card form" onSubmit={submit} noValidate>
-        {message && (
-          <div className="alert" role="alert">
-            <strong>{showList ? "Please fix these fields:" : message}</strong>
-            {showList && <ul>{errorList.map(([name, m]) => <li key={name}>{m}</li>)}</ul>}
-          </div>
-        )}
-        <Field {...f} name="monthly_income" label="Monthly income (VND)" hint="e.g. 20000000" />
-        <Field {...f} name="loan_amount" label="Loan amount (VND)" />
-        <Field {...f} name="loan_term_months" label="Loan term (months)" />
-        <Field {...f} name="estimated_monthly_payment" label="Estimated monthly payment (VND)" hint="If this is more than half of income, the application is flagged High risk." />
-        <Field {...f} name="citizen_id" label="Citizen ID (optional)" hint="9 or 12 digits. Stored encrypted; only the last 4 digits are normally shown." />
-        <Field {...f} name="bank_account" label="Bank account (optional)" hint="6 to 20 digits. Stored encrypted; access to the full number is logged." />
-        <Field {...f} name="purpose" label="Loan purpose" />
-        <Field {...f} name="credit_history_note" label="Credit history" area />
-        <Field {...f} name="cic_debt_group" label="CIC debt group (1-5, optional)" />
-        <button type="submit" className="primary" disabled={!!busy}>{busy || "Submit and score"}</button>
+      <PageHeader title="New loan application" />
+      <form className="form-grid" onSubmit={submit} noValidate>
+        <ErrorSummary errors={errors} idPrefix="field-" message={message} fields={FIELD_ORDER} />
+        <ApplicationFields form={form} setForm={setForm} errors={errors} idPrefix="field-" showIdentifiers />
+        <div className="form-actions">
+          <button type="submit" className="primary" disabled={!!busy}>{busy || ACTION_TEXT.submitAndScore}</button>
+        </div>
       </form>
     </>
   );
