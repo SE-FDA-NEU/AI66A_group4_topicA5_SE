@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { canApprove, filterApplications, needsReview, reviewQueue } from "../src/review.js";
+import { canApprove, filterApplications, needsReview, reviewQueue, reviewReason } from "../src/review.js";
 
 const loan = (id, changes = {}) => ({ id, owner_id: "hoang", status: "scored", created_at: "2026-10-01T08:00:00Z",
   dsr_flag_high_risk: false, cic_debt_group: 1, latest_score: { score: 80, label: "eligible" }, ...changes });
@@ -32,4 +32,7 @@ test("owner and review filters combine and all view retains completed records", 
   assert.deepEqual(filterApplications(applications, "review", "hoang").map((a) => a.id), ["mine"]);
   assert.equal(filterApplications(applications, "all").length, 3);
   assert.ok(needsReview(loan("pending", { status: "pending" })));
+});
+test("pending applications show a waiting reason even when high risk", () => {
+  assert.equal(reviewReason(loan("p", { status: "pending", dsr_flag_high_risk: true })), "Waiting for a score");
 });
