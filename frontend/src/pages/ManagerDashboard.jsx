@@ -32,8 +32,8 @@ export function ManagerView({ data, applications }) {
         <div className="scroll"><table className="list-table">
           <thead><tr><th>Application / Officer</th><th>Loan / score</th><th>Review reason</th><th><span className="sr-only">Action</span></th></tr></thead>
           <tbody>{queue.slice(0, 8).map((a) => <tr key={a.id}>
-            <td data-label="Application / Officer"><strong>#{a.id.slice(0, 8)}</strong> {a.owner_name} <small>{formatDateTime(a.created_at)}</small></td>
-            <td data-label="Loan / score">{vnd(a.loan_amount)} · Score: {a.latest_score?.score ?? "Not scored"}</td>
+            <td data-label="Application / Officer"><span className="cell-stack"><strong>#{a.id.slice(0, 8)}</strong> <span>{a.owner_name}</span> <small>{formatDateTime(a.created_at)}</small></span></td>
+            <td data-label="Loan / score"><span className="cell-stack"><span>{vnd(a.loan_amount)}</span> <span>Score: {a.latest_score?.score ?? "Not scored"}</span></span></td>
             <td data-label="Review reason" className="wrap-cell"><StatusBadge status={a.status} /> <RiskBadge high={a.dsr_flag_high_risk} />
               {a.status === "pending" ? <p className="muted">{reviewReason(a)}</p> : <p>{reviewReason(a)}</p>}</td>
             <td data-label="Action"><Link to={`/loan-applications/${a.id}`} state={{ from: "/dashboard" }}>{ACTION_TEXT.reviewApplication}</Link></td>

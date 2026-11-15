@@ -13,7 +13,7 @@ function WorkTable({ rows, action }) {
   return <div className="scroll"><table className="list-table">
     <thead><tr><th>Application</th><th>Loan</th><th>Status</th><th><span className="sr-only">Action</span></th></tr></thead>
     <tbody>{rows.map((a) => <tr key={a.id}>
-      <td data-label="Application"><strong>#{a.id.slice(0, 8)}</strong> <small>{formatDateTime(a.created_at)}</small></td>
+      <td data-label="Application"><span className="cell-stack"><strong>#{a.id.slice(0, 8)}</strong> <small>{formatDateTime(a.created_at)}</small></span></td>
       <td data-label="Loan">{vnd(a.loan_amount)}</td>
       <td data-label="Status"><StatusBadge status={a.status} /></td>
       <td data-label="Action">{action(a)}</td>

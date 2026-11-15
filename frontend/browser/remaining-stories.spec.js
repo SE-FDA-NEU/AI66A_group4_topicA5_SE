@@ -3,6 +3,17 @@ import { test, expect } from "@playwright/test";
 const VALID = { monthly_income: 20000000, loan_amount: 100000000, loan_term_months: 24,
   estimated_monthly_payment: 5000000, purpose: "P1/P2 browser fixture", credit_history_note: "3 years, on time", cic_debt_group: 1 };
 
+// Linux CI renders wider fonts than Windows; force a wide face before overflow checks so every OS catches them.
+async function useWideFont(page) {
+  await page.evaluate(() => {
+    if (document.getElementById("wide-font-guard")) return;
+    const style = document.createElement("style");
+    style.id = "wide-font-guard";
+    style.textContent = "*{font-family: Verdana, 'DejaVu Sans', sans-serif !important}";
+    document.head.appendChild(style);
+  });
+}
+
 async function signIn(page, email = "hoang@branch.vn", password = "Demo@2026") {
   await page.goto("/");
   await page.getByLabel("Email address", { exact: true }).fill(email);
@@ -313,6 +324,7 @@ for (const width of [1280, 768]) {
   test(`Manager nav collapses behind Menu at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 900 });
     await signIn(page, "thanh@branch.vn");
+    await useWideFont(page);
     const fits = await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth);
     expect(fits).toBe(true);
     const toggle = page.getByRole("button", { name: "Menu" });
@@ -411,6 +423,7 @@ test("US09 form groups fields, shows DSR and links errors", async ({ page }) => 
   await page.locator(".alert").filter({ hasText: "Please fix these fields:" }).getByRole("link", { name: "Monthly income", exact: true }).click();
   await expect(page.locator("#field-monthly_income")).toBeFocused();
   await page.setViewportSize({ width: 375, height: 812 });
+  await useWideFont(page);
   const fits = await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth);
   expect(fits).toBe(true);
 });
@@ -448,6 +461,7 @@ test("Manager dashboard queue renders as phone cards at 390 px", async ({ page, 
 async function expectFitsAt375(page) {
   // Navigation happens at desktop width (full top bar); only the check runs at 375 px.
   await page.setViewportSize({ width: 375, height: 812 });
+  await useWideFont(page);
   const fits = await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth);
   await page.setViewportSize({ width: 1440, height: 1000 });
   expect(fits).toBe(true);
