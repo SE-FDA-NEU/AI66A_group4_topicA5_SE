@@ -86,6 +86,8 @@ label { display: block; margin-bottom: var(--s-4); font-weight: 600; color: var(
 .field-error { display: block; color: var(--bad); font-weight: 500; margin-top: var(--s-1); font-size: .8125rem; }
 .field.has-error input, .field.has-error textarea, .field.has-error select { border-color: var(--bad); }
 .form { max-width: 560px; }
+.hint { display: block; color: var(--muted); margin-top: var(--s-1); font-size: .8125rem; }
+.req { color: var(--bad); margin-left: var(--s-1); }
 
 /* ---------- Feedback (alert / badge / state) ---------- */
 .alert { background: var(--bad-soft); border: 1px solid var(--bad); color: var(--bad); padding: var(--s-3) var(--s-4); border-radius: var(--r-md); margin-bottom: var(--s-4); }
@@ -118,6 +120,7 @@ tr:last-child td { border-bottom: 0; }
 .score ul { margin: 0; padding-left: 18px; } .score li { margin-bottom: 3px; }
 dl { display: grid; grid-template-columns: 200px 1fr; gap: var(--s-2) var(--s-4); margin: 0; }
 dt { color: var(--muted); } dd { margin: 0; }
+.data-list { display: grid; grid-template-columns: 200px 1fr; gap: var(--s-2) var(--s-4); margin: 0; }
 
 /* ---------- Layout (shell / topbar / page / footer) ---------- */
 .topbar {
@@ -140,7 +143,12 @@ dt { color: var(--muted); } dd { margin: 0; }
   background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); padding: var(--s-5);
   margin-bottom: var(--s-4); box-shadow: var(--shadow);
 }
+.card-head { display: flex; align-items: center; justify-content: space-between; gap: var(--s-4); margin-bottom: var(--s-4); }
+.card-head h2 { margin: 0; }
 .tile.card { min-height: 112px; }
+.page-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--s-4); margin-bottom: var(--s-6); }
+.page-header h1 { margin: 0; }
+.page-actions { display: flex; align-items: center; gap: var(--s-3); }
 .app-footer { text-align: center; color: var(--muted); padding: 0 var(--s-4) var(--s-5); font-size: .8125rem; }
 .app-footer span { padding: 0 6px; color: var(--brand); }
 /* Page-specific selectors kept until their pages are redesigned (PRs 2-4) */
