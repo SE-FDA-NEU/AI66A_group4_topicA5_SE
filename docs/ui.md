@@ -297,9 +297,9 @@ Findings re-check against the after images:
 
 PR 3 rebuilds `/dashboard` (both roles) and `/loan-applications` on the PR 1 components.
 
-- **Officer dashboard:** "My applications overview" with a "New application" action, tiles, a "Needs my action" card (unscored, scoring-failed and rejected items with a direct action such as "Get credit score") and a "Recent applications" card. Opening an item from the dashboard adds a "Back to the dashboard" link on the detail page.
+- **Officer dashboard:** "My applications overview" with a "New application" action, tiles, a "Needs my action" card and a "Recent applications" card. "Needs my action" lists pending and manual-review applications, oldest first, at most 8; pending rows link "Get credit score" (scoring starts on arrival). "Recent applications" shows the 5 newest not already shown above. Opening an item from the dashboard adds a "Back to the dashboard" link on the detail page.
 - **Manager dashboard:** the review queue comes first ("Manager review queue", "Open review queue"), the Needs review / High risk / Eligible chips link to the matching list view, and the branch activity tiles come last.
-- **List:** a chip filter row (counts from the glossary texts), one status chip per row (plus High risk), income, loan and term, and the Score column. Whole rows open the application. On phones (600 px and below) each row becomes a card with labelled lines.
+- **List:** a chip filter row (counts from the glossary texts) plus a "Created by" select (Manager), an Application column (id and created date), one status chip per row (plus High risk), income, loan and term, and a Score column that reads "Not scored" when there is no score. Whole rows open the application. On phones (600 px and below) each row becomes a card with labelled lines.
 - **Detail follow-ups:** the back link returns to the page the user came from (the dashboard, or the list with its `?view=` filter), the Officer decision card says "The branch manager can decide once the application is scored." before a score exists, the score card stacks its number above the factors in the narrow side column, and the side column is sticky only on screens at least 901 px wide and 820 px tall (no nested scroll on short screens).
 - **Rulings:** "Recent applications" excludes items already shown under "Needs my action"; sorting is offered only in the "All" view (review views keep the queue order); the sticky side column is limited to tall screens.
 - **Removed:** the old `.filter-tabs` styles (unused after the chip filters).
@@ -316,7 +316,11 @@ Before: pre-PR 3 build, captured 2026-11-15 on the seeded test server. After: br
 
 Findings re-check against the after images:
 
-- **L1-L5:** re-checked on the list and dashboards: one status chip per row, readable income and loan columns, whole-row open, the filter chips with counts, and the queue first on the Manager dashboard. No issue found in the after images.
+- **L1:** fixed. The filter is renamed "High risk, awaiting review", so a High risk row is no longer shown next to a "(0)" filter.
+- **L2:** fixed. Unscored rows read "Not scored" in the list Score column and "Waiting for a score" on the Manager dashboard, instead of "Scoring in progress" with "-".
+- **L3:** fixed. The Application column shows id and created date, the date sort is offered in the "All" view, and the whole row is clickable (the link is kept for keyboard use).
+- **L4:** fixed. The today tiles are compact and below the work lists; the Officer home now has "Needs my action".
+- **L5:** fixed by re-labelling only. Queue rows the Manager cannot act on yet are still listed but labelled "Waiting for a score"; they are not filtered out.
 - **L6** (mobile layout): fixed for the list and dashboards; at 390 px the list is a card per application and there is no horizontal page scroll (covered by E2E at 375 px).
 - **C1** (generic copy): dashboards and list now use task wording ("Needs my action", "Manager review queue") with no eyebrow or explanatory subtitle. The New application form copy is left to PR 4.
 
