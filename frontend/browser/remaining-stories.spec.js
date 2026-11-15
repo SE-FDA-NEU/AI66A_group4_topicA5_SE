@@ -194,6 +194,21 @@ test("US10 Save without scoring leaves a pending application that can be edited"
   await expect(page.getByRole("button", { name: "Get credit score", exact: true })).toBeVisible();
 });
 
+test("US09 monthly payment is filled from loan amount and term until the user types one", async ({ page }) => {
+  await signIn(page);
+  await page.getByRole("navigation").getByRole("link", { name: "New application", exact: true }).click();
+  const payment = page.locator("#field-estimated_monthly_payment");
+  await page.locator("#field-loan_amount").fill("120000000");
+  await expect(payment).toHaveValue("");
+  await page.locator("#field-loan_term_months").fill("24");
+  await expect(payment).toHaveValue("5000000");
+  await page.locator("#field-loan_term_months").fill("36");
+  await expect(payment).toHaveValue("3333334");
+  await payment.fill("4000000");
+  await page.locator("#field-loan_term_months").fill("12");
+  await expect(payment).toHaveValue("4000000");
+});
+
 test("US10 an approved application refuses editing in the interface", async ({ page }) => {
   await signIn(page);
   const loan = await pendingFixture(page);

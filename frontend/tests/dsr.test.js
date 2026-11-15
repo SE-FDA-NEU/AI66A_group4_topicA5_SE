@@ -24,3 +24,13 @@ test("CIC_OPTIONS has Not available plus groups 1 to 5", () => {
   assert.equal(CIC_OPTIONS.length, 6);
   assert.deepEqual(CIC_OPTIONS[0], { value: "", label: "Not available" });
 });
+
+test("suggestPayment divides the loan by the term and rounds up", async () => {
+  const { suggestPayment } = await import("../src/dsr.js");
+  assert.equal(suggestPayment("120000000", "24"), "5000000");
+  assert.equal(suggestPayment("100", "3"), "34");
+  assert.equal(suggestPayment("1000", "1"), "1000");
+  for (const [loan, term] of [["", "12"], ["100", ""], ["abc", "12"], ["100", "0"], ["0", "12"], ["1.5", "2"]]) {
+    assert.equal(suggestPayment(loan, term), "", `${loan}/${term}`);
+  }
+});

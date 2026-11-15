@@ -6,6 +6,18 @@ export const CIC_OPTIONS = [
   ...[1, 2, 3, 4, 5].map((n) => ({ value: String(n), label: String(n) })),
 ];
 
+// Loan amount divided by term, rounded up: the smallest whole-VND payment that still
+// covers the loan (BR9), so the suggestion is always accepted by the server.
+export function suggestPayment(loanAmount, termMonths) {
+  const loanText = String(loanAmount ?? "").trim();
+  const termText = String(termMonths ?? "").trim();
+  if (!WHOLE_NUMBER.test(loanText) || !WHOLE_NUMBER.test(termText)) return "";
+  const loan = BigInt(loanText);
+  const term = BigInt(termText);
+  if (loan <= 0n || term <= 0n) return "";
+  return String((loan + term - 1n) / term);
+}
+
 export function dsrInfo(income, payment) {
   const incomeText = String(income ?? "").trim();
   const paymentText = String(payment ?? "").trim();
