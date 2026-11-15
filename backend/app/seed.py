@@ -46,6 +46,23 @@ LOANS = [
     ("linh@branch.vn", 7_000_000, 70_000_000, 24, 4_900_000, "Urgent consumer spending", "Bad debt in the past", 4, R),
 ]
 
+# Applicant name shown as the application name, in the same order as LOANS.
+APPLICANT_NAMES = [
+    "Nguyễn Văn Minh",
+    "Trần Thị Lan",
+    "Lê Quang Huy",
+    "Phạm Thị Hương",
+    "Hoàng Đức Anh",
+    "Vũ Thị Mai",
+    "Đặng Văn Long",
+    "Bùi Thị Ngọc",
+    "Ngô Thanh Tùng",
+    "Đỗ Thị Thu",
+    "Dương Minh Khôi",
+    "Phan Thị Hạnh",
+]
+assert len(APPLICANT_NAMES) == len(LOANS)
+
 # Index in LOANS -> how the app's scoring left that loan (statuses above match scoring_service.py):
 # scored by the real model, BR4 rejection (CIC 3-5), or BR1 manual review (invalid model score).
 SCORED = {0, 1, 2, 5, 7, 8, 9}  # 9 was scored, then cancelled by the officer
@@ -97,6 +114,7 @@ def seed_database(db, current_demo: bool = False) -> dict:
         created = now if current_demo and i in {0, 2, 7, 8} else now - timedelta(days=len(LOANS) - i)
         loan = LoanApplication(
             created_by=users[owner].id,
+            application_name=APPLICANT_NAMES[i],
             monthly_income=income,
             loan_amount=amount,
             loan_term_months=term,
@@ -139,4 +157,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
