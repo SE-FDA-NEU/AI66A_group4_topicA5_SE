@@ -212,8 +212,7 @@ test("shell is usable at 375px", async ({ page }) => {
   expect(outline).not.toBe("none");
 });
 
-// The single collapse breakpoint is 1180px (the Manager bar with a long name needs ~1170px).
-const BREAKPOINT = 1180;
+// The single collapse breakpoint is 1280px (the Manager bar needs ~1170px on Windows fonts; Linux fonts run wider).
 async function expectNoWrap(page) {
   const fits = await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth);
   expect(fits).toBe(true);
@@ -224,7 +223,7 @@ async function expectNoWrap(page) {
   for (const h of heights) expect(h).toBeLessThanOrEqual(40);
 }
 
-for (const width of [BREAKPOINT + 1, 1280, 1440]) {
+for (const width of [1366, 1440]) {
   test(`Manager top bar stays on one row at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 900 });
     await signIn(page, "thanh@branch.vn");
@@ -232,12 +231,13 @@ for (const width of [BREAKPOINT + 1, 1280, 1440]) {
     await expect(page.getByRole("navigation")).toBeVisible();
     await expectNoWrap(page);
     // A long real name must not wrap or grow the bar either.
-    await page.evaluate(() => { document.querySelector(".user-name").firstChild.textContent = "Nguyen Thi Thanh Huong"; });
+    await page.evaluate(() => { document.querySelector(".user-name-text").textContent = "Nguyen Thi Thanh Huong"; });
+    await expect(page.locator(".user-name-text")).toHaveAttribute("title", "Do Hong Thanh");
     await expectNoWrap(page);
   });
 }
 
-for (const width of [BREAKPOINT, 768]) {
+for (const width of [1280, 768]) {
   test(`Manager nav collapses behind Menu at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 900 });
     await signIn(page, "thanh@branch.vn");

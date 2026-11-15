@@ -35,7 +35,7 @@ export default function Layout({ children }) {
         </nav>
         <div className="topbar-actions">
           <div className="who">
-            <span className="user-name">{user.full_name}<span className="role-label">{manager ? "Manager" : "Officer"}</span></span>
+            <span className="user-name"><span className="user-name-text" title={user.full_name}>{user.full_name}</span><span className="role-label">{manager ? "Manager" : "Officer"}</span></span>
             <button className="logout-btn" onClick={logout}>Log out</button>
           </div>
         </div>
