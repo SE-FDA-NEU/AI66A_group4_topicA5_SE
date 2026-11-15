@@ -2,7 +2,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { api, isRetryable, vnd } from "../api";
 import { useAuth } from "../auth";
-import { RiskBadge, StatusBadge } from "../components/Badges";
+import { StatusBadge } from "../components/Badges";
+import Card from "../components/Card";
+import DataList from "../components/DataList";
+import PageHeader from "../components/PageHeader";
 import ScoreCard from "../components/ScoreCard";
 import ScoreHistory from "../components/ScoreHistory";
 import { ErrorBox, Loading } from "../components/States";
@@ -151,70 +154,58 @@ export default function ApplicationDetail() {
   const a = state.app;
   const canApprove = eligibleForApproval(a);
   const manager = user.role === "admin";
+  const editable = a.status === "pending" && !a.latest_score;
   return (
     <>
-      <p className="eyebrow">{manager ? "Manager · Application review" : "Officer · My application"}</p>
-      <h1>Application <small className="muted">#{a.id.slice(0, 8)}</small> <StatusBadge status={a.status} /></h1>
-      <p className="muted">{manager
-        ? `Created by ${a.owner_name}. Review the data, score and risk warnings before making an approval decision below.`
-        : "You can check the data and scoring reasons here. Your branch manager makes the approval decision."}</p>
-      {manager && <p><Link to="/loan-applications?view=review">Back to manager review queue</Link></p>}
+      <p><Link to={manager ? "/loan-applications?view=review" : "/loan-applications"}>Back to the list</Link></p>
+      <PageHeader
+        title={`Application #${a.id.slice(0, 8)}`}
+        badge={<StatusBadge status={a.status} />}
+        actions={editable && !confirmCancel ? <>
+          <button onClick={() => navigate(`/loan-applications/${id}/edit`)} disabled={scoring || cancelling}>Edit application</button>
+          <button onClick={() => setConfirmCancel(true)} disabled={cancelling}>Cancel application</button>
+        </> : undefined}
+      />
+      <p className="detail-meta muted">Created by {a.owner_name} · {formatDateTime(a.created_at)}</p>
       {notice && <div className="alert" role="alert">{notice}</div>}
       {a.dsr_flag_high_risk && (
         <div className="alert warn" role="alert">
-          <strong>High risk.</strong> The installment is {a.dsr_percent}% of monthly income, above the 50% limit.
+          <strong>High risk.</strong> The installment is {a.dsr_percent}% of monthly income, above the 50% limit.{" "}
           {a.status === "approved" ? "A manager has reviewed and approved this application." : "A manager must review it even if the score is good."}
         </div>
       )}
+      {editable && confirmCancel && (
+        <div className="alert warn" role="group" aria-label="Confirm application cancellation">
+          <p>Cancel this application? Its record is retained, and it will leave the pending review queue.</p>
+          <button onClick={cancel} disabled={cancelling}>{cancelling ? "Cancelling..." : "Confirm cancellation"}</button>{" "}
+          <button onClick={() => setConfirmCancel(false)} disabled={cancelling}>Keep application</button>
+        </div>
+      )}
+      {cancelError && <div className="alert" role="alert">{cancelError}</div>}
 
-      <div role="tablist" aria-label="Application views" className="application-tabs" onKeyDown={tabKey}>
-        <button id="details-tab" role="tab" aria-selected={tab === "details"} aria-controls="details-panel" tabIndex={tab === "details" ? 0 : -1} onClick={() => setTab("details")}>Application details</button>
-        <button id="history-tab" role="tab" aria-selected={tab === "history"} aria-controls="history-panel" tabIndex={tab === "history" ? 0 : -1} onClick={() => setTab("history")}>Scoring history</button>
-      </div>
-      <div role="tabpanel" id="details-panel" aria-labelledby="details-tab" hidden={tab !== "details"}>
-      <section className="card">
-        <h2>Manage application</h2>
-        {cancelError && <div className="alert" role="alert">{cancelError}</div>}
-        {a.status === "pending" && !a.latest_score ? <>
-          <p>You can edit or cancel this unprocessed application. Processed applications are protected from changes.</p>
-          {!confirmCancel ? <>
-            <button onClick={() => navigate(`/loan-applications/${id}/edit`)} disabled={scoring || cancelling}>Edit application</button>{" "}
-            <button onClick={() => setConfirmCancel(true)} disabled={cancelling}>Cancel application</button>
-          </> : <div className="alert warn" role="group" aria-label="Confirm application cancellation">
-            <p>Cancel this application? Its record is retained, and it will leave the pending review queue.</p>
-            <button onClick={cancel} disabled={cancelling}>{cancelling ? "Cancelling..." : "Confirm cancellation"}</button>{" "}
-            <button onClick={() => setConfirmCancel(false)} disabled={cancelling}>Keep application</button>
-          </div>}
-        </> : <p>{a.status === "cancelled" ? "This application is cancelled." : "Application already processed, cannot be edited"}</p>}
-      </section>
-      <section className="card">
-        <h2>Credit score</h2>
-        <ScoreCard result={a.latest_score} status={a.status} />
-        {scoreError && <div className="alert" role="alert">{scoreError}</div>}
-        {!["cancelled", "approved"].includes(a.status) && (
-          <button onClick={rescore} disabled={scoring || approving || confirmApproval}>{scoring ? "Scoring..." : a.latest_score ? "Score again" : "Get credit score"}</button>
-        )}
-
-      </section>
-
-      <section className={`card ${manager ? "manager-decision" : ""}`}>
-        <h2>{manager ? "Your approval decision" : "Manager decision"}</h2>
-        {approvalError && <div className="alert" role="alert">{approvalError}</div>}
-        {a.status === "approved" ? (
-          <div role="status">
-            <strong>Approved</strong>
-            {a.approval && <p>Approved by {a.approval.actor_name} on {formatDateTime(a.approval.approved_at)}.</p>}
-            <p>This records the manager's approval of the application. Disbursement is handled outside this app.</p>
-          </div>
-        ) : ["cancelled", "rejected"].includes(a.status) ? (
-          <p>This application is {a.status} and cannot be approved.</p>
-        ) : (
-          <>
-            <p>The score is a recommendation. A manager makes the approval decision after reviewing the application data and reasons.</p>
-            {user.role !== "admin" ? (
-              <p>Ask your branch manager to open this application from Applications and review it.</p>
+      <div className="detail-grid">
+        <aside className="detail-side">
+          <Card title="Credit score">
+            <ScoreCard result={a.latest_score} status={a.status} showModelVersion={manager} />
+            {scoreError && <div className="alert" role="alert">{scoreError}</div>}
+            {!["cancelled", "approved"].includes(a.status) && (
+              <button onClick={rescore} disabled={scoring || approving || confirmApproval}>{scoring ? "Scoring..." : a.latest_score ? "Score again" : "Get credit score"}</button>
+            )}
+          </Card>
+          <Card title={manager ? "Your approval decision" : "Manager decision"} className={manager ? "manager-decision" : undefined}>
+            {approvalError && <div className="alert" role="alert">{approvalError}</div>}
+            {a.status === "approved" ? (
+              <div role="status">
+                <strong>Approved</strong>
+                {a.approval && <p>Approved by {a.approval.actor_name} on {formatDateTime(a.approval.approved_at)}.</p>}
+                <p>This records the manager's approval of the application. Disbursement is handled outside this app.</p>
+              </div>
+            ) : ["cancelled", "rejected"].includes(a.status) ? (
+              <p>This application is {a.status} and cannot be approved.</p>
+            ) : !manager ? (
+              <p>Waiting for the branch manager's decision.</p>
             ) : !canApprove ? (
-              <p>Approval requires a valid latest score of at least 70 (Eligible for proposal). Review the data and scoring results first.</p>
+              <p>Approval needs a latest score of 70 or more (Eligible for proposal).</p>
             ) : confirmApproval ? (
               <div className="alert warn" role="group" aria-label="Confirm manager approval">
                 <p>Confirm you have reviewed the application data, score and reasons{a.dsr_flag_high_risk ? ", including the High risk warning" : ""}.</p>
@@ -224,32 +215,36 @@ export default function ApplicationDetail() {
             ) : (
               <button className="primary" onClick={() => { setApprovalError(""); setConfirmApproval(true); }} disabled={scoring || approving}>Approve application</button>
             )}
-          </>
-        )}
-      </section>
+          </Card>
+        </aside>
 
-      <section className="card">
-        <h2>Application data <RiskBadge high={a.dsr_flag_high_risk} /></h2>
-        <dl>
-          <dt>Created by</dt><dd>{a.owner_name}</dd>
-          <dt>Monthly income</dt><dd>{vnd(a.monthly_income)}</dd>
-          <dt>Loan amount</dt><dd>{vnd(a.loan_amount)}</dd>
-          <dt>Loan term</dt><dd>{a.loan_term_months} months</dd>
-          <dt>Estimated monthly payment</dt><dd>{vnd(a.estimated_monthly_payment)} ({a.dsr_percent}% of income)</dd>
-          <dt>Purpose</dt><dd>{a.purpose || "-"}</dd>
-          <dt>Credit history</dt><dd>{a.credit_history_note || "-"}</dd>
-          <dt>CIC debt group</dt><dd>{a.cic_debt_group ?? "Not available"}</dd>
-        </dl>
-      </section>
-      <SensitiveData key={a.id} application={a} />
+        <div className="detail-main">
+          <div role="tablist" aria-label="Application views" className="application-tabs" onKeyDown={tabKey}>
+            <button id="details-tab" role="tab" aria-selected={tab === "details"} aria-controls="details-panel" tabIndex={tab === "details" ? 0 : -1} onClick={() => setTab("details")}>Application details</button>
+            <button id="history-tab" role="tab" aria-selected={tab === "history"} aria-controls="history-panel" tabIndex={tab === "history" ? 0 : -1} onClick={() => setTab("history")}>Scoring history</button>
+          </div>
+          <div role="tabpanel" id="details-panel" aria-labelledby="details-tab" hidden={tab !== "details"}>
+            <Card title="Application data">
+              <DataList rows={[
+                ["Monthly income", vnd(a.monthly_income)],
+                ["Loan amount", vnd(a.loan_amount)],
+                ["Loan term", `${a.loan_term_months} months`],
+                ["Estimated monthly payment", `${vnd(a.estimated_monthly_payment)} (${a.dsr_percent}% of income)`],
+                ["Purpose", a.purpose || null],
+                ["Credit history", a.credit_history_note || null],
+                ["CIC debt group", a.cic_debt_group ?? "Not available"],
+              ]} />
+            </Card>
+            <SensitiveData key={a.id} application={a} />
+          </div>
+          <section role="tabpanel" id="history-panel" aria-labelledby="history-tab" hidden={tab !== "history"} className="card">
+            <h2>Scoring history</h2>
+            {historyLoading ? <Loading text="Loading score history..." /> : historyError
+              ? <ErrorBox message={`Score history could not be loaded. ${historyError}`} onRetry={historyRetryable ? loadHistory : undefined} />
+              : <ScoreHistory history={history} />}
+          </section>
+        </div>
       </div>
-      <section role="tabpanel" id="history-panel" aria-labelledby="history-tab" hidden={tab !== "history"} className="card">
-        <h2>Scoring history</h2>
-        {historyLoading ? <Loading text="Loading score history..." /> : historyError
-          ? <ErrorBox message={`Score history could not be loaded. ${historyError}`} onRetry={historyRetryable ? loadHistory : undefined} />
-          : <ScoreHistory history={history} />}
-      </section>
-      <p><Link to="/loan-applications">Back to the list</Link></p>
     </>
   );
 }

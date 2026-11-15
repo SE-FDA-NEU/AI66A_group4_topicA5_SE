@@ -120,11 +120,11 @@ test("US03 saved High risk application is visible before a slow score and scorin
     expect(stored.latest_score).toBeNull();
     await capture(page, info, "p0-saved-before-scoring");
     release();
-    await expect(page.getByText("Recommendation Rejected", { exact: true })).toBeVisible();
+    await expect(page.locator(".score").getByText("Recommendation Rejected", { exact: true })).toBeVisible();
     expect(await page.locator(".score li").count()).toBeGreaterThanOrEqual(2);
     expect(scores).toBe(1);
     await page.reload();
-    await expect(page.getByText("Recommendation Rejected", { exact: true })).toBeVisible();
+    await expect(page.locator(".score").getByText("Recommendation Rejected", { exact: true })).toBeVisible();
     expect(scores).toBe(1);
     await info.attach("timing", { body: JSON.stringify({ saveToDetailsMs }), contentType: "application/json" });
     await capture(page, info, "p0-rejected-score");

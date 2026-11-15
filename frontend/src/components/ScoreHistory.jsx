@@ -1,4 +1,5 @@
 import { formatDateTime } from "../format";
+import { scoreLabelText } from "../glossary";
 
 export default function ScoreHistory({ history }) {
   if (!history || history.length === 0) return <p className="muted">No history available</p>;
@@ -8,7 +9,7 @@ export default function ScoreHistory({ history }) {
       <tbody>{history.map((item, index) => <tr key={item.id ?? index}>
         <td>{formatDateTime(item.created_at)}</td>
         <td>{item.score ?? "-"}</td>
-        <td>{item.label_text ?? "-"}</td>
+        <td>{scoreLabelText(item.label, item.label_text) || "-"}</td>
         <td>{item.model_version ?? "-"}</td>
       </tr>)}</tbody>
     </table></div>
