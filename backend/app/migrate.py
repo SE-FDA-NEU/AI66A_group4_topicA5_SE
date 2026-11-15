@@ -16,15 +16,22 @@ def ensure_schema(bind=engine):
             'citizen_id_last4': 'VARCHAR(4) NULL',
             'bank_account_encrypted': 'VARCHAR NULL',
             'bank_account_last4': 'VARCHAR(4) NULL',
+            'application_name': "VARCHAR(120) NOT NULL DEFAULT 'Loan application'",
         },
     }
     with bind.begin() as connection:
+        added_application_name = False
         for table, columns in additions.items():
             existing = {column['name'] for column in inspect(connection).get_columns(table)}
             for name, definition in columns.items():
                 if name not in existing:
                     # All identifiers and definitions are fixed code, not user input.
                     connection.execute(text(f'ALTER TABLE {table} ADD COLUMN {name} {definition}'))
+                    if table == 'loan_applications' and name == 'application_name':
+                        added_application_name = True
+        if added_application_name:
+            # Give legacy records a stable, readable label without overwriting user data.
+            connection.execute(text("UPDATE loan_applications SET application_name = 'Application ' || substr(id, 1, 8)"))
 
 
 if __name__ == '__main__':

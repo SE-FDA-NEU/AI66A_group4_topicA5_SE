@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 
-const VALID = { monthly_income: 20000000, loan_amount: 100000000, loan_term_months: 24,
+const VALID = { application_name: "P1/P2 browser loan", monthly_income: 20000000, loan_amount: 100000000, loan_term_months: 24,
   estimated_monthly_payment: 5000000, purpose: "P1/P2 browser fixture", credit_history_note: "3 years, on time", cic_debt_group: 1 };
 
 // Linux CI renders wider fonts than Windows; force a wide face before overflow checks so every OS catches them.
@@ -43,7 +43,7 @@ async function pendingFixture(page) {
 async function openFromList(page, id, manager = false) {
   await page.getByRole("navigation").getByRole("link", { name: manager ? "Branch applications" : "My applications", exact: true }).click();
   await page.getByRole("row").filter({ hasText: id.slice(0, 8) }).getByRole("link", { name: manager ? "Review" : "Open", exact: true }).click();
-  await expect(page.getByRole("heading", { level: 1, name: /^Application / })).toBeVisible();
+  await expect(page.getByText(/^Application #[0-9a-f]{8} · Created by /)).toBeVisible();
 }
 
 async function capture(page, info, name) {
@@ -147,7 +147,7 @@ test("US07 Manager receives a new notification and read status survives reopenin
     await expect(row.getByText("Read", { exact: true })).toBeVisible();
     await capture(page, info, "p2-notifications-read-persisted");
     await row.getByRole("button", { name: "Open application", exact: true }).click();
-    await expect(page.getByRole("heading", { level: 1, name: /^Application / })).toBeVisible();
+    await expect(page.getByText(/^Application #[0-9a-f]{8} · Created by /)).toBeVisible();
   } finally { await otherContext.close(); }
 });
 
@@ -208,7 +208,7 @@ async function findScoredRow(page, minScore, status) {
       const text = cells[scoreAt].textContent.trim();
       const score = Number(text);
       if (/^\d+(\.\d+)?$/.test(text) && Number.isFinite(score) && score >= minScore && (!status || cells[statusAt].textContent.includes(status)))
-        return cells[0].querySelector("strong").textContent.trim().replace("#", "");
+        return cells[0].textContent.match(/#([0-9a-f]{8})/)[1];
     }
     return null;
   }, { minScore, status });
@@ -224,7 +224,7 @@ test("US04 detail page shows data beside score and decision", async ({ page }) =
   const shortId = await findScoredRow(page, 70, "Scored");
   expect(shortId).toBeTruthy();
   await page.getByRole("row").filter({ hasText: shortId.slice(0, 8) }).getByRole("link", { name: "Review", exact: true }).click();
-  await expect(page.getByRole("heading", { level: 1, name: /^Application / })).toBeVisible();
+  await expect(page.getByText(/^Application #[0-9a-f]{8} · Created by /)).toBeVisible();
   await expect(page.getByRole("heading", { name: "Manage application" })).toHaveCount(0);
   const side = page.locator(".detail-side");
   const main = page.locator(".detail-main");
@@ -262,7 +262,7 @@ test("US04 detail page shows data beside score and decision", async ({ page }) =
 
   await page.goto("/dashboard");
   await page.getByRole("link", { name: /^(Open|Get credit score)$/ }).first().click();
-  await expect(page.getByRole("heading", { level: 1, name: /^Application / })).toBeVisible();
+  await expect(page.getByText(/^Application #[0-9a-f]{8} · Created by /)).toBeVisible();
   await page.getByRole("link", { name: "Back to the dashboard", exact: true }).click();
   await expect(page).toHaveURL(/\/dashboard$/);
 });
@@ -439,7 +439,7 @@ test("Manager back link falls back to the review queue when opened from Notifica
     await page.reload();
     const row = page.locator(".notification-list li").filter({ hasText: loan.id.slice(0, 8) });
     await row.getByRole("button", { name: "Open application", exact: true }).click();
-    await expect(page.getByRole("heading", { level: 1, name: /^Application / })).toBeVisible();
+    await expect(page.getByText(/^Application #[0-9a-f]{8} · Created by /)).toBeVisible();
     await expect(page.getByRole("link", { name: "Back to the list", exact: true })).toHaveAttribute("href", "/loan-applications?view=review");
   } finally { await otherContext.close(); }
 });

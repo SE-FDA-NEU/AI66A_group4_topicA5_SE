@@ -30,6 +30,10 @@ export default function ApplicationDetail() {
   const [confirmApproval, setConfirmApproval] = useState(false);
   const [approving, setApproving] = useState(false);
   const [approvalError, setApprovalError] = useState("");
+  const [confirmReject, setConfirmReject] = useState(false);
+  const [rejecting, setRejecting] = useState(false);
+  const [rejectReason, setRejectReason] = useState("");
+  const [rejectError, setRejectError] = useState("");
   const [tab, setTab] = useState("details");
   const [historyLoading, setHistoryLoading] = useState(true);
   const [historyRetryable, setHistoryRetryable] = useState(false);
@@ -51,6 +55,10 @@ export default function ApplicationDetail() {
     setConfirmApproval(false);
     setApproving(false);
     setApprovalError("");
+    setConfirmReject(false);
+    setRejecting(false);
+    setRejectReason("");
+    setRejectError("");
     return () => { activeId.current = null; };
   }, [id]);
 
@@ -135,6 +143,23 @@ export default function ApplicationDetail() {
     } finally { if (activeId.current === id) setCancelling(false); }
   };
 
+  const reject = async () => {
+    const reason = rejectReason.trim();
+    if (!reason) { setRejectError("Enter a reason before rejecting this application."); return; }
+    setRejecting(true);
+    setRejectError("");
+    try {
+      const application = await api.rejectApplication(id, { reason });
+      if (activeId.current !== id) return;
+      setState({ status: "ok", app: application });
+      setConfirmReject(false);
+      setRejectReason("");
+      window.dispatchEvent(new Event("notifications-changed"));
+    } catch (err) {
+      if (activeId.current === id) { setRejectError(err.message); setConfirmReject(false); load(); }
+    } finally { if (activeId.current === id) setRejecting(false); }
+  };
+
   const tabKey = event => {
     if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
     event.preventDefault();
@@ -160,18 +185,19 @@ export default function ApplicationDetail() {
   const canApprove = eligibleForApproval(a);
   const manager = user.role === "admin";
   const editable = a.status === "pending" && !a.latest_score;
+  const rejectable = manager && ["pending", "scored", "manual_review"].includes(a.status);
   return (
     <>
       <p><Link to={backTarget}>{backLabel}</Link></p>
       <PageHeader
-        title={`Application #${a.id.slice(0, 8)}`}
+        title={a.application_name || `Application #${a.id.slice(0, 8)}`}
         badge={<StatusBadge status={a.status} />}
         actions={editable && !confirmCancel ? <>
           <button onClick={() => navigate(`/loan-applications/${id}/edit`)} disabled={scoring || cancelling}>{ACTION_TEXT.edit}</button>
           <button onClick={() => setConfirmCancel(true)} disabled={cancelling}>{ACTION_TEXT.cancel}</button>
         </> : undefined}
       />
-      <p className="detail-meta muted">Created by {a.owner_name} · {formatDateTime(a.created_at)}</p>
+      <p className="detail-meta muted">Application #{a.id.slice(0, 8)} · Created by {a.owner_name} · {formatDateTime(a.created_at)}</p>
       {notice && <div className="alert" role="alert">{notice}</div>}
       {a.dsr_flag_high_risk && (
         <div className="alert warn" role="alert">
@@ -193,32 +219,50 @@ export default function ApplicationDetail() {
           <Card title="Credit score">
             <ScoreCard result={a.latest_score} status={a.status} showModelVersion={manager} />
             {scoreError && <div className="alert" role="alert">{scoreError}</div>}
-            {!["cancelled", "approved"].includes(a.status) && (
+            {!["cancelled", "approved"].includes(a.status) && !a.manager_rejection && (
               <button onClick={rescore} disabled={scoring || approving || confirmApproval}>{scoring ? "Scoring..." : a.latest_score ? ACTION_TEXT.scoreAgain : ACTION_TEXT.getScore}</button>
             )}
           </Card>
-          <Card title={manager ? "Your approval decision" : "Manager decision"} className={manager ? "manager-decision" : undefined}>
+          <Card title="Manager decision" className={manager ? "manager-decision" : undefined}>
             {approvalError && <div className="alert" role="alert">{approvalError}</div>}
+            {rejectError && <div className="alert" role="alert">{rejectError}</div>}
             {a.status === "approved" ? (
               <div role="status">
                 <strong>Approved</strong>
                 {a.approval && <p>Approved by {a.approval.actor_name} on {formatDateTime(a.approval.approved_at)}.</p>}
                 <p>This records the manager's approval of the application. Disbursement is handled outside this app.</p>
               </div>
-            ) : ["cancelled", "rejected"].includes(a.status) ? (
-              <p>This application is {a.status} and cannot be approved.</p>
+            ) : a.manager_rejection ? (
+              <div role="status">
+                <strong>Rejected by manager</strong>
+                <p>Rejected by {a.manager_rejection.actor_name} on {formatDateTime(a.manager_rejection.rejected_at)}.</p>
+                <p><strong>Reason:</strong> {a.manager_rejection.reason}</p>
+              </div>
+            ) : a.status === "rejected" ? (
+              <div role="status"><strong>Rejected by a scoring rule</strong><p>{a.latest_score?.rejected_reason || "The scoring rules did not accept this application."}</p></div>
             ) : !manager ? (
               <p>{a.latest_score ? "Waiting for the branch manager's decision." : "The branch manager can decide once the application is scored."}</p>
-            ) : !canApprove ? (
-              <p>Approval needs a latest score of 70 or more (Eligible for proposal).</p>
-            ) : confirmApproval ? (
-              <div className="alert warn" role="group" aria-label="Confirm manager approval">
-                <p>Confirm you have reviewed the application data, score and reasons{a.dsr_flag_high_risk ? ", including the High risk warning" : ""}.</p>
-                <button className="primary" onClick={approve} disabled={approving || scoring}>{approving ? "Approving..." : ACTION_TEXT.confirmApproval}</button>{" "}
-                <button onClick={() => setConfirmApproval(false)} disabled={approving}>{ACTION_TEXT.keepReviewing}</button>
-              </div>
             ) : (
-              <button className="primary" onClick={() => { setApprovalError(""); setConfirmApproval(true); }} disabled={scoring || approving}>{ACTION_TEXT.approve}</button>
+              <>
+                {canApprove ? (confirmApproval ? (
+                  <div className="alert warn" role="group" aria-label="Confirm manager approval">
+                    <p>Confirm you have reviewed the application data, score and reasons{a.dsr_flag_high_risk ? ", including the High risk warning" : ""}.</p>
+                    <button className="primary" onClick={approve} disabled={approving || scoring || rejecting}>{approving ? "Approving..." : ACTION_TEXT.confirmApproval}</button>{" "}
+                    <button onClick={() => setConfirmApproval(false)} disabled={approving}>{ACTION_TEXT.keepReviewing}</button>
+                  </div>
+                ) : <button className="primary" onClick={() => { setApprovalError(""); setConfirmApproval(true); }} disabled={scoring || approving || rejecting}>{ACTION_TEXT.approve}</button>) : <p>Approval needs a latest score of 70 or more (Eligible for proposal).</p>}
+                {rejectable && !confirmReject && <p><button className="danger" onClick={() => { setRejectError(""); setConfirmReject(true); setConfirmApproval(false); }} disabled={scoring || approving || rejecting}>Reject application</button></p>}
+                {rejectable && confirmReject && (
+                  <div className="alert warn" role="group" aria-label="Confirm application rejection">
+                    <p>Reject this application? The decision and reason will be saved in its history.</p>
+                    <label htmlFor="manager-rejection-reason">Reason for rejection (required)</label>
+                    <textarea id="manager-rejection-reason" rows={3} maxLength={500} value={rejectReason} onChange={event => setRejectReason(event.target.value)} aria-describedby="manager-rejection-hint" />
+                    <small id="manager-rejection-hint">Up to 500 characters. The applicant can see this reason.</small>
+                    <p><button className="danger" onClick={reject} disabled={rejecting || approving || scoring || !rejectReason.trim()}>{rejecting ? "Rejecting..." : "Confirm rejection"}</button>{" "}
+                    <button onClick={() => setConfirmReject(false)} disabled={rejecting}>Keep reviewing</button></p>
+                  </div>
+                )}
+              </>
             )}
           </Card>
         </aside>
@@ -231,6 +275,7 @@ export default function ApplicationDetail() {
           <div role="tabpanel" id="details-panel" aria-labelledby="details-tab" hidden={tab !== "details"}>
             <Card title="Application data">
               <DataList rows={[
+                ["Application name", a.application_name],
                 ["Monthly income", vnd(a.monthly_income)],
                 ["Loan amount", vnd(a.loan_amount)],
                 ["Loan term", `${a.loan_term_months} months`],

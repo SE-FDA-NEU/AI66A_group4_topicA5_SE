@@ -2,6 +2,7 @@
 // main.py 422 handler and privacy.py). Messages must stay identical to the server's.
 
 export const FIELD_LABELS = {
+  application_name: "Application name",
   monthly_income: "Monthly income",
   loan_amount: "Loan amount",
   loan_term_months: "Loan term",
@@ -80,6 +81,10 @@ export function validateApplication(form) {
       else if (value > 5n) errors.cic_debt_group = "CIC debt group must not exceed 5.";
     }
   }
+
+  const applicationName = text(form.application_name).trim();
+  if (!applicationName) errors.application_name = "Application name is required.";
+  else if (applicationName.length > 120) errors.application_name = "Application name must not exceed 120 characters.";
 
   for (const name of ["purpose", "credit_history_note"]) {
     if (text(form[name]).trim().length > MAX_TEXT) {

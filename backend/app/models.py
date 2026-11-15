@@ -110,6 +110,11 @@ class LoanApplication(Base):
         index=True,
     )
 
+    application_name = Column(
+        String(120), nullable=False, default="Loan application",
+        server_default="Loan application",
+    )
+
     # US03 - money is exact numbers.
     monthly_income = Column(BigInteger, nullable=False)               # BR2
     loan_amount = Column(BigInteger, nullable=False)                  # BR3

@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 import { performance } from "node:perf_hooks";
 
 const PASSWORD = "Demo@2026";
-const VALID = { monthly_income: "20000000", loan_amount: "100000000", loan_term_months: "24",
+const VALID = { application_name: "P0 browser loan", monthly_income: "20000000", loan_amount: "100000000", loan_term_months: "24",
   estimated_monthly_payment: "5000000", purpose: "P0 browser check", credit_history_note: "3 years, on time", cic_debt_group: "1" };
 
 async function signIn(page, email = "hoang@branch.vn") {
@@ -42,7 +42,7 @@ async function submitApplication(page) {
   const response = await saved;
   expect(response.status()).toBe(201);
   const application = await response.json();
-  await expect(page.getByRole("heading", { name: /^Application /, level: 1 })).toBeVisible();
+  await expect(page.getByText(/^Application #[0-9a-f]{8} · Created by /)).toBeVisible();
   return { application, saveToDetailsMs: performance.now() - started };
 }
 

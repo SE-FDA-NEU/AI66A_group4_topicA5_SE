@@ -29,11 +29,11 @@ test("ApplicationFields groups fields, uses a CIC select and marks four required
   const html = C.render(C.ApplicationFields, { form: EMPTY, setForm: noop, errors: {}, idPrefix: "field-", showIdentifiers: true });
   assert.ok(html.includes("<select") && html.includes("Not available"));
   assert.equal((html.match(/<legend/g) || []).length, 3);
-  assert.equal((html.match(/class="req"/g) || []).length, 4);
+  assert.equal((html.match(/class="req"/g) || []).length, 5);
   assert.ok(html.includes("Monthly income (VND)"));
   assert.ok(html.includes('class="dsr-line" aria-live="polite"'));
   assert.ok(!html.includes("Installment is"));
-  assert.equal((html.match(/aria-required="true"/g) || []).length, 4);
+  assert.equal((html.match(/aria-required="true"/g) || []).length, 5);
   assert.ok(!html.includes('role="alert"'));
 });
 

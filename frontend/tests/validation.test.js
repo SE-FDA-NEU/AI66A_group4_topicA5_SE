@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { validateApplication } from "../src/validation.js";
 
 const VALID = {
-  monthly_income: "20000000", loan_amount: "100000000", loan_term_months: "24",
+  application_name: "Home renovation loan", monthly_income: "20000000", loan_amount: "100000000", loan_term_months: "24",
   estimated_monthly_payment: "5000000", purpose: "", credit_history_note: "",
   cic_debt_group: "", citizen_id: "", bank_account: "",
 };
@@ -18,11 +18,23 @@ test("TC-US09-21 a valid form returns no errors", () => {
 test("TC-US09-22 empty form reports the four required fields", () => {
   const errors = validateApplication({});
   assert.deepEqual(errors, {
+    application_name: "Application name is required.",
     monthly_income: "Income is required",
     loan_amount: "Loan amount is required.",
     loan_term_months: "Loan term is required.",
     estimated_monthly_payment: "Estimated monthly payment is required.",
   });
+});
+
+test("application name is required and limited to 120 characters", () => {
+  for (const value of ["", "   ", null]) {
+    assert.equal(check({ application_name: value }).application_name, "Application name is required.");
+  }
+  assert.equal(check({ application_name: "a".repeat(120) }).application_name, undefined);
+  assert.equal(
+    check({ application_name: "a".repeat(121) }).application_name,
+    "Application name must not exceed 120 characters.",
+  );
 });
 
 test("TC-US09-23 whitespace-only income is required", () => {
